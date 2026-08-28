@@ -1,6 +1,7 @@
 'use server'
 
 import { revalidatePath } from 'next/cache'
+import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
 
 export async function addContact(orderId: string, formData: FormData) {
@@ -20,7 +21,7 @@ export async function addContact(orderId: string, formData: FormData) {
   const altaId = formData.get('alta_id') as string
   const mortgageeClause = formData.get('mortgagee_clause') as string
 
-  await supabase.from('contacts').insert({
+  const { error } = await supabase.from('contacts').insert({
     order_id: orderId,
     role,
     entity_type: entityType,
@@ -37,11 +38,20 @@ export async function addContact(orderId: string, formData: FormData) {
     mortgagee_clause: mortgageeClause || null,
   })
 
+  if (error) {
+    redirect(`/orders/${orderId}?error=${encodeURIComponent(error.message)}`)
+  }
+
   revalidatePath(`/orders/${orderId}`)
 }
 
 export async function deleteContact(orderId: string, contactId: string) {
   const supabase = await createClient()
-  await supabase.from('contacts').delete().eq('id', contactId)
+  const { error } = await supabase.from('contacts').delete().eq('id', contactId)
+
+  if (error) {
+    redirect(`/orders/${orderId}?error=${encodeURIComponent(error.message)}`)
+  }
+
   revalidatePath(`/orders/${orderId}`)
 }
