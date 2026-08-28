@@ -47,7 +47,10 @@ export async function createOrder(formData: FormData) {
     .single()
 
   if (error || !data) {
-    redirect(`/orders/new?error=${encodeURIComponent(error?.message ?? 'Unknown error')}`)
+    console.error('createOrder failed:', error)
+    redirect(
+      `/orders/new?error=${encodeURIComponent('Could not save. Please check your entries and try again.')}`
+    )
   }
 
   revalidatePath('/orders')
@@ -94,7 +97,10 @@ export async function updateOrder(orderId: string, formData: FormData) {
     .eq('id', orderId)
 
   if (error) {
-    redirect(`/orders/${orderId}?error=${encodeURIComponent(error.message)}`)
+    console.error('updateOrder failed:', error)
+    redirect(
+      `/orders/${orderId}?error=${encodeURIComponent('Could not save. Please check your entries and try again.')}`
+    )
   }
 
   revalidatePath(`/orders/${orderId}`)

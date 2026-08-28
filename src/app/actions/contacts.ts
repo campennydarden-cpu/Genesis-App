@@ -39,7 +39,10 @@ export async function addContact(orderId: string, formData: FormData) {
   })
 
   if (error) {
-    redirect(`/orders/${orderId}?error=${encodeURIComponent(error.message)}`)
+    console.error('addContact failed:', error)
+    redirect(
+      `/orders/${orderId}?error=${encodeURIComponent('Could not save. Please check your entries and try again.')}`
+    )
   }
 
   revalidatePath(`/orders/${orderId}`)
@@ -50,7 +53,10 @@ export async function deleteContact(orderId: string, contactId: string) {
   const { error } = await supabase.from('contacts').delete().eq('id', contactId)
 
   if (error) {
-    redirect(`/orders/${orderId}?error=${encodeURIComponent(error.message)}`)
+    console.error('deleteContact failed:', error)
+    redirect(
+      `/orders/${orderId}?error=${encodeURIComponent('Could not save. Please check your entries and try again.')}`
+    )
   }
 
   revalidatePath(`/orders/${orderId}`)
