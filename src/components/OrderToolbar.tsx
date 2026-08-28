@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useState } from 'react'
 import { usePathname } from 'next/navigation'
 
 type ToolbarTab = 'requested-tasks' | 'checklist' | 'attachments' | 'history'
@@ -15,10 +15,12 @@ const TOOLBAR_TABS: { key: ToolbarTab; label: string }[] = [
 export function OrderToolbar({ children }: { children: React.ReactNode }) {
   const pathname = usePathname()
   const [activeTab, setActiveTab] = useState<ToolbarTab | null>(null)
+  const [prevPathname, setPrevPathname] = useState(pathname)
 
-  useEffect(() => {
+  if (pathname !== prevPathname) {
+    setPrevPathname(pathname)
     setActiveTab(null)
-  }, [pathname])
+  }
 
   return (
     <div>

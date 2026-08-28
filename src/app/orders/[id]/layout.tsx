@@ -15,20 +15,16 @@ export default async function OrderLayout({
   const { id } = await params
   const supabase = await createClient()
 
-  const { data: order } = await supabase
+  const { data: orders } = await supabase
     .from('orders')
-    .select('id, file_number')
-    .eq('id', id)
-    .single()
+    .select('id, file_number, product_type, order_status')
+    .order('created_at', { ascending: false })
+
+  const order = orders?.find((o) => o.id === id)
 
   if (!order) {
     notFound()
   }
-
-  const { data: orders } = await supabase
-    .from('orders')
-    .select('id, file_number, product_type, order_status, title_status, escrow_status')
-    .order('created_at', { ascending: false })
 
   return (
     <div className="flex min-h-screen">

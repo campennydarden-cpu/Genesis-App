@@ -32,7 +32,7 @@ export default async function OrdersPage() {
         {(orders ?? []).map((o) => (
           <li key={o.id} data-testid="order-row">
             <Link
-              href={`/orders/${o.id}`}
+              href={`/orders/${o.id}/order-entry`}
               className="block rounded border p-4 hover:bg-slate-50"
             >
               <p className="font-medium">{o.file_number}</p>
