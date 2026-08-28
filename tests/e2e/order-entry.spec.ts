@@ -68,4 +68,39 @@ test.describe('Genesis foundation phase', () => {
     await expect(page.getByTestId('contact-row')).toContainText('Jane Test Buyer')
     await expect(page.getByTestId('contact-row')).toContainText('Buyer/Borrower')
   })
+
+  test('orders list shows created orders and status edits persist', async ({ page }) => {
+    const email = uniqueEmail()
+
+    await page.goto('/signup')
+    await page.getByLabel('Email').fill(email)
+    await page.getByLabel('Password').fill(TEST_PASSWORD)
+    await page.getByRole('button', { name: 'Sign Up' }).click()
+    await page.waitForURL('**/login**')
+    await page.getByLabel('Email').fill(email)
+    await page.getByLabel('Password').fill(TEST_PASSWORD)
+    await page.getByRole('button', { name: 'Sign In' }).click()
+    await page.waitForURL('**/orders')
+
+    await page.getByRole('link', { name: '+ New Order' }).click()
+    const fileNumber = `TEST-${Date.now()}`
+    await page.getByLabel('File Number').fill(fileNumber)
+    await page.getByRole('button', { name: 'Create Order' }).click()
+    await page.waitForURL('**/orders/**')
+
+    // Edit status fields and save
+    await page.getByLabel('Title Status').selectOption('Searching')
+    await page.getByRole('button', { name: 'Save Changes' }).click()
+    await page.waitForURL('**/orders/**')
+    await expect(page.getByLabel('Title Status')).toHaveValue('Searching')
+
+    // Back to the list — the order should appear with its status
+    await page.goto('/orders')
+    await expect(page.getByTestId('order-list')).toContainText(fileNumber)
+    await expect(page.getByTestId('order-list')).toContainText('Searching')
+
+    // Sign out returns to /login
+    await page.getByRole('button', { name: 'Sign Out' }).click()
+    await page.waitForURL('**/login**')
+  })
 })
