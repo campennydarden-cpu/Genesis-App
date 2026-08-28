@@ -83,9 +83,10 @@ test.describe('Genesis foundation phase', () => {
     await page.getByLabel('Property Address').fill('123 Main St')
     await page.getByRole('button', { name: 'Create Order' }).click()
 
-    await page.waitForURL('**/orders/**')
-    await expect(page.getByRole('heading', { name: `Order ${fileNumber}` })).toBeVisible()
+    await page.waitForURL('**/orders/**/order-entry')
+    const orderId = page.url().match(/\/orders\/([^/]+)\/order-entry/)?.[1]
 
+    await page.goto(`/orders/${orderId}/contacts`)
     await page.getByText('Add a contact').click()
     await page.getByLabel('Role').fill('Buyer/Borrower')
     await page.getByLabel('Name').fill('Jane Test Buyer')
@@ -95,8 +96,6 @@ test.describe('Genesis foundation phase', () => {
     await expect(page.getByTestId('contact-row')).toContainText('Jane Test Buyer')
     await expect(page.getByTestId('contact-row')).toContainText('Buyer/Borrower')
 
-    // Remove the contact and confirm the row disappears (this order has
-    // exactly one contact, so the single "Remove" button is unambiguous).
     await page.getByRole('button', { name: 'Remove' }).click()
     await expect(page.getByTestId('contact-row')).not.toBeVisible()
   })
@@ -108,20 +107,19 @@ test.describe('Genesis foundation phase', () => {
     const fileNumber = `TEST-${Date.now()}`
     await page.getByLabel('File Number').fill(fileNumber)
     await page.getByRole('button', { name: 'Create Order' }).click()
-    await page.waitForURL('**/orders/**')
+    await page.waitForURL('**/orders/**/order-entry')
+    const orderId = page.url().match(/\/orders\/([^/]+)\/order-entry/)?.[1]
 
-    // Edit status fields and save
+    await page.goto(`/orders/${orderId}/order-info`)
     await page.getByLabel('Title Status').selectOption('Searching')
     await page.getByRole('button', { name: 'Save Changes' }).click()
-    await page.waitForURL('**/orders/**')
+    await page.waitForURL('**/order-info')
     await expect(page.getByLabel('Title Status')).toHaveValue('Searching')
 
-    // Back to the list — the order should appear with its status
     await page.goto('/orders')
     await expect(page.getByTestId('order-list')).toContainText(fileNumber)
     await expect(page.getByTestId('order-list')).toContainText('Searching')
 
-    // Sign out returns to /login
     await page.getByRole('button', { name: 'Sign Out' }).click()
     await page.waitForURL('**/login**')
   })

@@ -54,10 +54,10 @@ export async function createOrder(formData: FormData) {
   }
 
   revalidatePath('/orders')
-  redirect(`/orders/${data.id}`)
+  redirect(`/orders/${data.id}/order-entry`)
 }
 
-export async function updateOrder(orderId: string, formData: FormData) {
+export async function updateOrderEntry(orderId: string, formData: FormData) {
   const supabase = await createClient()
 
   const fileNumber = formData.get('file_number') as string
@@ -71,9 +71,6 @@ export async function updateOrder(orderId: string, formData: FormData) {
   const propertyCounty = formData.get('property_county') as string
   const propertyState = formData.get('property_state') as string
   const propertyZip = formData.get('property_zip') as string
-  const orderStatus = formData.get('order_status') as string
-  const titleStatus = formData.get('title_status') as string
-  const escrowStatus = formData.get('escrow_status') as string
 
   const { error } = await supabase
     .from('orders')
@@ -89,6 +86,31 @@ export async function updateOrder(orderId: string, formData: FormData) {
       property_county: propertyCounty || null,
       property_state: propertyState || null,
       property_zip: propertyZip || null,
+      updated_at: new Date().toISOString(),
+    })
+    .eq('id', orderId)
+
+  if (error) {
+    console.error('updateOrderEntry failed:', error)
+    redirect(
+      `/orders/${orderId}/order-entry?error=${encodeURIComponent('Could not save. Please check your entries and try again.')}`
+    )
+  }
+
+  revalidatePath(`/orders/${orderId}`)
+  redirect(`/orders/${orderId}/order-entry`)
+}
+
+export async function updateOrderInfo(orderId: string, formData: FormData) {
+  const supabase = await createClient()
+
+  const orderStatus = formData.get('order_status') as string
+  const titleStatus = formData.get('title_status') as string
+  const escrowStatus = formData.get('escrow_status') as string
+
+  const { error } = await supabase
+    .from('orders')
+    .update({
       order_status: orderStatus,
       title_status: titleStatus,
       escrow_status: escrowStatus,
@@ -97,12 +119,12 @@ export async function updateOrder(orderId: string, formData: FormData) {
     .eq('id', orderId)
 
   if (error) {
-    console.error('updateOrder failed:', error)
+    console.error('updateOrderInfo failed:', error)
     redirect(
-      `/orders/${orderId}?error=${encodeURIComponent('Could not save. Please check your entries and try again.')}`
+      `/orders/${orderId}/order-info?error=${encodeURIComponent('Could not save. Please check your entries and try again.')}`
     )
   }
 
   revalidatePath(`/orders/${orderId}`)
-  redirect(`/orders/${orderId}`)
+  redirect(`/orders/${orderId}/order-info`)
 }

@@ -1,28 +1,5 @@
-import {
-  PRODUCT_TYPES,
-  POLICY_TYPES,
-  ORDER_STATUSES,
-  TITLE_STATUSES,
-  ESCROW_STATUSES,
-} from '@/lib/constants'
-
-type Order = {
-  id: string
-  file_number: string
-  product_type: string
-  policy_type: string
-  purchase_price: number | null
-  loan_amount: number | null
-  property_address: string | null
-  parcel_number: string | null
-  property_city: string | null
-  property_county: string | null
-  property_state: string | null
-  property_zip: string | null
-  order_status: string
-  title_status: string
-  escrow_status: string
-}
+import { PRODUCT_TYPES, POLICY_TYPES } from '@/lib/constants'
+import type { Order } from '@/lib/types'
 
 export function OrderForm({
   action,
@@ -182,62 +159,6 @@ export function OrderForm({
           className="mt-1 w-full rounded border px-3 py-2"
         />
       </div>
-
-      {order && (
-        <div className="grid grid-cols-3 gap-4 border-t pt-4">
-          <div>
-            <label htmlFor="order_status" className="block text-sm font-medium">
-              Order Status
-            </label>
-            <select
-              id="order_status"
-              name="order_status"
-              defaultValue={order.order_status}
-              className="mt-1 w-full rounded border px-3 py-2"
-            >
-              {ORDER_STATUSES.map((s) => (
-                <option key={s} value={s}>
-                  {s}
-                </option>
-              ))}
-            </select>
-          </div>
-          <div>
-            <label htmlFor="title_status" className="block text-sm font-medium">
-              Title Status
-            </label>
-            <select
-              id="title_status"
-              name="title_status"
-              defaultValue={order.title_status}
-              className="mt-1 w-full rounded border px-3 py-2"
-            >
-              {TITLE_STATUSES.map((s) => (
-                <option key={s} value={s}>
-                  {s}
-                </option>
-              ))}
-            </select>
-          </div>
-          <div>
-            <label htmlFor="escrow_status" className="block text-sm font-medium">
-              Escrow Status
-            </label>
-            <select
-              id="escrow_status"
-              name="escrow_status"
-              defaultValue={order.escrow_status}
-              className="mt-1 w-full rounded border px-3 py-2"
-            >
-              {ESCROW_STATUSES.map((s) => (
-                <option key={s} value={s}>
-                  {s}
-                </option>
-              ))}
-            </select>
-          </div>
-        </div>
-      )}
 
       <button type="submit" className="rounded bg-slate-900 px-4 py-2 text-white">
         {order ? 'Save Changes' : 'Create Order'}

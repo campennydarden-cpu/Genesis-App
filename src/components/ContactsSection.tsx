@@ -28,7 +28,7 @@ export function ContactsSection({
   const addContactWithOrderId = addContact.bind(null, orderId)
 
   return (
-    <div className="mt-10 border-t pt-6">
+    <div>
       <h2 className="mb-4 text-xl font-semibold">Contacts</h2>
 
       <ul className="mb-6 space-y-2" data-testid="contact-list">
