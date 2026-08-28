@@ -123,4 +123,31 @@ test.describe('Genesis foundation phase', () => {
     await page.getByRole('button', { name: 'Sign Out' }).click()
     await page.waitForURL('**/login**')
   })
+
+  test('navigation shell: sidebar and vertical nav render and link correctly', async ({ page }) => {
+    await loginAsSeededUser(page)
+
+    await page.getByRole('link', { name: '+ New Order' }).click()
+    const fileNumber = `TEST-${Date.now()}`
+    await page.getByLabel('File Number').fill(fileNumber)
+    await page.getByRole('button', { name: 'Create Order' }).click()
+    await page.waitForURL('**/orders/**/order-entry')
+
+    await expect(page.getByTestId('order-sidebar')).toContainText(fileNumber)
+
+    await page.getByTestId('file-section-nav').getByRole('link', { name: 'Contacts' }).click()
+    await page.waitForURL('**/contacts')
+    await expect(page.getByRole('heading', { name: 'Contacts' })).toBeVisible()
+
+    await page.getByTestId('file-section-nav').getByRole('link', { name: 'Order Info' }).click()
+    await page.waitForURL('**/order-info')
+    await expect(page.getByLabel('Order Status')).toBeVisible()
+
+    await expect(
+      page.getByTestId('file-section-nav').getByTestId('nav-disabled').filter({ hasText: 'Property' })
+    ).toBeVisible()
+    await expect(
+      page.getByTestId('file-section-nav').getByRole('link', { name: 'Property' })
+    ).toHaveCount(0)
+  })
 })
