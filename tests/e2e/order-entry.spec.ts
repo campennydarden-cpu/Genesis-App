@@ -34,10 +34,13 @@ test.describe('Genesis foundation phase', () => {
     await expect(page.getByRole('heading', { name: 'Genesis — Sign In' })).toBeVisible()
   })
 
-  test('sign up and log in', async ({ page }) => {
-    // This is the ONLY test that exercises the real signup flow — a fresh,
-    // unique-per-run email is fine here since the test is specifically
-    // verifying the signup+login round trip, not just needing a session.
+  test('signup is disabled (post-bootstrap security posture)', async ({ page }) => {
+    // Public signup was intentionally closed in the Supabase dashboard once the
+    // one seeded account existed (final-review Critical finding: an open /signup
+    // route + single-tenant "to authenticated" RLS meant anyone with the URL
+    // could self-register and read/write every order and contact, SSN/DOB
+    // included). This test verifies that fix holds, rather than testing a flow
+    // that's now deliberately unavailable.
     const email = uniqueEmail()
 
     await page.goto('/signup')
@@ -45,12 +48,13 @@ test.describe('Genesis foundation phase', () => {
     await page.getByLabel('Password').fill(TEST_PASSWORD)
     await page.getByRole('button', { name: 'Sign Up' }).click()
 
-    await page.waitForURL('**/login**')
-    await page.getByLabel('Email').fill(email)
-    await page.getByLabel('Password').fill(TEST_PASSWORD)
-    await page.getByRole('button', { name: 'Sign In' }).click()
+    await page.waitForURL('**/signup?error=**')
+    await expect(page.locator('p.text-red-700')).toBeVisible()
+    expect(page.url()).not.toContain('/orders')
+  })
 
-    await page.waitForURL('**/orders')
+  test('log in with the seeded account', async ({ page }) => {
+    await loginAsSeededUser(page)
     await expect(page.getByRole('heading', { name: 'Orders' })).toBeVisible()
   })
 
