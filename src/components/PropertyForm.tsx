@@ -113,7 +113,7 @@ export function PropertyForm({
               <input
                 id="city"
                 name="city"
-                defaultValue={property?.city ?? orderDefaults.city ?? undefined}
+                defaultValue={property ? (property.city ?? undefined) : (orderDefaults.city ?? undefined)}
                 className="mt-1 w-full rounded border px-3 py-2"
               />
             </div>
@@ -124,7 +124,7 @@ export function PropertyForm({
               <input
                 id="county"
                 name="county"
-                defaultValue={property?.county ?? orderDefaults.county ?? undefined}
+                defaultValue={property ? (property.county ?? undefined) : (orderDefaults.county ?? undefined)}
                 className="mt-1 w-full rounded border px-3 py-2"
               />
             </div>
@@ -135,7 +135,7 @@ export function PropertyForm({
               <input
                 id="state"
                 name="state"
-                defaultValue={property?.state ?? orderDefaults.state ?? undefined}
+                defaultValue={property ? (property.state ?? undefined) : (orderDefaults.state ?? undefined)}
                 className="mt-1 w-full rounded border px-3 py-2"
               />
             </div>
@@ -146,7 +146,7 @@ export function PropertyForm({
               <input
                 id="zip"
                 name="zip"
-                defaultValue={property?.zip ?? orderDefaults.zip ?? undefined}
+                defaultValue={property ? (property.zip ?? undefined) : (orderDefaults.zip ?? undefined)}
                 className="mt-1 w-full rounded border px-3 py-2"
               />
             </div>
@@ -249,7 +249,9 @@ export function PropertyForm({
               <input
                 id="parcel_number"
                 name="parcel_number"
-                defaultValue={property?.parcel_number ?? orderDefaults.parcel_number ?? undefined}
+                defaultValue={
+                  property ? (property.parcel_number ?? undefined) : (orderDefaults.parcel_number ?? undefined)
+                }
                 className="mt-1 w-full rounded border px-3 py-2"
               />
             </div>

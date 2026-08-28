@@ -225,4 +225,62 @@ test.describe('Genesis foundation phase', () => {
     await page.getByRole('button', { name: 'Remove' }).click()
     await expect(page.getByTestId('easement-row')).not.toBeVisible()
   })
+
+  test('property: clearing a saved field does not re-pull the order default on reload', async ({ page }) => {
+    await loginAsSeededUser(page)
+
+    await page.getByRole('link', { name: '+ New Order' }).click()
+    const fileNumber = `TEST-${Date.now()}`
+    await page.getByLabel('File Number').fill(fileNumber)
+    await page.getByLabel('City').fill('Lorain')
+    await page.getByLabel('County').fill('Lorain')
+    await page.getByLabel('State').fill('OH')
+    await page.getByLabel('Zip').fill('44053')
+    await page.getByLabel('Parcel Number').fill('12-34-567')
+    await page.getByRole('button', { name: 'Create Order' }).click()
+    await page.waitForURL('**/orders/**/order-entry')
+
+    await page.getByTestId('file-section-nav').getByRole('link', { name: 'Property' }).click()
+    await page.waitForURL('**/property')
+
+    // No property_details row exists yet — fields are pre-filled from the order.
+    await expect(page.getByLabel('City')).toHaveValue('Lorain')
+    await expect(page.getByLabel('County')).toHaveValue('Lorain')
+    await expect(page.getByLabel('State')).toHaveValue('OH')
+    await expect(page.getByLabel('Zip')).toHaveValue('44053')
+
+    // Save with the pre-filled values untouched — this creates the property_details row.
+    await page.getByRole('button', { name: 'Save Changes' }).click()
+    await page.waitForURL('**/property')
+    await page.waitForLoadState('networkidle')
+
+    await expect(page.getByLabel('City')).toHaveValue('Lorain')
+    await expect(page.getByLabel('County')).toHaveValue('Lorain')
+    await expect(page.getByLabel('State')).toHaveValue('OH')
+    await expect(page.getByLabel('Zip')).toHaveValue('44053')
+
+    await page.getByTestId('property-tab-legal').click()
+    await expect(page.getByLabel('Parcel Number', { exact: true })).toHaveValue('12-34-567')
+    await page.getByTestId('property-tab-identification').click()
+
+    // Now the row exists — deliberately clear just City and save again.
+    await page.getByLabel('City').fill('')
+    await page.getByRole('button', { name: 'Save Changes' }).click()
+    await page.waitForURL('**/property')
+    await page.waitForLoadState('networkidle')
+
+    // Reload from scratch to prove this isn't just uncommitted client state.
+    await page.reload()
+    await page.waitForLoadState('networkidle')
+
+    // City must stay empty — never silently repopulated from the order default —
+    // while the other saved fields keep their values.
+    await expect(page.getByLabel('City')).toHaveValue('')
+    await expect(page.getByLabel('County')).toHaveValue('Lorain')
+    await expect(page.getByLabel('State')).toHaveValue('OH')
+    await expect(page.getByLabel('Zip')).toHaveValue('44053')
+
+    await page.getByTestId('property-tab-legal').click()
+    await expect(page.getByLabel('Parcel Number', { exact: true })).toHaveValue('12-34-567')
+  })
 })
