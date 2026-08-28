@@ -2,6 +2,7 @@ import { notFound } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
 import { updateOrder } from '@/app/actions/orders'
 import { OrderForm } from '@/components/OrderForm'
+import { ContactsSection } from '@/components/ContactsSection'
 
 export default async function OrderDetailPage({
   params,
@@ -20,6 +21,12 @@ export default async function OrderDetailPage({
     notFound()
   }
 
+  const { data: contacts } = await supabase
+    .from('contacts')
+    .select('*')
+    .eq('order_id', id)
+    .order('created_at', { ascending: true })
+
   const updateOrderWithId = updateOrder.bind(null, id)
 
   return (
@@ -29,6 +36,7 @@ export default async function OrderDetailPage({
         <p className="mb-4 rounded bg-red-50 p-3 text-sm text-red-700">{error}</p>
       )}
       <OrderForm action={updateOrderWithId} order={order} />
+      <ContactsSection orderId={id} contacts={contacts ?? []} />
     </div>
   )
 }

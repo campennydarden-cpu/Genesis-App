@@ -58,5 +58,14 @@ test.describe('Genesis foundation phase', () => {
 
     await page.waitForURL('**/orders/**')
     await expect(page.getByRole('heading', { name: `Order ${fileNumber}` })).toBeVisible()
+
+    await page.getByText('Add a contact').click()
+    await page.getByLabel('Role').fill('Buyer/Borrower')
+    await page.getByLabel('Name').fill('Jane Test Buyer')
+    await page.getByLabel('Phone').fill('555-0100')
+    await page.getByRole('button', { name: 'Add Contact' }).click()
+
+    await expect(page.getByTestId('contact-row')).toContainText('Jane Test Buyer')
+    await expect(page.getByTestId('contact-row')).toContainText('Buyer/Borrower')
   })
 })
