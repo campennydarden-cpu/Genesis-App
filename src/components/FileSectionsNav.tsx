@@ -13,7 +13,7 @@ const NAV_GROUPS: NavGroup[] = [
       { label: 'Order Entry', segment: 'order-entry' },
       { label: 'Order Info', segment: 'order-info' },
       { label: 'Contacts', segment: 'contacts' },
-      { label: 'Property' },
+      { label: 'Property', segment: 'property' },
     ],
   },
   {

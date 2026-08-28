@@ -144,11 +144,11 @@ test.describe('Genesis foundation phase', () => {
     await expect(page.getByLabel('Order Status')).toBeVisible()
 
     await expect(
-      page.getByTestId('file-section-nav').getByTestId('nav-disabled').filter({ hasText: 'Property' })
+      page.getByTestId('file-section-nav').getByTestId('nav-disabled').filter({ hasText: 'Prelim Title Search' })
     ).toBeVisible()
     await expect(
       page.getByTestId('file-section-nav').getByRole('link', { name: 'Property' })
-    ).toHaveCount(0)
+    ).toHaveCount(1)
   })
 
   test('navigation shell: toolbar tabs show placeholder content and reset on nav', async ({ page }) => {
@@ -170,5 +170,59 @@ test.describe('Genesis foundation phase', () => {
     await page.waitForURL('**/order-info')
     await expect(page.getByTestId('toolbar-placeholder')).not.toBeVisible()
     await expect(page.getByLabel('Order Status')).toBeVisible()
+  })
+
+  test('property: pre-fills from Order Entry, saves fields, and manages easements', async ({ page }) => {
+    await loginAsSeededUser(page)
+
+    await page.getByRole('link', { name: '+ New Order' }).click()
+    const fileNumber = `TEST-${Date.now()}`
+    await page.getByLabel('File Number').fill(fileNumber)
+    await page.getByLabel('City').fill('Lorain')
+    await page.getByLabel('County').fill('Lorain')
+    await page.getByLabel('State').fill('OH')
+    await page.getByLabel('Zip').fill('44053')
+    await page.getByLabel('Parcel Number').fill('12-34-567')
+    await page.getByRole('button', { name: 'Create Order' }).click()
+    await page.waitForURL('**/orders/**/order-entry')
+
+    await page.getByTestId('file-section-nav').getByRole('link', { name: 'Property' }).click()
+    await page.waitForURL('**/property')
+
+    await expect(page.getByLabel('City')).toHaveValue('Lorain')
+    await expect(page.getByLabel('County')).toHaveValue('Lorain')
+    await expect(page.getByLabel('State')).toHaveValue('OH')
+    await expect(page.getByLabel('Zip')).toHaveValue('44053')
+
+    await page.getByLabel('House Number').fill('640')
+    await page.getByLabel('Street Name').fill('Bayberry Rd')
+    await page.getByLabel('Use Type').selectOption('Single Family')
+
+    await page.getByTestId('property-tab-legal').click()
+    await expect(page.getByLabel('Parcel Number', { exact: true })).toHaveValue('12-34-567')
+    await page.getByLabel('Parcel Number Type').selectOption('APN')
+    await page.getByLabel('Full Legal Description').fill('Lot 5, Block 2, Test Subdivision')
+
+    await page.getByRole('button', { name: 'Save Changes' }).click()
+    await page.waitForURL('**/property')
+    await page.waitForLoadState('networkidle')
+
+    await page.getByTestId('property-tab-identification').click()
+    await expect(page.getByLabel('House Number')).toHaveValue('640')
+    await expect(page.getByLabel('Use Type')).toHaveValue('Single Family')
+
+    await page.getByTestId('property-tab-legal').click()
+    await expect(page.getByLabel('Full Legal Description')).toHaveValue('Lot 5, Block 2, Test Subdivision')
+
+    await page.getByText('Add an easement').click()
+    await page.locator('#easement_type').selectOption('Utility Easement')
+    await page.locator('#description').fill('Rear yard utility line')
+    await page.getByRole('button', { name: 'Add Easement' }).click()
+
+    await expect(page.getByTestId('easement-row')).toContainText('Utility Easement')
+    await expect(page.getByTestId('easement-row')).toContainText('Rear yard utility line')
+
+    await page.getByRole('button', { name: 'Remove' }).click()
+    await expect(page.getByTestId('easement-row')).not.toBeVisible()
   })
 })
