@@ -47,3 +47,40 @@ export const ENTITY_TYPES = [
   'Trust',
   'Estate',
 ] as const
+
+export const USE_TYPES = [
+  '1-4 Family',
+  'Single Family',
+  'PUD',
+  'Condominium',
+  'Cooperative',
+  'Mobile/Manufactured Housing',
+  'Vacant Land',
+  'Unimproved Land',
+  'Ag Land',
+  'Commercial Property',
+  'Mixed Use',
+] as const
+
+export const PARCEL_NUMBER_TYPES = [
+  'Parcel ID',
+  'APN',
+  'Tax Map Number (TMS)',
+  'PIN',
+  'Folio Number',
+  'Account Number',
+  'Other',
+] as const
+
+export const EASEMENT_TYPES = [
+  'Utility Easement',
+  'Ingress/Egress Easement',
+  'Drainage Easement',
+  'Right of Way (ROW) Dedication',
+  'Shared Driveway Easement',
+  'Access Easement',
+  'Pipeline/Transmission Easement',
+  'Conservation Easement',
+  'Party Wall Agreement',
+  'Other',
+] as const
