@@ -3,6 +3,7 @@ import Link from 'next/link'
 import { createClient } from '@/lib/supabase/server'
 import { logout } from '@/app/login/actions'
 import { FileSectionsNav } from '@/components/FileSectionsNav'
+import { OrderToolbar } from '@/components/OrderToolbar'
 
 export default async function OrderLayout({
   children,
@@ -69,7 +70,7 @@ export default async function OrderLayout({
 
       <main className="flex-1 p-8">
         <h1 className="mb-4 text-2xl font-semibold">Order {order.file_number}</h1>
-        {children}
+        <OrderToolbar>{children}</OrderToolbar>
       </main>
     </div>
   )

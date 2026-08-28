@@ -150,4 +150,25 @@ test.describe('Genesis foundation phase', () => {
       page.getByTestId('file-section-nav').getByRole('link', { name: 'Property' })
     ).toHaveCount(0)
   })
+
+  test('navigation shell: toolbar tabs show placeholder content and reset on nav', async ({ page }) => {
+    await loginAsSeededUser(page)
+
+    await page.getByRole('link', { name: '+ New Order' }).click()
+    const fileNumber = `TEST-${Date.now()}`
+    await page.getByLabel('File Number').fill(fileNumber)
+    await page.getByRole('button', { name: 'Create Order' }).click()
+    await page.waitForURL('**/orders/**/order-entry')
+
+    await expect(page.getByLabel('File Number')).toBeVisible()
+
+    await page.getByTestId('toolbar-tab-attachments').click()
+    await expect(page.getByTestId('toolbar-placeholder')).toContainText('Not built yet')
+    await expect(page.getByLabel('File Number')).not.toBeVisible()
+
+    await page.getByTestId('file-section-nav').getByRole('link', { name: 'Order Info' }).click()
+    await page.waitForURL('**/order-info')
+    await expect(page.getByTestId('toolbar-placeholder')).not.toBeVisible()
+    await expect(page.getByLabel('Order Status')).toBeVisible()
+  })
 })
