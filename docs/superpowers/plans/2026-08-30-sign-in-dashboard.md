@@ -220,7 +220,7 @@ _Model: sonnet_ (component extraction + data-fetching refactor, must not break e
 **Interfaces:**
 - Produces: `type OrderSummary = { id: string; file_number: string; product_type: string; order_status: string; title_status: string; escrow_status: string; property_address: string | null; created_at: string }` and `type ContactSummary = { order_id: string; role: string; name: string }`, exported from `HomeDashboard.tsx` — Tasks 4 and 5 import both.
 - Produces: `export function HomeDashboard({ orders, contacts }: { orders: OrderSummary[]; contacts: ContactSummary[] })` — Task 4 adds search state to this component, Task 5 adds queue state, Task 6 adds the placeholder cards. All three tasks modify this same file's body, not its exported signature.
-- Consumes: `Card`, `Badge` from `@/components/ui/card` and `@/components/ui/badge` (Task 1).
+- Consumes: `Card`, `Badge` from `@/components/ui/card` and `@/components/ui/badge` (Task 1); `buttonVariants` from `@/components/ui/button` (Task 1) — used as a className helper on a plain `Link`, not `<Button asChild>`: Task 1's shadcn install resolved to the `@base-ui/react` primitive set, which doesn't support Radix's `asChild` slot pattern.
 
 - [ ] **Step 1: Create `HomeDashboard.tsx` with the list skeleton**
 
@@ -293,7 +293,7 @@ import Link from 'next/link'
 import { createClient } from '@/lib/supabase/server'
 import { logout } from '@/app/login/actions'
 import { HomeDashboard } from '@/components/HomeDashboard'
-import { Button } from '@/components/ui/button'
+import { buttonVariants } from '@/components/ui/button'
 
 export default async function OrdersPage() {
   const supabase = await createClient()
@@ -312,9 +312,9 @@ export default async function OrdersPage() {
       <div className="mb-6 flex items-center justify-between">
         <h1 className="text-2xl font-semibold">Genesis</h1>
         <div className="flex items-center gap-4">
-          <Button asChild>
-            <Link href="/orders/new">+ New Order</Link>
-          </Button>
+          <Link href="/orders/new" className={buttonVariants({ variant: 'default' })}>
+            + New Order
+          </Link>
           <form action={logout}>
             <button type="submit" className="text-sm text-muted-foreground hover:underline">
               Sign Out
