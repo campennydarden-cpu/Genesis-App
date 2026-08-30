@@ -283,4 +283,37 @@ test.describe('Genesis foundation phase', () => {
     await page.getByTestId('property-tab-legal').click()
     await expect(page.getByLabel('Parcel Number', { exact: true })).toHaveValue('12-34-567')
   })
+
+  test('dashboard search matches file number, property address, and buyer/seller name', async ({ page }) => {
+    await loginAsSeededUser(page)
+
+    await page.getByRole('link', { name: '+ New Order' }).click()
+    const fileNumber = `TEST-${Date.now()}`
+    await page.getByLabel('File Number').fill(fileNumber)
+    await page.getByLabel('Property Address').fill('789 Search Test Ave')
+    await page.getByRole('button', { name: 'Create Order' }).click()
+    await page.waitForURL('**/orders/**/order-entry')
+    const orderId = page.url().match(/\/orders\/([^/]+)\/order-entry/)?.[1]
+
+    await page.goto(`/orders/${orderId}/contacts`)
+    await page.getByText('Add a contact').click()
+    await page.getByLabel('Role').fill('Buyer/Borrower')
+    await page.getByLabel('Name').fill('Search Test Buyer')
+    await page.getByRole('button', { name: 'Add Contact' }).click()
+    await expect(page.getByTestId('contact-row')).toContainText('Search Test Buyer')
+
+    await page.goto('/orders')
+
+    await page.getByTestId('dashboard-search').fill(fileNumber)
+    await expect(page.getByTestId('order-list')).toContainText(fileNumber)
+
+    await page.getByTestId('dashboard-search').fill('789 Search Test Ave')
+    await expect(page.getByTestId('order-list')).toContainText(fileNumber)
+
+    await page.getByTestId('dashboard-search').fill('Search Test Buyer')
+    await expect(page.getByTestId('order-list')).toContainText(fileNumber)
+
+    await page.getByTestId('dashboard-search').fill('no-such-order-xyz')
+    await expect(page.getByTestId('order-list')).toContainText('No orders match')
+  })
 })

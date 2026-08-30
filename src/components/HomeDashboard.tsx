@@ -17,9 +17,30 @@ export type ContactSummary = {
   name: string
 }
 
+import { useMemo, useState } from 'react'
 import Link from 'next/link'
 import { Card } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
+import { Input } from '@/components/ui/input'
+
+const PARTY_ROLE_PATTERN = /buyer|borrower|seller/i
+
+function matchesSearch(
+  order: OrderSummary,
+  contactsByOrder: Map<string, ContactSummary[]>,
+  query: string
+): boolean {
+  if (!query) return true
+  const q = query.toLowerCase()
+
+  if (order.file_number.toLowerCase().includes(q)) return true
+  if (order.property_address?.toLowerCase().includes(q)) return true
+
+  const contacts = contactsByOrder.get(order.id) ?? []
+  return contacts.some(
+    (c) => PARTY_ROLE_PATTERN.test(c.role) && c.name.toLowerCase().includes(q)
+  )
+}
 
 export function HomeDashboard({
   orders,
@@ -28,12 +49,37 @@ export function HomeDashboard({
   orders: OrderSummary[]
   contacts: ContactSummary[]
 }) {
-  void contacts // consumed starting Task 4
+  const [searchQuery, setSearchQuery] = useState('')
+
+  const contactsByOrder = useMemo(() => {
+    const map = new Map<string, ContactSummary[]>()
+    for (const c of contacts) {
+      const existing = map.get(c.order_id)
+      if (existing) {
+        existing.push(c)
+      } else {
+        map.set(c.order_id, [c])
+      }
+    }
+    return map
+  }, [contacts])
+
+  const filteredOrders = useMemo(
+    () => orders.filter((o) => matchesSearch(o, contactsByOrder, searchQuery)),
+    [orders, contactsByOrder, searchQuery]
+  )
 
   return (
     <div className="space-y-6">
+      <Input
+        placeholder="Search by file number, property address, or buyer/seller name"
+        value={searchQuery}
+        onChange={(e) => setSearchQuery(e.target.value)}
+        data-testid="dashboard-search"
+      />
+
       <ul className="space-y-2" data-testid="order-list">
-        {orders.map((o) => (
+        {filteredOrders.map((o) => (
           <li key={o.id} data-testid="order-row">
             <Link href={`/orders/${o.id}/order-entry`}>
               <Card className="p-4 transition-colors hover:bg-muted">
@@ -48,8 +94,8 @@ export function HomeDashboard({
             </Link>
           </li>
         ))}
-        {orders.length === 0 && (
-          <p className="text-sm text-muted-foreground">No orders yet.</p>
+        {filteredOrders.length === 0 && (
+          <p className="text-sm text-muted-foreground">No orders match.</p>
         )}
       </ul>
     </div>
