@@ -13,6 +13,8 @@ import { fullDerivationClause, derivationVestingClause } from '@/lib/derivation-
 import type { PrelimSearch, DerivationPrincipal } from '@/lib/types'
 import { DerivationPrincipalRoster } from './DerivationPrincipalRoster'
 
+const ROSTER_ENTITY_TYPES = ['LLC', 'Corporation', 'Partnership', 'Trust']
+
 export function DerivationSection({
   orderId,
   prelimSearch,
@@ -234,22 +236,26 @@ export function DerivationSection({
 
       {prelimSearch ? (
         <>
-          <DerivationPrincipalRoster
-            orderId={orderId}
-            prelimSearchId={prelimSearch.id}
-            side="grantee"
-            entityType={granteeType}
-            principals={granteePrincipals}
-            label="Grantee Principals"
-          />
-          <DerivationPrincipalRoster
-            orderId={orderId}
-            prelimSearchId={prelimSearch.id}
-            side="grantor"
-            entityType={grantorType}
-            principals={grantorPrincipals}
-            label="Grantor Principals"
-          />
+          {ROSTER_ENTITY_TYPES.includes(granteeType) && (
+            <DerivationPrincipalRoster
+              orderId={orderId}
+              prelimSearchId={prelimSearch.id}
+              side="grantee"
+              entityType={granteeType}
+              principals={granteePrincipals}
+              label="Grantee Principals"
+            />
+          )}
+          {ROSTER_ENTITY_TYPES.includes(grantorType) && (
+            <DerivationPrincipalRoster
+              orderId={orderId}
+              prelimSearchId={prelimSearch.id}
+              side="grantor"
+              entityType={grantorType}
+              principals={grantorPrincipals}
+              label="Grantor Principals"
+            />
+          )}
         </>
       ) : (
         <p className="mt-4 text-sm text-slate-500">Save Derivation first before adding Principals.</p>
