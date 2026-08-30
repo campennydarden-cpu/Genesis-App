@@ -26,6 +26,8 @@
 
 ### Task 1: Design system foundation — shadcn/ui init + design tokens
 
+_Model: haiku_ (mechanical CLI scaffolding + verbatim token values, no logic)
+
 **Files:**
 - Create: `genesis-app/components.json` (via shadcn CLI)
 - Create: `genesis-app/src/components/ui/button.tsx`, `input.tsx`, `label.tsx`, `card.tsx`, `badge.tsx`, `alert.tsx` (via shadcn CLI)
@@ -115,6 +117,8 @@ git commit -m "chore: install shadcn/ui and wire Genesis design-system tokens"
 ---
 
 ### Task 2: Sign In retrofit
+
+_Model: haiku_ (well-defined markup swap, existing tests already cover the underlying behavior)
 
 **Files:**
 - Modify: `genesis-app/src/app/login/page.tsx`
@@ -206,6 +210,8 @@ git commit -m "feat: retrofit Sign In screen against Genesis design system"
 ---
 
 ### Task 3: Dashboard shell — extract HomeDashboard, wire data fetching
+
+_Model: sonnet_ (component extraction + data-fetching refactor, must not break existing list/tests)
 
 **Files:**
 - Create: `genesis-app/src/components/HomeDashboard.tsx`
@@ -351,6 +357,8 @@ git commit -m "refactor: extract HomeDashboard component, fetch contacts alongsi
 ---
 
 ### Task 4: Search
+
+_Model: sonnet_ (real multi-field matching logic, including cross-table role substring matching)
 
 **Files:**
 - Modify: `genesis-app/src/components/HomeDashboard.tsx`
@@ -528,6 +536,8 @@ git commit -m "feat: add dashboard search across file number, address, and buyer
 ---
 
 ### Task 5: Production Queues
+
+_Model: sonnet_ (grouping/counting logic, toggle-filter state combined with Task 4's search filter)
 
 **Files:**
 - Modify: `genesis-app/src/components/HomeDashboard.tsx`
@@ -797,6 +807,8 @@ git commit -m "feat: add Title/Escrow production queue filtering to dashboard"
 
 ### Task 6: Tasks and Firm Analytics placeholder cards
 
+_Model: haiku_ (simplest remaining piece — two static stub cards, same pattern already used elsewhere)
+
 **Files:**
 - Modify: `genesis-app/src/components/HomeDashboard.tsx`
 - Modify: `genesis-app/tests/e2e/order-entry.spec.ts`
@@ -871,6 +883,8 @@ git commit -m "feat: add Tasks and Firm Analytics placeholder cards to dashboard
 ---
 
 ### Task 7: Full regression, Build Log update, sync
+
+_Model: haiku_ (mechanical wrap-up — verification commands, doc updates, merge/push)
 
 **Files:**
 - Modify: `M&L Title/M&L Title - Obsidian Vault/Genesis Build Log.md`
