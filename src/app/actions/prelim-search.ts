@@ -185,3 +185,81 @@ export async function deleteSecurityInstrument(orderId: string, id: string) {
 
   revalidatePath(`/orders/${orderId}/prelim-search`)
 }
+
+export async function addRelatedDoc(securityInstrumentId: string, orderId: string, formData: FormData) {
+  const supabase = await createClient()
+  const field = (name: string) => (formData.get(name) as string) || null
+  const type = field('type')
+  const isAssignmentType = ['Assignment', 'Assignment of Leases and Rents', 'Assignment of Beneficial Interest'].includes(
+    type ?? ''
+  )
+
+  const { error } = await supabase.from('security_instrument_related_docs').insert({
+    security_instrument_id: securityInstrumentId,
+    type,
+    dated_date: field('dated_date'),
+    recorded_date: field('recorded_date'),
+    book: field('book'),
+    page: field('page'),
+    instrument_number: field('instrument_number'),
+    assignor: isAssignmentType ? field('assignor') : null,
+    assignee: isAssignmentType ? field('assignee') : null,
+    notes: field('notes'),
+  })
+
+  if (error) {
+    console.error('addRelatedDoc failed:', error)
+    redirect(
+      `/orders/${orderId}/prelim-search?error=${encodeURIComponent('Could not save. Please check your entries and try again.')}`
+    )
+  }
+
+  revalidatePath(`/orders/${orderId}/prelim-search`)
+}
+
+export async function updateRelatedDoc(id: string, orderId: string, formData: FormData) {
+  const supabase = await createClient()
+  const field = (name: string) => (formData.get(name) as string) || null
+  const type = field('type')
+  const isAssignmentType = ['Assignment', 'Assignment of Leases and Rents', 'Assignment of Beneficial Interest'].includes(
+    type ?? ''
+  )
+
+  const { error } = await supabase
+    .from('security_instrument_related_docs')
+    .update({
+      type,
+      dated_date: field('dated_date'),
+      recorded_date: field('recorded_date'),
+      book: field('book'),
+      page: field('page'),
+      instrument_number: field('instrument_number'),
+      assignor: isAssignmentType ? field('assignor') : null,
+      assignee: isAssignmentType ? field('assignee') : null,
+      notes: field('notes'),
+    })
+    .eq('id', id)
+
+  if (error) {
+    console.error('updateRelatedDoc failed:', error)
+    redirect(
+      `/orders/${orderId}/prelim-search?error=${encodeURIComponent('Could not save. Please check your entries and try again.')}`
+    )
+  }
+
+  revalidatePath(`/orders/${orderId}/prelim-search`)
+}
+
+export async function deleteRelatedDoc(orderId: string, id: string) {
+  const supabase = await createClient()
+  const { error } = await supabase.from('security_instrument_related_docs').delete().eq('id', id)
+
+  if (error) {
+    console.error('deleteRelatedDoc failed:', error)
+    redirect(
+      `/orders/${orderId}/prelim-search?error=${encodeURIComponent('Could not save. Please check your entries and try again.')}`
+    )
+  }
+
+  revalidatePath(`/orders/${orderId}/prelim-search`)
+}

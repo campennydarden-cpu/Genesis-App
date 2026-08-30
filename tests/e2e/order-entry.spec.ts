@@ -377,4 +377,43 @@ test.describe('Genesis foundation phase', () => {
     await page.getByTestId('security-instrument-row').getByRole('button', { name: 'Remove' }).click()
     await expect(page.getByTestId('security-instrument-row')).not.toBeVisible()
   })
+
+  test('prelim search: Related Documents show Assignor/Assignee only for Assignment-family types', async ({
+    page,
+  }) => {
+    await loginAsSeededUser(page)
+
+    await page.getByRole('link', { name: '+ New Order' }).click()
+    const fileNumber = `TEST-${Date.now()}`
+    await page.getByLabel('File Number').fill(fileNumber)
+    await page.getByRole('button', { name: 'Create Order' }).click()
+    await page.waitForURL('**/orders/**/order-entry')
+
+    await page.getByTestId('file-section-nav').getByRole('link', { name: 'Prelim Title Search' }).click()
+    await page.waitForURL('**/prelim-search')
+    await page.getByRole('button', { name: 'Save Changes' }).click()
+    await page.waitForURL('**/prelim-search')
+    await page.waitForLoadState('networkidle')
+
+    await page.getByText('Add a Security Instrument').click()
+    await page.locator('#si-type').click()
+    await page.getByRole('option', { name: 'Mortgage' }).click()
+    await page.getByRole('button', { name: 'Add Security Instrument' }).click()
+    await expect(page.getByTestId('security-instrument-row')).toBeVisible()
+
+    await page.getByText('Add a Related Document').click()
+    const relatedDocForm = page.locator('[data-testid="related-docs-section"] details')
+    await relatedDocForm.locator('button[role="combobox"]').click()
+    await page.getByRole('option', { name: 'Substitution of Trustee' }).click()
+    await expect(relatedDocForm.getByLabel('Assignor')).not.toBeVisible()
+
+    await relatedDocForm.locator('button[role="combobox"]').click()
+    await page.getByRole('option', { name: 'Assignment', exact: true }).click()
+    await expect(relatedDocForm.getByLabel('Assignor')).toBeVisible()
+    await relatedDocForm.getByLabel('Assignor').fill('Original Bank')
+    await relatedDocForm.getByLabel('Assignee').fill('New Bank')
+    await relatedDocForm.getByRole('button', { name: 'Add' }).click()
+
+    await expect(page.getByTestId('related-doc-row')).toContainText('Original Bank → New Bank')
+  })
 })

@@ -75,12 +75,15 @@ export function SecurityInstrumentsSection({
   orderId,
   prelimSearchId,
   instruments,
-  relatedDocsSlot,
+  relatedDocsSlots,
 }: {
   orderId: string
   prelimSearchId: string
   instruments: SecurityInstrument[]
-  relatedDocsSlot?: (instrumentId: string) => React.ReactNode
+  // Keyed by instrument id. Note: this is pre-rendered ReactNode per instrument, not a
+  // callback — a Server Component (page.tsx) cannot pass a plain function prop across
+  // the RSC boundary into this Client Component, only serializable data/JSX elements.
+  relatedDocsSlots?: Record<string, React.ReactNode>
 }) {
   const [editingId, setEditingId] = useState<string | null>(null)
 
@@ -135,7 +138,7 @@ export function SecurityInstrumentsSection({
                   </form>
                 </div>
               </div>
-              {relatedDocsSlot?.(instrument.id)}
+              {relatedDocsSlots?.[instrument.id]}
             </li>
           )
         )}

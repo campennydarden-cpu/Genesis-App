@@ -2,6 +2,7 @@ import { notFound } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
 import { DerivationSection } from '@/components/prelim-search/DerivationSection'
 import { SecurityInstrumentsSection } from '@/components/prelim-search/SecurityInstrumentsSection'
+import { RelatedDocumentsSection } from '@/components/prelim-search/RelatedDocumentsSection'
 
 export default async function PrelimSearchPage({
   params,
@@ -57,6 +58,31 @@ export default async function PrelimSearchPage({
         .order('created_at', { ascending: true })
     : { data: [] }
 
+  const instrumentIds = (securityInstruments ?? []).map((i) => i.id)
+  const { data: relatedDocs } = instrumentIds.length
+    ? await supabase
+        .from('security_instrument_related_docs')
+        .select('*')
+        .in('security_instrument_id', instrumentIds)
+        .order('created_at', { ascending: true })
+    : { data: [] }
+
+  // A Server Component can't pass a plain function prop across the RSC boundary into
+  // a Client Component — only serializable data/JSX can cross. Pre-render each
+  // instrument's Related Documents block here and pass the resulting elements down
+  // as a lookup instead of a `(instrumentId) => ReactNode` callback.
+  const relatedDocsSlots = Object.fromEntries(
+    (securityInstruments ?? []).map((instrument) => [
+      instrument.id,
+      <RelatedDocumentsSection
+        key={instrument.id}
+        orderId={id}
+        securityInstrumentId={instrument.id}
+        docs={(relatedDocs ?? []).filter((d) => d.security_instrument_id === instrument.id)}
+      />,
+    ])
+  )
+
   return (
     <div>
       {error && <p className="mb-4 rounded bg-red-50 p-3 text-sm text-red-700">{error}</p>}
@@ -92,6 +118,7 @@ export default async function PrelimSearchPage({
             orderId={id}
             prelimSearchId={prelimSearch.id}
             instruments={securityInstruments ?? []}
+            relatedDocsSlots={relatedDocsSlots}
           />
         )}
         {/* Liens, Exception Matters sections are added in Tasks 8-9 */}
