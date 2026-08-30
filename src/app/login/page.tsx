@@ -1,4 +1,9 @@
 import { login } from './actions'
+import { Button } from '@/components/ui/button'
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { Input } from '@/components/ui/input'
+import { Label } from '@/components/ui/label'
+import { Alert, AlertDescription } from '@/components/ui/alert'
 
 export default async function LoginPage({
   searchParams,
@@ -9,42 +14,37 @@ export default async function LoginPage({
 
   return (
     <div className="mx-auto mt-24 max-w-sm">
-      <h1 className="mb-6 text-2xl font-semibold">Genesis — Sign In</h1>
-      {message && (
-        <p className="mb-4 rounded bg-green-50 p-3 text-sm text-green-700">{message}</p>
-      )}
-      {error && (
-        <p className="mb-4 rounded bg-red-50 p-3 text-sm text-red-700">{error}</p>
-      )}
-      <form action={login} className="space-y-4">
-        <div>
-          <label htmlFor="email" className="block text-sm font-medium">
-            Email
-          </label>
-          <input
-            id="email"
-            name="email"
-            type="email"
-            required
-            className="mt-1 w-full rounded border px-3 py-2"
-          />
-        </div>
-        <div>
-          <label htmlFor="password" className="block text-sm font-medium">
-            Password
-          </label>
-          <input
-            id="password"
-            name="password"
-            type="password"
-            required
-            className="mt-1 w-full rounded border px-3 py-2"
-          />
-        </div>
-        <button type="submit" className="w-full rounded bg-slate-900 px-4 py-2 text-white">
-          Sign In
-        </button>
-      </form>
+      <p className="mb-6 text-center text-2xl font-bold text-primary">Genesis</p>
+      <Card>
+        <CardHeader>
+          <CardTitle>Sign In</CardTitle>
+        </CardHeader>
+        <CardContent>
+          {message && (
+            <Alert className="mb-4">
+              <AlertDescription>{message}</AlertDescription>
+            </Alert>
+          )}
+          {error && (
+            <Alert className="mb-4" variant="destructive">
+              <AlertDescription>{error}</AlertDescription>
+            </Alert>
+          )}
+          <form action={login} className="space-y-4">
+            <div className="space-y-1">
+              <Label htmlFor="email">Email</Label>
+              <Input id="email" name="email" type="email" required />
+            </div>
+            <div className="space-y-1">
+              <Label htmlFor="password">Password</Label>
+              <Input id="password" name="password" type="password" required />
+            </div>
+            <Button type="submit" className="w-full">
+              Sign In
+            </Button>
+          </form>
+        </CardContent>
+      </Card>
     </div>
   )
 }

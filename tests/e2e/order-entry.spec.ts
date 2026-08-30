@@ -31,7 +31,7 @@ test.describe('Genesis foundation phase', () => {
   test('redirects unauthenticated users to /login', async ({ page }) => {
     await page.goto('/orders')
     await page.waitForURL('**/login**')
-    await expect(page.getByRole('heading', { name: 'Genesis — Sign In' })).toBeVisible()
+    await expect(page.locator('[data-slot="card-title"]')).toBeVisible()
   })
 
   test('signup is disabled (post-bootstrap security posture)', async ({ page }) => {
@@ -66,7 +66,7 @@ test.describe('Genesis foundation phase', () => {
 
     // Should stay on /login with an error message rendered, never reach /orders.
     await page.waitForURL('**/login**')
-    await expect(page.getByRole('heading', { name: 'Genesis — Sign In' })).toBeVisible()
+    await expect(page.locator('[data-slot="card-title"]')).toBeVisible()
     await expect(page.locator('p.text-red-700')).toBeVisible()
     expect(page.url()).not.toContain('/orders')
   })
