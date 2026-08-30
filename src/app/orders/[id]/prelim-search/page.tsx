@@ -1,6 +1,7 @@
 import { notFound } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
 import { DerivationSection } from '@/components/prelim-search/DerivationSection'
+import { SecurityInstrumentsSection } from '@/components/prelim-search/SecurityInstrumentsSection'
 
 export default async function PrelimSearchPage({
   params,
@@ -48,6 +49,14 @@ export default async function PrelimSearchPage({
         .order('created_at', { ascending: true })
     : { data: [] }
 
+  const { data: securityInstruments } = prelimSearch
+    ? await supabase
+        .from('security_instruments')
+        .select('*')
+        .eq('prelim_search_id', prelimSearch.id)
+        .order('created_at', { ascending: true })
+    : { data: [] }
+
   return (
     <div>
       {error && <p className="mb-4 rounded bg-red-50 p-3 text-sm text-red-700">{error}</p>}
@@ -78,7 +87,14 @@ export default async function PrelimSearchPage({
           grantorPrincipals={grantorPrincipals ?? []}
           county={property?.county ?? order.property_county ?? null}
         />
-        {/* Security Instruments, Liens, Exception Matters sections are added in Tasks 6-9 */}
+        {prelimSearch && (
+          <SecurityInstrumentsSection
+            orderId={id}
+            prelimSearchId={prelimSearch.id}
+            instruments={securityInstruments ?? []}
+          />
+        )}
+        {/* Liens, Exception Matters sections are added in Tasks 8-9 */}
       </div>
     </div>
   )

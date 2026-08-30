@@ -340,4 +340,41 @@ test.describe('Genesis foundation phase', () => {
     await page.getByTestId('grantee-principal-row').getByRole('button', { name: 'Remove' }).click()
     await expect(page.getByTestId('grantee-principal-row')).not.toBeVisible()
   })
+
+  test('prelim search: Security Instruments add, edit, and remove', async ({ page }) => {
+    await loginAsSeededUser(page)
+
+    await page.getByRole('link', { name: '+ New Order' }).click()
+    const fileNumber = `TEST-${Date.now()}`
+    await page.getByLabel('File Number').fill(fileNumber)
+    await page.getByRole('button', { name: 'Create Order' }).click()
+    await page.waitForURL('**/orders/**/order-entry')
+
+    await page.getByTestId('file-section-nav').getByRole('link', { name: 'Prelim Title Search' }).click()
+    await page.waitForURL('**/prelim-search')
+
+    // Security Instruments need a saved prelim_search row first (foreign key) -
+    // save Derivation with the minimum required fields.
+    await page.getByRole('button', { name: 'Save Changes' }).click()
+    await page.waitForURL('**/prelim-search')
+    await page.waitForLoadState('networkidle')
+
+    await page.getByText('Add a Security Instrument').click()
+    await page.locator('#si-type').click()
+    await page.getByRole('option', { name: 'Deed of Trust' }).click()
+    await page.locator('#si-mortgagor').fill('Test Borrower')
+    await page.locator('#si-mortgagee').fill('Test Lender Bank')
+    await page.getByRole('button', { name: 'Add Security Instrument' }).click()
+
+    await expect(page.getByTestId('security-instrument-row')).toContainText('Deed of Trust')
+    await expect(page.getByTestId('security-instrument-row')).toContainText('Test Borrower → Test Lender Bank')
+
+    await page.getByTestId('security-instrument-row').getByRole('button', { name: /Edit/ }).click()
+    await page.getByTestId('security-instrument-row-editing').locator('#si-mortgagee').fill('Updated Lender Bank')
+    await page.getByTestId('security-instrument-row-editing').getByRole('button', { name: 'Save' }).click()
+    await expect(page.getByTestId('security-instrument-row')).toContainText('Test Borrower → Updated Lender Bank')
+
+    await page.getByTestId('security-instrument-row').getByRole('button', { name: 'Remove' }).click()
+    await expect(page.getByTestId('security-instrument-row')).not.toBeVisible()
+  })
 })

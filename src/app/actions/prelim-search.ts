@@ -111,3 +111,77 @@ export async function deleteDerivationPrincipal(orderId: string, id: string) {
 
   revalidatePath(`/orders/${orderId}/prelim-search`)
 }
+
+export async function addSecurityInstrument(prelimSearchId: string, orderId: string, formData: FormData) {
+  const supabase = await createClient()
+  const field = (name: string) => (formData.get(name) as string) || null
+  const originalAmount = formData.get('original_amount') as string
+
+  const { error } = await supabase.from('security_instruments').insert({
+    prelim_search_id: prelimSearchId,
+    type: field('type'),
+    dated_date: field('dated_date'),
+    recorded_date: field('recorded_date'),
+    book: field('book'),
+    page: field('page'),
+    instrument_number: field('instrument_number'),
+    original_amount: originalAmount ? Number(originalAmount) : null,
+    mortgagor: field('mortgagor'),
+    mortgagee: field('mortgagee'),
+    trustee: field('trustee'),
+  })
+
+  if (error) {
+    console.error('addSecurityInstrument failed:', error)
+    redirect(
+      `/orders/${orderId}/prelim-search?error=${encodeURIComponent('Could not save. Please check your entries and try again.')}`
+    )
+  }
+
+  revalidatePath(`/orders/${orderId}/prelim-search`)
+}
+
+export async function updateSecurityInstrument(id: string, orderId: string, formData: FormData) {
+  const supabase = await createClient()
+  const field = (name: string) => (formData.get(name) as string) || null
+  const originalAmount = formData.get('original_amount') as string
+
+  const { error } = await supabase
+    .from('security_instruments')
+    .update({
+      type: field('type'),
+      dated_date: field('dated_date'),
+      recorded_date: field('recorded_date'),
+      book: field('book'),
+      page: field('page'),
+      instrument_number: field('instrument_number'),
+      original_amount: originalAmount ? Number(originalAmount) : null,
+      mortgagor: field('mortgagor'),
+      mortgagee: field('mortgagee'),
+      trustee: field('trustee'),
+    })
+    .eq('id', id)
+
+  if (error) {
+    console.error('updateSecurityInstrument failed:', error)
+    redirect(
+      `/orders/${orderId}/prelim-search?error=${encodeURIComponent('Could not save. Please check your entries and try again.')}`
+    )
+  }
+
+  revalidatePath(`/orders/${orderId}/prelim-search`)
+}
+
+export async function deleteSecurityInstrument(orderId: string, id: string) {
+  const supabase = await createClient()
+  const { error } = await supabase.from('security_instruments').delete().eq('id', id)
+
+  if (error) {
+    console.error('deleteSecurityInstrument failed:', error)
+    redirect(
+      `/orders/${orderId}/prelim-search?error=${encodeURIComponent('Could not save. Please check your entries and try again.')}`
+    )
+  }
+
+  revalidatePath(`/orders/${orderId}/prelim-search`)
+}
