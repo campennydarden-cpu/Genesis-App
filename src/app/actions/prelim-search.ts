@@ -1,0 +1,113 @@
+'use server'
+
+import { revalidatePath } from 'next/cache'
+import { redirect } from 'next/navigation'
+import { createClient } from '@/lib/supabase/server'
+
+export async function upsertPrelimSearch(orderId: string, formData: FormData) {
+  const supabase = await createClient()
+
+  const field = (name: string) => (formData.get(name) as string) || null
+  const consideration = formData.get('derivation_consideration') as string
+
+  const { error } = await supabase.from('prelim_search').upsert(
+    {
+      order_id: orderId,
+      effective_date: field('effective_date'),
+      effective_time: field('effective_time'),
+      search_from_date: field('search_from_date'),
+      search_to_date: field('search_to_date'),
+      search_to_time: field('search_to_time'),
+      search_type: field('search_type'),
+      derivation_instrument_type: field('derivation_instrument_type'),
+      derivation_dated_date: field('derivation_dated_date'),
+      derivation_recorded_date: field('derivation_recorded_date'),
+      derivation_book: field('derivation_book'),
+      derivation_page: field('derivation_page'),
+      derivation_instrument_number: field('derivation_instrument_number'),
+      derivation_consideration: consideration ? Number(consideration) : null,
+      derivation_grantee_name: field('derivation_grantee_name'),
+      derivation_grantee_entity_type: field('derivation_grantee_entity_type'),
+      derivation_grantor_name: field('derivation_grantor_name'),
+      derivation_grantor_entity_type: field('derivation_grantor_entity_type'),
+      derivation_is_portion: formData.get('derivation_is_portion') === 'on',
+      derivation_note: field('derivation_note'),
+      taxes_paid_through_year: field('taxes_paid_through_year'),
+      taxes_now_due: field('taxes_now_due'),
+      taxes_not_yet_due: field('taxes_not_yet_due'),
+      special_levies_assessments: field('special_levies_assessments'),
+      updated_at: new Date().toISOString(),
+    },
+    { onConflict: 'order_id' }
+  )
+
+  if (error) {
+    console.error('upsertPrelimSearch failed:', error)
+    redirect(
+      `/orders/${orderId}/prelim-search?error=${encodeURIComponent('Could not save. Please check your entries and try again.')}`
+    )
+  }
+
+  revalidatePath(`/orders/${orderId}/prelim-search`)
+  redirect(`/orders/${orderId}/prelim-search`)
+}
+
+export async function addDerivationPrincipal(
+  prelimSearchId: string,
+  orderId: string,
+  side: 'grantee' | 'grantor',
+  formData: FormData
+) {
+  const supabase = await createClient()
+
+  const name = formData.get('name') as string
+  const role = (formData.get('role') as string) || null
+
+  const { error } = await supabase.from('derivation_principals').insert({
+    prelim_search_id: prelimSearchId,
+    side,
+    name,
+    role,
+  })
+
+  if (error) {
+    console.error('addDerivationPrincipal failed:', error)
+    redirect(
+      `/orders/${orderId}/prelim-search?error=${encodeURIComponent('Could not save. Please check your entries and try again.')}`
+    )
+  }
+
+  revalidatePath(`/orders/${orderId}/prelim-search`)
+}
+
+export async function updateDerivationPrincipal(id: string, orderId: string, formData: FormData) {
+  const supabase = await createClient()
+
+  const name = formData.get('name') as string
+  const role = (formData.get('role') as string) || null
+
+  const { error } = await supabase.from('derivation_principals').update({ name, role }).eq('id', id)
+
+  if (error) {
+    console.error('updateDerivationPrincipal failed:', error)
+    redirect(
+      `/orders/${orderId}/prelim-search?error=${encodeURIComponent('Could not save. Please check your entries and try again.')}`
+    )
+  }
+
+  revalidatePath(`/orders/${orderId}/prelim-search`)
+}
+
+export async function deleteDerivationPrincipal(orderId: string, id: string) {
+  const supabase = await createClient()
+  const { error } = await supabase.from('derivation_principals').delete().eq('id', id)
+
+  if (error) {
+    console.error('deleteDerivationPrincipal failed:', error)
+    redirect(
+      `/orders/${orderId}/prelim-search?error=${encodeURIComponent('Could not save. Please check your entries and try again.')}`
+    )
+  }
+
+  revalidatePath(`/orders/${orderId}/prelim-search`)
+}

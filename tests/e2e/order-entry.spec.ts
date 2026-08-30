@@ -144,8 +144,8 @@ test.describe('Genesis foundation phase', () => {
     await expect(page.getByLabel('Order Status')).toBeVisible()
 
     await expect(
-      page.getByTestId('file-section-nav').getByTestId('nav-disabled').filter({ hasText: 'Prelim Title Search' })
-    ).toBeVisible()
+      page.getByTestId('file-section-nav').getByRole('link', { name: 'Prelim Title Search' })
+    ).toHaveCount(1)
     await expect(
       page.getByTestId('file-section-nav').getByRole('link', { name: 'Property' })
     ).toHaveCount(1)
@@ -282,5 +282,62 @@ test.describe('Genesis foundation phase', () => {
 
     await page.getByTestId('property-tab-legal').click()
     await expect(page.getByLabel('Parcel Number', { exact: true })).toHaveValue('12-34-567')
+  })
+
+  test('prelim search: Derivation form saves, generates Vesting/Derivation Clause, and manages Principals', async ({
+    page,
+  }) => {
+    await loginAsSeededUser(page)
+
+    await page.getByRole('link', { name: '+ New Order' }).click()
+    const fileNumber = `TEST-${Date.now()}`
+    await page.getByLabel('File Number').fill(fileNumber)
+    await page.getByLabel('County').fill('Lorain')
+    await page.getByRole('button', { name: 'Create Order' }).click()
+    await page.waitForURL('**/orders/**/order-entry')
+
+    await page.getByTestId('file-section-nav').getByRole('link', { name: 'Prelim Title Search' }).click()
+    await page.waitForURL('**/prelim-search')
+
+    await page.getByLabel('Effective Date').fill('2026-06-01')
+    await page.getByLabel('Instrument Type').click()
+    await page.getByRole('option', { name: 'Warranty Deed', exact: true }).click()
+    await page.getByLabel('Recorded Date').fill('2026-05-15')
+    await page.getByLabel('Grantee Name').fill('Test Trust Co')
+    await page.getByLabel('Grantee Entity Type').click()
+    await page.getByRole('option', { name: 'Trust' }).click()
+    await page.getByLabel('Grantor Name').fill('Original Owner LLC')
+    await page.getByLabel('Grantor Entity Type').click()
+    await page.getByRole('option', { name: 'LLC' }).click()
+
+    await page.getByRole('button', { name: 'Save Changes' }).click()
+    await page.waitForURL('**/prelim-search')
+    await page.waitForLoadState('networkidle')
+
+    // No trustees yet - Vesting Clause shows the "not yet added" fallback.
+    await expect(page.getByTestId('vesting-clause')).toContainText('[Trustee(s) not yet added] of the Test Trust Co')
+
+    // Add a Grantee (Trust) principal.
+    await page.getByTestId('grantee-principal-roster').getByText('Add Grantee Principal').click()
+    await page.locator('#grantee-new-name').fill('Jane Trustee')
+    await page.locator('#grantee-new-role').click()
+    await page.getByRole('option', { name: 'Trustee', exact: true }).click()
+    await page.getByTestId('grantee-principal-roster').getByRole('button', { name: 'Add' }).click()
+
+    await expect(page.getByTestId('grantee-principal-row')).toContainText('Jane Trustee')
+    await expect(page.getByTestId('vesting-clause')).toContainText('Jane Trustee, as Trustee of the Test Trust Co')
+    await expect(page.getByTestId('derivation-clause')).toContainText(
+      'Being the same parcel conveyed unto Jane Trustee, as Trustee of the Test Trust Co by Warranty Deed of Original Owner LLC recorded May 15, 2026 of the Lorain County records.'
+    )
+
+    // Edit the principal via the pencil/Edit control.
+    await page.getByTestId('grantee-principal-row').getByRole('button', { name: /Edit/ }).click();
+    await page.getByTestId('grantee-principal-row-editing').locator('input[name="name"]').fill('Jane A. Trustee');
+    await page.getByTestId('grantee-principal-row-editing').getByRole('button', { name: 'Save' }).click();
+    await expect(page.getByTestId('grantee-principal-row')).toContainText('Jane A. Trustee')
+
+    // Remove it.
+    await page.getByTestId('grantee-principal-row').getByRole('button', { name: 'Remove' }).click()
+    await expect(page.getByTestId('grantee-principal-row')).not.toBeVisible()
   })
 })
