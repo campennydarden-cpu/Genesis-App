@@ -55,7 +55,7 @@ test.describe('Genesis foundation phase', () => {
 
   test('log in with the seeded account', async ({ page }) => {
     await loginAsSeededUser(page)
-    await expect(page.getByRole('heading', { name: 'Orders' })).toBeVisible()
+    await expect(page.getByRole('heading', { name: 'Genesis' })).toBeVisible()
   })
 
   test('bad login shows an error and does not redirect to /orders', async ({ page }) => {
