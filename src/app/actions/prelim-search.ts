@@ -3,6 +3,7 @@
 import { revalidatePath } from 'next/cache'
 import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
+import { RELATED_DOC_ASSIGNMENT_TYPES } from '@/lib/constants'
 
 export async function upsertPrelimSearch(orderId: string, formData: FormData) {
   const supabase = await createClient()
@@ -190,9 +191,7 @@ export async function addRelatedDoc(securityInstrumentId: string, orderId: strin
   const supabase = await createClient()
   const field = (name: string) => (formData.get(name) as string) || null
   const type = field('type')
-  const isAssignmentType = ['Assignment', 'Assignment of Leases and Rents', 'Assignment of Beneficial Interest'].includes(
-    type ?? ''
-  )
+  const isAssignmentType = (RELATED_DOC_ASSIGNMENT_TYPES as readonly string[]).includes(type ?? '')
 
   const { error } = await supabase.from('security_instrument_related_docs').insert({
     security_instrument_id: securityInstrumentId,
@@ -221,9 +220,7 @@ export async function updateRelatedDoc(id: string, orderId: string, formData: Fo
   const supabase = await createClient()
   const field = (name: string) => (formData.get(name) as string) || null
   const type = field('type')
-  const isAssignmentType = ['Assignment', 'Assignment of Leases and Rents', 'Assignment of Beneficial Interest'].includes(
-    type ?? ''
-  )
+  const isAssignmentType = (RELATED_DOC_ASSIGNMENT_TYPES as readonly string[]).includes(type ?? '')
 
   const { error } = await supabase
     .from('security_instrument_related_docs')
