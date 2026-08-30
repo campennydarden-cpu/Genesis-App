@@ -302,6 +302,14 @@ test.describe('Genesis foundation phase', () => {
     await page.getByRole('button', { name: 'Add Contact' }).click()
     await expect(page.getByTestId('contact-row')).toContainText('Search Test Buyer')
 
+    // The "Add a contact" <details> disclosure stays open after a successful
+    // submit (the form resets, but the disclosure itself isn't re-closed) —
+    // clicking the summary again here would toggle it CLOSED, not reopen it.
+    await page.getByLabel('Role').fill('Listing Agent')
+    await page.getByLabel('Name').fill('Nonmatching Agent')
+    await page.getByRole('button', { name: 'Add Contact' }).click()
+    await expect(page.getByTestId('contact-row').filter({ hasText: 'Nonmatching Agent' })).toBeVisible()
+
     await page.goto('/orders')
 
     await page.getByTestId('dashboard-search').fill(fileNumber)
@@ -312,6 +320,9 @@ test.describe('Genesis foundation phase', () => {
 
     await page.getByTestId('dashboard-search').fill('Search Test Buyer')
     await expect(page.getByTestId('order-list')).toContainText(fileNumber)
+
+    await page.getByTestId('dashboard-search').fill('Nonmatching Agent')
+    await expect(page.getByTestId('order-list')).not.toContainText(fileNumber)
 
     await page.getByTestId('dashboard-search').fill('no-such-order-xyz')
     await expect(page.getByTestId('order-list')).toContainText('No orders match')
