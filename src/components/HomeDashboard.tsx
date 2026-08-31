@@ -19,7 +19,7 @@ export type ContactSummary = {
 
 import { useMemo, useState } from 'react'
 import Link from 'next/link'
-import { Card } from '@/components/ui/card'
+import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Input } from '@/components/ui/input'
 import { TITLE_STATUSES, ESCROW_STATUSES } from '@/lib/constants'
@@ -160,6 +160,25 @@ export function HomeDashboard({
           activeFilter={queueFilter}
           onSelect={handleSelectQueue}
         />
+      </div>
+
+      <div className="grid gap-6 sm:grid-cols-2">
+        <Card data-testid="dashboard-placeholder-tasks">
+          <CardHeader>
+            <CardTitle>Tasks</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <p className="text-sm text-muted-foreground">Not built yet.</p>
+          </CardContent>
+        </Card>
+        <Card data-testid="dashboard-placeholder-analytics">
+          <CardHeader>
+            <CardTitle>Firm Analytics</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <p className="text-sm text-muted-foreground">Not built yet.</p>
+          </CardContent>
+        </Card>
       </div>
 
       <ul className="space-y-2" data-testid="order-list">

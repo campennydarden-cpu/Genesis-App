@@ -368,4 +368,14 @@ test.describe('Genesis foundation phase', () => {
       .click()
     await expect(page.getByTestId('order-list')).toContainText(fileNumber)
   })
+
+  test('dashboard shows Tasks and Firm Analytics as placeholders', async ({ page }) => {
+    await loginAsSeededUser(page)
+    await page.goto('/orders')
+
+    await expect(page.getByTestId('dashboard-placeholder-tasks')).toContainText('Tasks')
+    await expect(page.getByTestId('dashboard-placeholder-tasks')).toContainText('Not built yet')
+    await expect(page.getByTestId('dashboard-placeholder-analytics')).toContainText('Firm Analytics')
+    await expect(page.getByTestId('dashboard-placeholder-analytics')).toContainText('Not built yet')
+  })
 })
