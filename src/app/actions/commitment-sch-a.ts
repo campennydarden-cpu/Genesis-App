@@ -55,3 +55,64 @@ export async function upsertCommitmentScheduleA(orderId: string, formData: FormD
   revalidatePath(`/orders/${orderId}/commitment-sch-a`)
   redirect(`/orders/${orderId}/commitment-sch-a`)
 }
+
+function chainOfTitleFieldsFromFormData(formData: FormData) {
+  const field = (name: string) => (formData.get(name) as string) || null
+  return {
+    instrument_type: field('instrument_type'),
+    grantor: field('grantor'),
+    grantee: field('grantee'),
+    dated_date: field('dated_date'),
+    recorded_date: field('recorded_date'),
+    book: field('book'),
+    page: field('page'),
+    instrument_number: field('instrument_number'),
+  }
+}
+
+export async function addChainOfTitleEntry(commitmentSchAId: string, orderId: string, formData: FormData) {
+  const supabase = await createClient()
+
+  const { error } = await supabase.from('chain_of_title').insert({
+    commitment_sch_a_id: commitmentSchAId,
+    ...chainOfTitleFieldsFromFormData(formData),
+  })
+
+  if (error) {
+    console.error('addChainOfTitleEntry failed:', error)
+    redirect(
+      `/orders/${orderId}/commitment-sch-a?error=${encodeURIComponent('Could not save. Please check your entries and try again.')}`
+    )
+  }
+
+  revalidatePath(`/orders/${orderId}/commitment-sch-a`)
+}
+
+export async function updateChainOfTitleEntry(id: string, orderId: string, formData: FormData) {
+  const supabase = await createClient()
+
+  const { error } = await supabase.from('chain_of_title').update(chainOfTitleFieldsFromFormData(formData)).eq('id', id)
+
+  if (error) {
+    console.error('updateChainOfTitleEntry failed:', error)
+    redirect(
+      `/orders/${orderId}/commitment-sch-a?error=${encodeURIComponent('Could not save. Please check your entries and try again.')}`
+    )
+  }
+
+  revalidatePath(`/orders/${orderId}/commitment-sch-a`)
+}
+
+export async function deleteChainOfTitleEntry(orderId: string, id: string) {
+  const supabase = await createClient()
+  const { error } = await supabase.from('chain_of_title').delete().eq('id', id)
+
+  if (error) {
+    console.error('deleteChainOfTitleEntry failed:', error)
+    redirect(
+      `/orders/${orderId}/commitment-sch-a?error=${encodeURIComponent('Could not save. Please check your entries and try again.')}`
+    )
+  }
+
+  revalidatePath(`/orders/${orderId}/commitment-sch-a`)
+}

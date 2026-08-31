@@ -2,6 +2,7 @@ import { notFound } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
 import { upsertCommitmentScheduleA } from '@/app/actions/commitment-sch-a'
 import { CommitmentScheduleAForm } from '@/components/commitment-sch-a/CommitmentScheduleAForm'
+import { ChainOfTitleSection } from '@/components/commitment-sch-a/ChainOfTitleSection'
 
 export default async function CommitmentScheduleAPage({
   params,
@@ -27,7 +28,7 @@ export default async function CommitmentScheduleAPage({
 
   const { data: prelimSearch } = await supabase
     .from('prelim_search')
-    .select('effective_date, effective_time')
+    .select('effective_date, effective_time, derivation_instrument_type, derivation_grantor_name, derivation_grantee_name')
     .eq('order_id', id)
     .maybeSingle()
 
@@ -42,6 +43,23 @@ export default async function CommitmentScheduleAPage({
     ? `${prelimSearch.effective_date}${prelimSearch.effective_time ? ' ' + prelimSearch.effective_time : ''}`
     : '— set on Prelim Search'
 
+  const { data: chainOfTitle } = commitmentSchA
+    ? await supabase
+        .from('chain_of_title')
+        .select('*')
+        .eq('commitment_sch_a_id', commitmentSchA.id)
+        .order('created_at', { ascending: true })
+    : { data: [] }
+
+  const derivationSeed =
+    prelimSearch && (prelimSearch.derivation_grantee_name || prelimSearch.derivation_grantor_name)
+      ? {
+          instrumentType: prelimSearch.derivation_instrument_type ?? '',
+          grantor: prelimSearch.derivation_grantor_name ?? '',
+          grantee: prelimSearch.derivation_grantee_name ?? '',
+        }
+      : null
+
   const upsertCommitmentScheduleAWithId = upsertCommitmentScheduleA.bind(null, id)
 
   return (
@@ -55,6 +73,16 @@ export default async function CommitmentScheduleAPage({
         buyerBorrowerContacts={buyerBorrowerContacts}
         lenderContacts={lenderContacts}
       />
+      {commitmentSchA && (
+        <div className="mt-10">
+          <ChainOfTitleSection
+            orderId={id}
+            commitmentSchAId={commitmentSchA.id}
+            entries={chainOfTitle ?? []}
+            derivationSeed={derivationSeed}
+          />
+        </div>
+      )}
     </div>
   )
 }
