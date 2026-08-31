@@ -611,6 +611,11 @@ test.describe('Genesis foundation phase', () => {
 
     await expect(page.getByTestId('estate-fact')).toContainText('Fee Simple')
     await expect(page.getByLabel(/Environmental Protection Lien Statutes/)).toBeVisible()
+
+    // Real reload, not just leftover client state after the redirect - proves it persisted server-side.
+    await page.reload()
+    await expect(page.getByTestId('estate-fact')).toContainText('Fee Simple')
+    await expect(page.getByLabel(/Environmental Protection Lien Statutes/)).toBeVisible()
   })
 
   test('commitment sch A: Chain of Title add/edit/remove with Copy from Derivation seed, and contact seed chips', async ({
@@ -625,7 +630,7 @@ test.describe('Genesis foundation phase', () => {
     await page.getByRole('button', { name: 'Create Order' }).click()
     await page.waitForURL('**/orders/**/order-entry')
 
-    await page.getByLabel('Policy Type').selectOption("Owner's")
+    await page.getByLabel('Policy Type').selectOption('Simultaneous')
     await page.getByRole('button', { name: 'Save Changes' }).click()
     await page.waitForURL('**/order-entry')
 
@@ -660,13 +665,27 @@ test.describe('Genesis foundation phase', () => {
     await page.waitForURL('**/commitment-sch-a')
 
     await expect(page.getByTestId('owner-insured-seed-chips')).toContainText('Jane Buyer')
-    await page.getByRole('button', { name: '+ Jane Buyer' }).click()
-    await expect(page.getByLabel('Proposed Insured')).toHaveValue('Jane Buyer')
+    await page.getByTestId('owner-policy-card').getByRole('button', { name: '+ Jane Buyer' }).click()
+    await expect(page.getByTestId('owner-policy-card').getByLabel('Proposed Insured')).toHaveValue('Jane Buyer')
+
+    await expect(page.getByTestId('loan-insured-seed-chips')).toContainText('First National Bank')
+    await page.getByTestId('loan-policy-card').getByRole('button', { name: '+ First National Bank' }).click()
+    await expect(page.getByTestId('loan-policy-card').getByLabel('Proposed Insured')).toHaveValue('First National Bank')
+
+    await expect(page.getByTestId('mortgagee-clause-seed-chips')).toContainText('Copy from First National Bank')
+    await page.getByTestId('mortgagee-clause-seed-chips').getByRole('button', { name: '+ Copy from First National Bank' }).click()
+    await expect(page.getByTestId('loan-policy-card').getByLabel('Mortgagee Clause')).toHaveValue(
+      'First National Bank, its successors and/or assigns, ISAOA/ATIMA'
+    )
 
     // Save the main form first - chain_of_title needs the commitment_sch_a row's FK.
     await page.getByRole('button', { name: 'Save Changes' }).click()
     await page.waitForURL('**/commitment-sch-a')
     await page.waitForLoadState('networkidle')
+
+    // Real reload, not just leftover client state after the redirect - proves it persisted server-side.
+    await page.reload()
+    await expect(page.getByTestId('owner-policy-card').getByLabel('Proposed Insured')).toHaveValue('Jane Buyer')
 
     await expect(page.getByTestId('chain-of-title-list')).toBeVisible()
     await page.getByText('Add a Chain of Title Entry').click()
