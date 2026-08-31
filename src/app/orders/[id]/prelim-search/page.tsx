@@ -3,6 +3,7 @@ import { createClient } from '@/lib/supabase/server'
 import { DerivationSection } from '@/components/prelim-search/DerivationSection'
 import { SecurityInstrumentsSection } from '@/components/prelim-search/SecurityInstrumentsSection'
 import { RelatedDocumentsSection } from '@/components/prelim-search/RelatedDocumentsSection'
+import { LiensSection } from '@/components/prelim-search/LiensSection'
 
 export default async function PrelimSearchPage({
   params,
@@ -67,6 +68,10 @@ export default async function PrelimSearchPage({
         .order('created_at', { ascending: true })
     : { data: [] }
 
+  const { data: liens } = prelimSearch
+    ? await supabase.from('liens').select('*').eq('prelim_search_id', prelimSearch.id).order('created_at', { ascending: true })
+    : { data: [] }
+
   // A Server Component can't pass a plain function prop across the RSC boundary into
   // a Client Component — only serializable data/JSX can cross. Pre-render each
   // instrument's Related Documents block here and pass the resulting elements down
@@ -121,7 +126,10 @@ export default async function PrelimSearchPage({
             relatedDocsSlots={relatedDocsSlots}
           />
         )}
-        {/* Liens, Exception Matters sections are added in Tasks 8-9 */}
+        {prelimSearch && (
+          <LiensSection orderId={id} prelimSearchId={prelimSearch.id} liens={liens ?? []} />
+        )}
+        {/* Exception Matters section is added in Task 9 */}
       </div>
     </div>
   )

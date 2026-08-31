@@ -416,4 +416,40 @@ test.describe('Genesis foundation phase', () => {
 
     await expect(page.getByTestId('related-doc-row')).toContainText('Original Bank → New Bank')
   })
+
+  test('prelim search: Liens show different fields per type', async ({ page }) => {
+    await loginAsSeededUser(page)
+
+    await page.getByRole('link', { name: '+ New Order' }).click()
+    const fileNumber = `TEST-${Date.now()}`
+    await page.getByLabel('File Number').fill(fileNumber)
+    await page.getByRole('button', { name: 'Create Order' }).click()
+    await page.waitForURL('**/orders/**/order-entry')
+
+    await page.getByTestId('file-section-nav').getByRole('link', { name: 'Prelim Title Search' }).click()
+    await page.waitForURL('**/prelim-search')
+    await page.getByRole('button', { name: 'Save Changes' }).click()
+    await page.waitForURL('**/prelim-search')
+    await page.waitForLoadState('networkidle')
+
+    await page.getByText('Add a Lien').click()
+    const lienForm = page.locator('#liens').locator('details')
+    await lienForm.locator('#lien-new-type').click()
+    await page.getByRole('option', { name: 'Judgment' }).click()
+    await expect(lienForm.getByLabel('Debtor')).toBeVisible()
+    await expect(lienForm.getByLabel('Court')).toBeVisible()
+    await expect(lienForm.getByLabel('Taxing Authority')).not.toBeVisible()
+
+    await lienForm.locator('#lien-new-type').click()
+    await page.getByRole('option', { name: 'Tax Lien' }).click()
+    await expect(lienForm.getByLabel('Taxing Authority')).toBeVisible()
+    await expect(lienForm.getByLabel('Court')).not.toBeVisible()
+
+    await lienForm.getByLabel('Debtor').fill('Test Debtor')
+    await lienForm.getByLabel('Taxing Authority').fill('County Tax Office')
+    await page.getByRole('button', { name: 'Add Lien' }).click()
+
+    await expect(page.getByTestId('lien-row')).toContainText('Tax Lien')
+    await expect(page.getByTestId('lien-row')).toContainText('Test Debtor')
+  })
 })

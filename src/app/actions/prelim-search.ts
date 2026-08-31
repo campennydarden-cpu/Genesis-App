@@ -260,3 +260,79 @@ export async function deleteRelatedDoc(orderId: string, id: string) {
 
   revalidatePath(`/orders/${orderId}/prelim-search`)
 }
+
+function lienFieldsFromFormData(formData: FormData) {
+  const field = (name: string) => (formData.get(name) as string) || null
+  const amount = formData.get('amount') as string
+  return {
+    type: field('type'),
+    dated_date: field('dated_date'),
+    recorded_date: field('recorded_date'),
+    book: field('book'),
+    page: field('page'),
+    instrument_number: field('instrument_number'),
+    amount: amount ? Number(amount) : null,
+    debtor: field('debtor'),
+    creditor: field('creditor'),
+    docket_date: field('docket_date'),
+    case_number: field('case_number'),
+    court: field('court'),
+    taxing_authority: field('taxing_authority'),
+    tax_type: field('tax_type'),
+    filed_date: field('filed_date'),
+    hoa_company: field('hoa_company'),
+    materialman: field('materialman'),
+    last_service_date: field('last_service_date'),
+    plaintiff: field('plaintiff'),
+    defendant: field('defendant'),
+    certificate_id: field('certificate_id'),
+    redemption_expiration: field('redemption_expiration'),
+  }
+}
+
+export async function addLien(prelimSearchId: string, orderId: string, formData: FormData) {
+  const supabase = await createClient()
+
+  const { error } = await supabase.from('liens').insert({
+    prelim_search_id: prelimSearchId,
+    ...lienFieldsFromFormData(formData),
+  })
+
+  if (error) {
+    console.error('addLien failed:', error)
+    redirect(
+      `/orders/${orderId}/prelim-search?error=${encodeURIComponent('Could not save. Please check your entries and try again.')}`
+    )
+  }
+
+  revalidatePath(`/orders/${orderId}/prelim-search`)
+}
+
+export async function updateLien(id: string, orderId: string, formData: FormData) {
+  const supabase = await createClient()
+
+  const { error } = await supabase.from('liens').update(lienFieldsFromFormData(formData)).eq('id', id)
+
+  if (error) {
+    console.error('updateLien failed:', error)
+    redirect(
+      `/orders/${orderId}/prelim-search?error=${encodeURIComponent('Could not save. Please check your entries and try again.')}`
+    )
+  }
+
+  revalidatePath(`/orders/${orderId}/prelim-search`)
+}
+
+export async function deleteLien(orderId: string, id: string) {
+  const supabase = await createClient()
+  const { error } = await supabase.from('liens').delete().eq('id', id)
+
+  if (error) {
+    console.error('deleteLien failed:', error)
+    redirect(
+      `/orders/${orderId}/prelim-search?error=${encodeURIComponent('Could not save. Please check your entries and try again.')}`
+    )
+  }
+
+  revalidatePath(`/orders/${orderId}/prelim-search`)
+}
