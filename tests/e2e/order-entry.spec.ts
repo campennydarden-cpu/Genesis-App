@@ -577,4 +577,39 @@ test.describe('Genesis foundation phase', () => {
     await page.getByTestId('exception-matter-row').getByRole('button', { name: 'Remove' }).click()
     await expect(page.getByTestId('exception-matter-row')).not.toBeVisible()
   })
+
+  test('commitment sch A: Form Type and Policy Type drive Owner\'s/Loan Policy visibility', async ({ page }) => {
+    await loginAsSeededUser(page)
+
+    await page.getByRole('link', { name: '+ New Order' }).click()
+    const fileNumber = `TEST-${Date.now()}`
+    await page.getByLabel('File Number').fill(fileNumber)
+    await page.getByRole('button', { name: 'Create Order' }).click()
+    await page.waitForURL('**/orders/**/order-entry')
+
+    await page.getByLabel('Policy Type').selectOption('Simultaneous')
+    await page.getByRole('button', { name: 'Save Changes' }).click()
+    await page.waitForURL('**/order-entry')
+
+    await page.getByTestId('file-section-nav').getByRole('link', { name: 'Commitment Sch A' }).click()
+    await page.waitForURL('**/commitment-sch-a')
+
+    await expect(page.getByTestId('owner-policy-card')).toBeVisible()
+    await expect(page.getByTestId('loan-policy-card')).toBeVisible()
+
+    await page.locator('#form_type').click()
+    await page.getByRole('option', { name: 'Short Form' }).click()
+
+    await expect(page.getByTestId('owner-policy-card')).not.toBeVisible()
+    await expect(page.getByTestId('loan-policy-card')).toBeVisible()
+    await expect(page.getByTestId('estate-fact')).toContainText('Fee Simple')
+    await expect(page.getByLabel(/Environmental Protection Lien Statutes/)).toBeVisible()
+
+    await page.getByRole('button', { name: 'Save Changes' }).click()
+    await page.waitForURL('**/commitment-sch-a')
+    await page.waitForLoadState('networkidle')
+
+    await expect(page.getByTestId('estate-fact')).toContainText('Fee Simple')
+    await expect(page.getByLabel(/Environmental Protection Lien Statutes/)).toBeVisible()
+  })
 })

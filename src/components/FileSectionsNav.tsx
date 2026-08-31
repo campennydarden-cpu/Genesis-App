@@ -20,7 +20,7 @@ const NAV_GROUPS: NavGroup[] = [
     heading: 'Title',
     items: [
       { label: 'Prelim Title Search', segment: 'prelim-search' },
-      { label: 'Commitment Sch A' },
+      { label: 'Commitment Sch A', segment: 'commitment-sch-a' },
       { label: 'Commitment Sch B-I/B-II' },
       { label: 'Curative' },
     ],
