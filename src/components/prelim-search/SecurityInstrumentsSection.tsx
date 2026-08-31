@@ -13,13 +13,13 @@ import {
 } from '@/app/actions/prelim-search'
 import type { SecurityInstrument } from '@/lib/types'
 
-function SecurityInstrumentFields({ instrument }: { instrument?: SecurityInstrument }) {
+function SecurityInstrumentFields({ instrument, idPrefix }: { instrument?: SecurityInstrument; idPrefix: string }) {
   return (
     <div className="grid grid-cols-3 gap-4">
       <div>
-        <Label htmlFor="si-type">Type</Label>
+        <Label htmlFor={`${idPrefix}-type`}>Type</Label>
         <Select name="type" defaultValue={instrument?.type}>
-          <SelectTrigger id="si-type">
+          <SelectTrigger id={`${idPrefix}-type`}>
             <SelectValue placeholder="— Select —" />
           </SelectTrigger>
           <SelectContent>
@@ -32,40 +32,40 @@ function SecurityInstrumentFields({ instrument }: { instrument?: SecurityInstrum
         </Select>
       </div>
       <div>
-        <Label htmlFor="si-dated_date">Dated Date</Label>
-        <Input id="si-dated_date" name="dated_date" type="date" defaultValue={instrument?.dated_date ?? undefined} />
+        <Label htmlFor={`${idPrefix}-dated_date`}>Dated Date</Label>
+        <Input id={`${idPrefix}-dated_date`} name="dated_date" type="date" defaultValue={instrument?.dated_date ?? undefined} />
       </div>
       <div>
-        <Label htmlFor="si-recorded_date">Recorded Date</Label>
-        <Input id="si-recorded_date" name="recorded_date" type="date" defaultValue={instrument?.recorded_date ?? undefined} />
+        <Label htmlFor={`${idPrefix}-recorded_date`}>Recorded Date</Label>
+        <Input id={`${idPrefix}-recorded_date`} name="recorded_date" type="date" defaultValue={instrument?.recorded_date ?? undefined} />
       </div>
       <div>
-        <Label htmlFor="si-book">Book</Label>
-        <Input id="si-book" name="book" defaultValue={instrument?.book ?? undefined} />
+        <Label htmlFor={`${idPrefix}-book`}>Book</Label>
+        <Input id={`${idPrefix}-book`} name="book" defaultValue={instrument?.book ?? undefined} />
       </div>
       <div>
-        <Label htmlFor="si-page">Page</Label>
-        <Input id="si-page" name="page" defaultValue={instrument?.page ?? undefined} />
+        <Label htmlFor={`${idPrefix}-page`}>Page</Label>
+        <Input id={`${idPrefix}-page`} name="page" defaultValue={instrument?.page ?? undefined} />
       </div>
       <div>
-        <Label htmlFor="si-instrument_number">Instrument Number</Label>
-        <Input id="si-instrument_number" name="instrument_number" defaultValue={instrument?.instrument_number ?? undefined} />
+        <Label htmlFor={`${idPrefix}-instrument_number`}>Instrument Number</Label>
+        <Input id={`${idPrefix}-instrument_number`} name="instrument_number" defaultValue={instrument?.instrument_number ?? undefined} />
       </div>
       <div>
-        <Label htmlFor="si-original_amount">Original Amount</Label>
-        <Input id="si-original_amount" name="original_amount" type="number" step="0.01" defaultValue={instrument?.original_amount ?? undefined} />
+        <Label htmlFor={`${idPrefix}-original_amount`}>Original Amount</Label>
+        <Input id={`${idPrefix}-original_amount`} name="original_amount" type="number" step="0.01" defaultValue={instrument?.original_amount ?? undefined} />
       </div>
       <div>
-        <Label htmlFor="si-mortgagor">Mortgagor</Label>
-        <Input id="si-mortgagor" name="mortgagor" defaultValue={instrument?.mortgagor ?? undefined} />
+        <Label htmlFor={`${idPrefix}-mortgagor`}>Mortgagor</Label>
+        <Input id={`${idPrefix}-mortgagor`} name="mortgagor" defaultValue={instrument?.mortgagor ?? undefined} />
       </div>
       <div>
-        <Label htmlFor="si-mortgagee">Mortgagee</Label>
-        <Input id="si-mortgagee" name="mortgagee" defaultValue={instrument?.mortgagee ?? undefined} />
+        <Label htmlFor={`${idPrefix}-mortgagee`}>Mortgagee</Label>
+        <Input id={`${idPrefix}-mortgagee`} name="mortgagee" defaultValue={instrument?.mortgagee ?? undefined} />
       </div>
       <div>
-        <Label htmlFor="si-trustee">Trustee</Label>
-        <Input id="si-trustee" name="trustee" defaultValue={instrument?.trustee ?? undefined} />
+        <Label htmlFor={`${idPrefix}-trustee`}>Trustee</Label>
+        <Input id={`${idPrefix}-trustee`} name="trustee" defaultValue={instrument?.trustee ?? undefined} />
       </div>
     </div>
   )
@@ -102,7 +102,7 @@ export function SecurityInstrumentsSection({
                 }}
                 className="space-y-4"
               >
-                <SecurityInstrumentFields instrument={instrument} />
+                <SecurityInstrumentFields instrument={instrument} idPrefix={`si-edit-${instrument.id}`} />
                 <div className="flex gap-2">
                   <Button type="submit" size="sm">
                     Save
@@ -148,7 +148,7 @@ export function SecurityInstrumentsSection({
       <details className="rounded border p-4">
         <summary className="cursor-pointer font-medium">Add a Security Instrument</summary>
         <form action={addSecurityInstrument.bind(null, prelimSearchId, orderId)} className="mt-4 space-y-4">
-          <SecurityInstrumentFields />
+          <SecurityInstrumentFields idPrefix="si-new" />
           <Button type="submit">Add Security Instrument</Button>
         </form>
       </details>

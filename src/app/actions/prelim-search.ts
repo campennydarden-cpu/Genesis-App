@@ -118,6 +118,10 @@ export async function addSecurityInstrument(prelimSearchId: string, orderId: str
   const field = (name: string) => (formData.get(name) as string) || null
   const originalAmount = formData.get('original_amount') as string
 
+  if (!field('type')) {
+    redirect(`/orders/${orderId}/prelim-search?error=${encodeURIComponent('Please select a Type before saving.')}`)
+  }
+
   const { error } = await supabase.from('security_instruments').insert({
     prelim_search_id: prelimSearchId,
     type: field('type'),
@@ -192,6 +196,10 @@ export async function addRelatedDoc(securityInstrumentId: string, orderId: strin
   const field = (name: string) => (formData.get(name) as string) || null
   const type = field('type')
   const isAssignmentType = (RELATED_DOC_ASSIGNMENT_TYPES as readonly string[]).includes(type ?? '')
+
+  if (!type) {
+    redirect(`/orders/${orderId}/prelim-search?error=${encodeURIComponent('Please select a Type before saving.')}`)
+  }
 
   const { error } = await supabase.from('security_instrument_related_docs').insert({
     security_instrument_id: securityInstrumentId,
@@ -292,6 +300,10 @@ function lienFieldsFromFormData(formData: FormData) {
 
 export async function addLien(prelimSearchId: string, orderId: string, formData: FormData) {
   const supabase = await createClient()
+
+  if (!(formData.get('type') as string)) {
+    redirect(`/orders/${orderId}/prelim-search?error=${encodeURIComponent('Please select a Type before saving.')}`)
+  }
 
   const { error } = await supabase.from('liens').insert({
     prelim_search_id: prelimSearchId,

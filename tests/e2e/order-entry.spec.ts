@@ -360,17 +360,17 @@ test.describe('Genesis foundation phase', () => {
     await page.waitForLoadState('networkidle')
 
     await page.getByText('Add a Security Instrument').click()
-    await page.locator('#si-type').click()
+    await page.locator('#si-new-type').click()
     await page.getByRole('option', { name: 'Deed of Trust' }).click()
-    await page.locator('#si-mortgagor').fill('Test Borrower')
-    await page.locator('#si-mortgagee').fill('Test Lender Bank')
+    await page.locator('#si-new-mortgagor').fill('Test Borrower')
+    await page.locator('#si-new-mortgagee').fill('Test Lender Bank')
     await page.getByRole('button', { name: 'Add Security Instrument' }).click()
 
     await expect(page.getByTestId('security-instrument-row')).toContainText('Deed of Trust')
     await expect(page.getByTestId('security-instrument-row')).toContainText('Test Borrower → Test Lender Bank')
 
     await page.getByTestId('security-instrument-row').getByRole('button', { name: /Edit/ }).click()
-    await page.getByTestId('security-instrument-row-editing').locator('#si-mortgagee').fill('Updated Lender Bank')
+    await page.getByTestId('security-instrument-row-editing').locator('[name="mortgagee"]').fill('Updated Lender Bank')
     await page.getByTestId('security-instrument-row-editing').getByRole('button', { name: 'Save' }).click()
     await expect(page.getByTestId('security-instrument-row')).toContainText('Test Borrower → Updated Lender Bank')
 
@@ -396,7 +396,7 @@ test.describe('Genesis foundation phase', () => {
     await page.waitForLoadState('networkidle')
 
     await page.getByText('Add a Security Instrument').click()
-    await page.locator('#si-type').click()
+    await page.locator('#si-new-type').click()
     await page.getByRole('option', { name: 'Mortgage' }).click()
     await page.getByRole('button', { name: 'Add Security Instrument' }).click()
     await expect(page.getByTestId('security-instrument-row')).toBeVisible()
