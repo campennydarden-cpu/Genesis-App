@@ -452,4 +452,34 @@ test.describe('Genesis foundation phase', () => {
     await expect(page.getByTestId('lien-row')).toContainText('Tax Lien')
     await expect(page.getByTestId('lien-row')).toContainText('Test Debtor')
   })
+
+  test('prelim search: Exception Matters add, edit, and remove', async ({ page }) => {
+    await loginAsSeededUser(page)
+
+    await page.getByRole('link', { name: '+ New Order' }).click()
+    const fileNumber = `TEST-${Date.now()}`
+    await page.getByLabel('File Number').fill(fileNumber)
+    await page.getByRole('button', { name: 'Create Order' }).click()
+    await page.waitForURL('**/orders/**/order-entry')
+
+    await page.getByTestId('file-section-nav').getByRole('link', { name: 'Prelim Title Search' }).click()
+    await page.waitForURL('**/prelim-search')
+    await page.getByRole('button', { name: 'Save Changes' }).click()
+    await page.waitForURL('**/prelim-search')
+    await page.waitForLoadState('networkidle')
+
+    await page.getByText('Add an Exception Matter').click()
+    await page.locator('#em-new-description').fill('Easement of record affecting the rear 10 feet')
+    await page.getByRole('button', { name: 'Add Exception Matter' }).click()
+
+    await expect(page.getByTestId('exception-matter-row')).toContainText('Easement of record affecting the rear 10 feet')
+
+    await page.getByTestId('exception-matter-row').getByRole('button', { name: 'Edit exception matter' }).click()
+    await page.getByTestId('exception-matter-row-editing').locator('textarea[name="description"]').fill('Updated exception text')
+    await page.getByTestId('exception-matter-row-editing').getByRole('button', { name: 'Save' }).click()
+    await expect(page.getByTestId('exception-matter-row')).toContainText('Updated exception text')
+
+    await page.getByTestId('exception-matter-row').getByRole('button', { name: 'Remove' }).click()
+    await expect(page.getByTestId('exception-matter-row')).not.toBeVisible()
+  })
 })

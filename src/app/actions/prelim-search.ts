@@ -336,3 +336,67 @@ export async function deleteLien(orderId: string, id: string) {
 
   revalidatePath(`/orders/${orderId}/prelim-search`)
 }
+
+export async function addExceptionMatter(prelimSearchId: string, orderId: string, formData: FormData) {
+  const supabase = await createClient()
+  const field = (name: string) => (formData.get(name) as string) || null
+
+  const { error } = await supabase.from('exception_matters').insert({
+    prelim_search_id: prelimSearchId,
+    description: formData.get('description') as string,
+    dated_date: field('dated_date'),
+    recorded_date: field('recorded_date'),
+    book: field('book'),
+    page: field('page'),
+    instrument_number: field('instrument_number'),
+  })
+
+  if (error) {
+    console.error('addExceptionMatter failed:', error)
+    redirect(
+      `/orders/${orderId}/prelim-search?error=${encodeURIComponent('Could not save. Please check your entries and try again.')}`
+    )
+  }
+
+  revalidatePath(`/orders/${orderId}/prelim-search`)
+}
+
+export async function updateExceptionMatter(id: string, orderId: string, formData: FormData) {
+  const supabase = await createClient()
+  const field = (name: string) => (formData.get(name) as string) || null
+
+  const { error } = await supabase
+    .from('exception_matters')
+    .update({
+      description: formData.get('description') as string,
+      dated_date: field('dated_date'),
+      recorded_date: field('recorded_date'),
+      book: field('book'),
+      page: field('page'),
+      instrument_number: field('instrument_number'),
+    })
+    .eq('id', id)
+
+  if (error) {
+    console.error('updateExceptionMatter failed:', error)
+    redirect(
+      `/orders/${orderId}/prelim-search?error=${encodeURIComponent('Could not save. Please check your entries and try again.')}`
+    )
+  }
+
+  revalidatePath(`/orders/${orderId}/prelim-search`)
+}
+
+export async function deleteExceptionMatter(orderId: string, id: string) {
+  const supabase = await createClient()
+  const { error } = await supabase.from('exception_matters').delete().eq('id', id)
+
+  if (error) {
+    console.error('deleteExceptionMatter failed:', error)
+    redirect(
+      `/orders/${orderId}/prelim-search?error=${encodeURIComponent('Could not save. Please check your entries and try again.')}`
+    )
+  }
+
+  revalidatePath(`/orders/${orderId}/prelim-search`)
+}

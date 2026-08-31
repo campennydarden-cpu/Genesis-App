@@ -4,6 +4,7 @@ import { DerivationSection } from '@/components/prelim-search/DerivationSection'
 import { SecurityInstrumentsSection } from '@/components/prelim-search/SecurityInstrumentsSection'
 import { RelatedDocumentsSection } from '@/components/prelim-search/RelatedDocumentsSection'
 import { LiensSection } from '@/components/prelim-search/LiensSection'
+import { ExceptionMattersSection } from '@/components/prelim-search/ExceptionMattersSection'
 
 export default async function PrelimSearchPage({
   params,
@@ -72,6 +73,10 @@ export default async function PrelimSearchPage({
     ? await supabase.from('liens').select('*').eq('prelim_search_id', prelimSearch.id).order('created_at', { ascending: true })
     : { data: [] }
 
+  const { data: exceptionMatters } = prelimSearch
+    ? await supabase.from('exception_matters').select('*').eq('prelim_search_id', prelimSearch.id).order('created_at', { ascending: true })
+    : { data: [] }
+
   // A Server Component can't pass a plain function prop across the RSC boundary into
   // a Client Component — only serializable data/JSX can cross. Pre-render each
   // instrument's Related Documents block here and pass the resulting elements down
@@ -129,7 +134,9 @@ export default async function PrelimSearchPage({
         {prelimSearch && (
           <LiensSection orderId={id} prelimSearchId={prelimSearch.id} liens={liens ?? []} />
         )}
-        {/* Exception Matters section is added in Task 9 */}
+        {prelimSearch && (
+          <ExceptionMattersSection orderId={id} prelimSearchId={prelimSearch.id} matters={exceptionMatters ?? []} />
+        )}
       </div>
     </div>
   )
