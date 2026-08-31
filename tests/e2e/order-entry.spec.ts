@@ -709,4 +709,106 @@ test.describe('Genesis foundation phase', () => {
     await page.getByTestId('chain-of-title-row').getByRole('button', { name: 'Remove' }).click()
     await expect(page.getByTestId('chain-of-title-row')).not.toBeVisible()
   })
+
+  test('commitment schedule B: chip generation, sub-item numbering, manual add', async ({ page }) => {
+    await loginAsSeededUser(page)
+
+    await page.getByRole('link', { name: '+ New Order' }).click()
+    const fileNumber = `TEST-${Date.now()}`
+    await page.getByLabel('File Number').fill(fileNumber)
+    await page.getByRole('button', { name: 'Create Order' }).click()
+    await page.waitForURL('**/orders/**/order-entry')
+
+    await page.getByTestId('file-section-nav').getByRole('link', { name: 'Prelim Title Search' }).click()
+    await page.waitForURL('**/prelim-search')
+
+    // Security Instruments/Liens/Exception Matters only render once a prelim_search row
+    // exists (foreign key) - save Derivation with the minimum required fields first.
+    await page.getByRole('button', { name: 'Save Changes' }).click()
+    await page.waitForURL('**/prelim-search')
+    await page.waitForLoadState('networkidle')
+
+    await page.getByText('Add a Security Instrument').click()
+    const siForm = page.locator('details:has-text("Add a Security Instrument")')
+    await page.locator('#si-new-type').click()
+    await page.getByRole('option', { name: 'Deed of Trust' }).click()
+    await siForm.getByLabel('Mortgagor').fill('Test Owner')
+    await siForm.getByLabel('Mortgagee').fill('Test Lender')
+    await siForm.getByRole('button', { name: 'Add Security Instrument' }).click()
+    await expect(page.getByTestId('security-instrument-row')).toContainText('Deed of Trust')
+
+    const siRow = page.getByTestId('security-instrument-row').first()
+    await siRow.getByText('Add a Related Document').click()
+    const relatedForm = siRow.locator('details:has-text("Add a Related Document")')
+    await relatedForm.locator('button[role="combobox"]').click()
+    await page.getByRole('option', { name: 'Assignment', exact: true }).click()
+    await relatedForm.getByLabel('Assignor').fill('Test Lender')
+    await relatedForm.getByLabel('Assignee').fill('Assignee Bank')
+    await relatedForm.getByRole('button', { name: 'Add' }).click()
+    await expect(siRow.getByTestId('related-doc-row')).toContainText('Assignment')
+
+    await page.getByText('Add a Lien').click()
+    const lienForm = page.locator('details:has-text("Add a Lien")')
+    await lienForm.locator('#lien-new-type').click()
+    await page.getByRole('option', { name: 'Judgment' }).click()
+    await lienForm.getByLabel('Debtor').fill('Test Debtor')
+    await lienForm.getByLabel('Creditor').fill('Test Creditor')
+    await lienForm.getByRole('button', { name: 'Add Lien' }).click()
+    await expect(page.getByTestId('lien-row')).toContainText('Test Debtor')
+
+    await page.getByText('Add an Exception Matter').click()
+    const emForm = page.locator('details:has-text("Add an Exception Matter")')
+    await emForm.getByLabel('Description').fill('Utility easement of record')
+    await emForm.getByRole('button', { name: 'Add Exception Matter' }).click()
+    await expect(page.getByTestId('exception-matter-row')).toContainText('Utility easement of record')
+
+    await page.getByTestId('file-section-nav').getByRole('link', { name: 'Commitment Sch B-I/B-II' }).click()
+    await page.waitForURL('**/commitment-sch-b')
+
+    // Chips exist for the SI and Lien, but the Related Document sub-item chip is absent until the SI chip is used
+    await expect(page.getByTestId('si-req-chip')).toBeVisible()
+    await expect(page.getByTestId('lien-req-chip')).toBeVisible()
+    await expect(page.getByTestId('rel-req-chip')).not.toBeVisible()
+    await expect(page.getByTestId('em-exc-chip')).toBeVisible()
+
+    // A fresh order has no Commitment Sch A form_type on file, so requirement numbering
+    // defaults to Standard's 4 pre-printed items (STANDARD_BI_ITEM_COUNTS.Standard) - the
+    // first added requirement is "5.", not "1."
+    await page.getByTestId('si-req-chip').click()
+    await expect(page.getByTestId('requirement-row')).toContainText('Release of Deed of Trust')
+    await expect(page.getByTestId('requirement-row')).toContainText('5.')
+
+    // Now the Related Document's sub-item chip appears
+    await expect(page.getByTestId('rel-req-chip')).toBeVisible()
+    await page.getByTestId('rel-req-chip').click()
+    await expect(page.getByTestId('requirement-list').getByTestId('requirement-row').nth(1)).toContainText('5a.')
+
+    await page.getByTestId('lien-req-chip').click()
+    await expect(page.getByTestId('requirement-list').getByTestId('requirement-row').nth(2)).toContainText('6.')
+
+    await page.getByTestId('em-exc-chip').click()
+    await expect(page.getByTestId('exception-row')).toContainText('Utility easement of record')
+    await expect(page.getByTestId('exception-row')).toContainText('1.')
+
+    // Manual add
+    await page.getByText('Add a requirement').click()
+    const reqForm = page.locator('details:has-text("Add a requirement")')
+    await reqForm.getByLabel('Description').fill('Manual test requirement')
+    await reqForm.getByRole('button', { name: 'Add Requirement' }).click()
+    await expect(page.getByTestId('requirement-list').getByTestId('requirement-row').nth(3)).toContainText('7.')
+    await expect(page.getByTestId('requirement-list').getByTestId('requirement-row').nth(3)).toContainText('Manual test requirement')
+
+    // Edit a requirement. Note: filling the textarea changes its DOM `.value`, not its
+    // rendered textContent, so keep scoping by the original description text throughout.
+    const requirementRow = page.getByTestId('requirement-row').filter({ hasText: 'Manual test requirement' })
+    await requirementRow.getByRole('button', { name: 'Edit' }).click()
+    await requirementRow.locator('textarea[name="description"]').fill('Edited test requirement')
+    await requirementRow.getByRole('button', { name: 'Save' }).click()
+    await expect(page.getByTestId('requirement-list')).toContainText('Edited test requirement')
+
+    // Reload and confirm persistence
+    await page.reload()
+    await expect(page.getByTestId('requirement-list').getByTestId('requirement-row')).toHaveCount(4)
+    await expect(page.getByTestId('exception-list').getByTestId('exception-row')).toHaveCount(1)
+  })
 })
