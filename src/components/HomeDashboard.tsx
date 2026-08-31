@@ -22,6 +22,7 @@ import Link from 'next/link'
 import { Card } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Input } from '@/components/ui/input'
+import { TITLE_STATUSES, ESCROW_STATUSES } from '@/lib/constants'
 
 const PARTY_ROLE_PATTERN = /buyer|borrower|seller/i
 
@@ -42,6 +43,60 @@ function matchesSearch(
   )
 }
 
+type QueueDimension = 'title' | 'escrow'
+type QueueFilter = { dimension: QueueDimension; status: string } | null
+
+function matchesQueue(order: OrderSummary, filter: QueueFilter): boolean {
+  if (!filter) return true
+  return filter.dimension === 'title'
+    ? order.title_status === filter.status
+    : order.escrow_status === filter.status
+}
+
+function QueuePanel({
+  heading,
+  dimension,
+  statuses,
+  orders,
+  activeFilter,
+  onSelect,
+}: {
+  heading: string
+  dimension: QueueDimension
+  statuses: readonly string[]
+  orders: OrderSummary[]
+  activeFilter: QueueFilter
+  onSelect: (dimension: QueueDimension, status: string) => void
+}) {
+  const field = dimension === 'title' ? 'title_status' : 'escrow_status'
+
+  return (
+    <div>
+      <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+        {heading}
+      </p>
+      <div className="flex flex-wrap gap-2" data-testid={`queue-panel-${dimension}`}>
+        {statuses.map((status) => {
+          const count = orders.filter((o) => o[field] === status).length
+          const active = activeFilter?.dimension === dimension && activeFilter.status === status
+          return (
+            <button
+              key={status}
+              type="button"
+              data-testid="queue-badge"
+              onClick={() => onSelect(dimension, status)}
+            >
+              <Badge variant={active ? 'default' : 'outline'}>
+                {status} ({count})
+              </Badge>
+            </button>
+          )
+        })}
+      </div>
+    </div>
+  )
+}
+
 export function HomeDashboard({
   orders,
   contacts,
@@ -50,6 +105,7 @@ export function HomeDashboard({
   contacts: ContactSummary[]
 }) {
   const [searchQuery, setSearchQuery] = useState('')
+  const [queueFilter, setQueueFilter] = useState<QueueFilter>(null)
 
   const contactsByOrder = useMemo(() => {
     const map = new Map<string, ContactSummary[]>()
@@ -65,9 +121,18 @@ export function HomeDashboard({
   }, [contacts])
 
   const filteredOrders = useMemo(
-    () => orders.filter((o) => matchesSearch(o, contactsByOrder, searchQuery)),
-    [orders, contactsByOrder, searchQuery]
+    () =>
+      orders.filter(
+        (o) => matchesQueue(o, queueFilter) && matchesSearch(o, contactsByOrder, searchQuery)
+      ),
+    [orders, contactsByOrder, searchQuery, queueFilter]
   )
+
+  function handleSelectQueue(dimension: QueueDimension, status: string) {
+    setQueueFilter((prev) =>
+      prev?.dimension === dimension && prev.status === status ? null : { dimension, status }
+    )
+  }
 
   return (
     <div className="space-y-6">
@@ -77,6 +142,25 @@ export function HomeDashboard({
         onChange={(e) => setSearchQuery(e.target.value)}
         data-testid="dashboard-search"
       />
+
+      <div className="grid gap-6 sm:grid-cols-2">
+        <QueuePanel
+          heading="Title"
+          dimension="title"
+          statuses={TITLE_STATUSES}
+          orders={orders}
+          activeFilter={queueFilter}
+          onSelect={handleSelectQueue}
+        />
+        <QueuePanel
+          heading="Escrow"
+          dimension="escrow"
+          statuses={ESCROW_STATUSES}
+          orders={orders}
+          activeFilter={queueFilter}
+          onSelect={handleSelectQueue}
+        />
+      </div>
 
       <ul className="space-y-2" data-testid="order-list">
         {filteredOrders.map((o) => (

@@ -327,4 +327,45 @@ test.describe('Genesis foundation phase', () => {
     await page.getByTestId('dashboard-search').fill('no-such-order-xyz')
     await expect(page.getByTestId('order-list')).toContainText('No orders match')
   })
+
+  test('dashboard queue badges filter the order list and toggle off', async ({ page }) => {
+    await loginAsSeededUser(page)
+
+    await page.getByRole('link', { name: '+ New Order' }).click()
+    const fileNumber = `TEST-${Date.now()}`
+    await page.getByLabel('File Number').fill(fileNumber)
+    await page.getByRole('button', { name: 'Create Order' }).click()
+    await page.waitForURL('**/orders/**/order-entry')
+    const orderId = page.url().match(/\/orders\/([^/]+)\/order-entry/)?.[1]
+
+    await page.goto(`/orders/${orderId}/order-info`)
+    await page.getByLabel('Title Status').selectOption('Exam')
+    await page.getByRole('button', { name: 'Save Changes' }).click()
+    await page.waitForURL('**/order-info')
+    await expect(page.getByLabel('Title Status')).toHaveValue('Exam')
+
+    await page.goto('/orders')
+    await expect(page.getByTestId('order-list')).toContainText(fileNumber)
+
+    await page
+      .getByTestId('queue-panel-title')
+      .getByTestId('queue-badge')
+      .filter({ hasText: /^Curative/ })
+      .click()
+    await expect(page.getByTestId('order-list')).not.toContainText(fileNumber)
+
+    await page
+      .getByTestId('queue-panel-title')
+      .getByTestId('queue-badge')
+      .filter({ hasText: /^Curative/ })
+      .click()
+    await expect(page.getByTestId('order-list')).toContainText(fileNumber)
+
+    await page
+      .getByTestId('queue-panel-title')
+      .getByTestId('queue-badge')
+      .filter({ hasText: /^Exam/ })
+      .click()
+    await expect(page.getByTestId('order-list')).toContainText(fileNumber)
+  })
 })
