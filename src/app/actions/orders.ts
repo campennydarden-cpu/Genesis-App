@@ -98,6 +98,7 @@ export async function updateOrderEntry(orderId: string, formData: FormData) {
   }
 
   revalidatePath(`/orders/${orderId}`)
+  revalidatePath('/orders')
   redirect(`/orders/${orderId}/order-entry`)
 }
 
@@ -126,5 +127,6 @@ export async function updateOrderInfo(orderId: string, formData: FormData) {
   }
 
   revalidatePath(`/orders/${orderId}`)
+  revalidatePath('/orders')
   redirect(`/orders/${orderId}/order-info`)
 }

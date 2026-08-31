@@ -31,7 +31,7 @@ test.describe('Genesis foundation phase', () => {
   test('redirects unauthenticated users to /login', async ({ page }) => {
     await page.goto('/orders')
     await page.waitForURL('**/login**')
-    await expect(page.getByRole('heading', { name: 'Genesis — Sign In' })).toBeVisible()
+    await expect(page.locator('[data-slot="card-title"]')).toBeVisible()
   })
 
   test('signup is disabled (post-bootstrap security posture)', async ({ page }) => {
@@ -55,7 +55,7 @@ test.describe('Genesis foundation phase', () => {
 
   test('log in with the seeded account', async ({ page }) => {
     await loginAsSeededUser(page)
-    await expect(page.getByRole('heading', { name: 'Orders' })).toBeVisible()
+    await expect(page.getByRole('heading', { name: 'Genesis' })).toBeVisible()
   })
 
   test('bad login shows an error and does not redirect to /orders', async ({ page }) => {
@@ -66,8 +66,8 @@ test.describe('Genesis foundation phase', () => {
 
     // Should stay on /login with an error message rendered, never reach /orders.
     await page.waitForURL('**/login**')
-    await expect(page.getByRole('heading', { name: 'Genesis — Sign In' })).toBeVisible()
-    await expect(page.locator('p.text-red-700')).toBeVisible()
+    await expect(page.locator('[data-slot="card-title"]')).toBeVisible()
+    await expect(page.getByRole('alert')).toBeVisible()
     expect(page.url()).not.toContain('/orders')
   })
 
@@ -282,5 +282,100 @@ test.describe('Genesis foundation phase', () => {
 
     await page.getByTestId('property-tab-legal').click()
     await expect(page.getByLabel('Parcel Number', { exact: true })).toHaveValue('12-34-567')
+  })
+
+  test('dashboard search matches file number, property address, and buyer/seller name', async ({ page }) => {
+    await loginAsSeededUser(page)
+
+    await page.getByRole('link', { name: '+ New Order' }).click()
+    const fileNumber = `TEST-${Date.now()}`
+    await page.getByLabel('File Number').fill(fileNumber)
+    await page.getByLabel('Property Address').fill('789 Search Test Ave')
+    await page.getByRole('button', { name: 'Create Order' }).click()
+    await page.waitForURL('**/orders/**/order-entry')
+    const orderId = page.url().match(/\/orders\/([^/]+)\/order-entry/)?.[1]
+
+    await page.goto(`/orders/${orderId}/contacts`)
+    await page.getByText('Add a contact').click()
+    await page.getByLabel('Role').fill('Buyer/Borrower')
+    await page.getByLabel('Name').fill('Search Test Buyer')
+    await page.getByRole('button', { name: 'Add Contact' }).click()
+    await expect(page.getByTestId('contact-row')).toContainText('Search Test Buyer')
+
+    // The "Add a contact" <details> disclosure stays open after a successful
+    // submit (the form resets, but the disclosure itself isn't re-closed) —
+    // clicking the summary again here would toggle it CLOSED, not reopen it.
+    await page.getByLabel('Role').fill('Listing Agent')
+    await page.getByLabel('Name').fill('Nonmatching Agent')
+    await page.getByRole('button', { name: 'Add Contact' }).click()
+    await expect(page.getByTestId('contact-row').filter({ hasText: 'Nonmatching Agent' })).toBeVisible()
+
+    await page.goto('/orders')
+
+    await page.getByTestId('dashboard-search').fill(fileNumber)
+    await expect(page.getByTestId('order-list')).toContainText(fileNumber)
+
+    await page.getByTestId('dashboard-search').fill('789 Search Test Ave')
+    await expect(page.getByTestId('order-list')).toContainText(fileNumber)
+
+    await page.getByTestId('dashboard-search').fill('Search Test Buyer')
+    await expect(page.getByTestId('order-list')).toContainText(fileNumber)
+
+    await page.getByTestId('dashboard-search').fill('Nonmatching Agent')
+    await expect(page.getByTestId('order-list')).not.toContainText(fileNumber)
+
+    await page.getByTestId('dashboard-search').fill('no-such-order-xyz')
+    await expect(page.getByTestId('order-list')).toContainText('No orders match')
+  })
+
+  test('dashboard queue badges filter the order list and toggle off', async ({ page }) => {
+    await loginAsSeededUser(page)
+
+    await page.getByRole('link', { name: '+ New Order' }).click()
+    const fileNumber = `TEST-${Date.now()}`
+    await page.getByLabel('File Number').fill(fileNumber)
+    await page.getByRole('button', { name: 'Create Order' }).click()
+    await page.waitForURL('**/orders/**/order-entry')
+    const orderId = page.url().match(/\/orders\/([^/]+)\/order-entry/)?.[1]
+
+    await page.goto(`/orders/${orderId}/order-info`)
+    await page.getByLabel('Title Status').selectOption('Exam')
+    await page.getByRole('button', { name: 'Save Changes' }).click()
+    await page.waitForURL('**/order-info')
+    await expect(page.getByLabel('Title Status')).toHaveValue('Exam')
+
+    await page.goto('/orders')
+    await expect(page.getByTestId('order-list')).toContainText(fileNumber)
+
+    await page
+      .getByTestId('queue-panel-title')
+      .getByTestId('queue-badge')
+      .filter({ hasText: /^Curative/ })
+      .click()
+    await expect(page.getByTestId('order-list')).not.toContainText(fileNumber)
+
+    await page
+      .getByTestId('queue-panel-title')
+      .getByTestId('queue-badge')
+      .filter({ hasText: /^Curative/ })
+      .click()
+    await expect(page.getByTestId('order-list')).toContainText(fileNumber)
+
+    await page
+      .getByTestId('queue-panel-title')
+      .getByTestId('queue-badge')
+      .filter({ hasText: /^Exam/ })
+      .click()
+    await expect(page.getByTestId('order-list')).toContainText(fileNumber)
+  })
+
+  test('dashboard shows Tasks and Firm Analytics as placeholders', async ({ page }) => {
+    await loginAsSeededUser(page)
+    await page.goto('/orders')
+
+    await expect(page.getByTestId('dashboard-placeholder-tasks')).toContainText('Tasks')
+    await expect(page.getByTestId('dashboard-placeholder-tasks')).toContainText('Not built yet')
+    await expect(page.getByTestId('dashboard-placeholder-analytics')).toContainText('Firm Analytics')
+    await expect(page.getByTestId('dashboard-placeholder-analytics')).toContainText('Not built yet')
   })
 })

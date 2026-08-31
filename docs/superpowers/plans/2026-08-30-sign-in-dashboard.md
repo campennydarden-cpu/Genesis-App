@@ -26,6 +26,8 @@
 
 ### Task 1: Design system foundation — shadcn/ui init + design tokens
 
+_Model: haiku_ (mechanical CLI scaffolding + verbatim token values, no logic)
+
 **Files:**
 - Create: `genesis-app/components.json` (via shadcn CLI)
 - Create: `genesis-app/src/components/ui/button.tsx`, `input.tsx`, `label.tsx`, `card.tsx`, `badge.tsx`, `alert.tsx` (via shadcn CLI)
@@ -115,6 +117,8 @@ git commit -m "chore: install shadcn/ui and wire Genesis design-system tokens"
 ---
 
 ### Task 2: Sign In retrofit
+
+_Model: haiku_ (well-defined markup swap, existing tests already cover the underlying behavior)
 
 **Files:**
 - Modify: `genesis-app/src/app/login/page.tsx`
@@ -207,6 +211,8 @@ git commit -m "feat: retrofit Sign In screen against Genesis design system"
 
 ### Task 3: Dashboard shell — extract HomeDashboard, wire data fetching
 
+_Model: sonnet_ (component extraction + data-fetching refactor, must not break existing list/tests)
+
 **Files:**
 - Create: `genesis-app/src/components/HomeDashboard.tsx`
 - Modify: `genesis-app/src/app/orders/page.tsx`
@@ -214,7 +220,7 @@ git commit -m "feat: retrofit Sign In screen against Genesis design system"
 **Interfaces:**
 - Produces: `type OrderSummary = { id: string; file_number: string; product_type: string; order_status: string; title_status: string; escrow_status: string; property_address: string | null; created_at: string }` and `type ContactSummary = { order_id: string; role: string; name: string }`, exported from `HomeDashboard.tsx` — Tasks 4 and 5 import both.
 - Produces: `export function HomeDashboard({ orders, contacts }: { orders: OrderSummary[]; contacts: ContactSummary[] })` — Task 4 adds search state to this component, Task 5 adds queue state, Task 6 adds the placeholder cards. All three tasks modify this same file's body, not its exported signature.
-- Consumes: `Card`, `Badge` from `@/components/ui/card` and `@/components/ui/badge` (Task 1).
+- Consumes: `Card`, `Badge` from `@/components/ui/card` and `@/components/ui/badge` (Task 1); `buttonVariants` from `@/components/ui/button` (Task 1) — used as a className helper on a plain `Link`, not `<Button asChild>`: Task 1's shadcn install resolved to the `@base-ui/react` primitive set, which doesn't support Radix's `asChild` slot pattern.
 
 - [ ] **Step 1: Create `HomeDashboard.tsx` with the list skeleton**
 
@@ -287,7 +293,7 @@ import Link from 'next/link'
 import { createClient } from '@/lib/supabase/server'
 import { logout } from '@/app/login/actions'
 import { HomeDashboard } from '@/components/HomeDashboard'
-import { Button } from '@/components/ui/button'
+import { buttonVariants } from '@/components/ui/button'
 
 export default async function OrdersPage() {
   const supabase = await createClient()
@@ -306,9 +312,9 @@ export default async function OrdersPage() {
       <div className="mb-6 flex items-center justify-between">
         <h1 className="text-2xl font-semibold">Genesis</h1>
         <div className="flex items-center gap-4">
-          <Button asChild>
-            <Link href="/orders/new">+ New Order</Link>
-          </Button>
+          <Link href="/orders/new" className={buttonVariants({ variant: 'default' })}>
+            + New Order
+          </Link>
           <form action={logout}>
             <button type="submit" className="text-sm text-muted-foreground hover:underline">
               Sign Out
@@ -351,6 +357,8 @@ git commit -m "refactor: extract HomeDashboard component, fetch contacts alongsi
 ---
 
 ### Task 4: Search
+
+_Model: sonnet_ (real multi-field matching logic, including cross-table role substring matching)
 
 **Files:**
 - Modify: `genesis-app/src/components/HomeDashboard.tsx`
@@ -528,6 +536,8 @@ git commit -m "feat: add dashboard search across file number, address, and buyer
 ---
 
 ### Task 5: Production Queues
+
+_Model: sonnet_ (grouping/counting logic, toggle-filter state combined with Task 4's search filter)
 
 **Files:**
 - Modify: `genesis-app/src/components/HomeDashboard.tsx`
@@ -797,6 +807,8 @@ git commit -m "feat: add Title/Escrow production queue filtering to dashboard"
 
 ### Task 6: Tasks and Firm Analytics placeholder cards
 
+_Model: haiku_ (simplest remaining piece — two static stub cards, same pattern already used elsewhere)
+
 **Files:**
 - Modify: `genesis-app/src/components/HomeDashboard.tsx`
 - Modify: `genesis-app/tests/e2e/order-entry.spec.ts`
@@ -871,6 +883,8 @@ git commit -m "feat: add Tasks and Firm Analytics placeholder cards to dashboard
 ---
 
 ### Task 7: Full regression, Build Log update, sync
+
+_Model: haiku_ (mechanical wrap-up — verification commands, doc updates, merge/push)
 
 **Files:**
 - Modify: `M&L Title/M&L Title - Obsidian Vault/Genesis Build Log.md`
