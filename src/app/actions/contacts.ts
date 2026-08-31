@@ -46,6 +46,7 @@ export async function addContact(orderId: string, formData: FormData) {
   }
 
   revalidatePath(`/orders/${orderId}`)
+  revalidatePath('/orders')
 }
 
 export async function deleteContact(orderId: string, contactId: string) {
@@ -60,4 +61,5 @@ export async function deleteContact(orderId: string, contactId: string) {
   }
 
   revalidatePath(`/orders/${orderId}`)
+  revalidatePath('/orders')
 }
