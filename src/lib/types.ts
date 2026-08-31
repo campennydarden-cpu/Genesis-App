@@ -202,3 +202,35 @@ export type ChainOfTitleEntry = {
   page: string | null
   instrument_number: string | null
 }
+
+export type CommitmentRequirement = {
+  id: string
+  order_id: string
+  description: string
+  notes: string | null
+  source_type: 'si' | 'rel' | 'lien' | null
+  source_id: string | null
+  parent_requirement_id: string | null
+  disposition: string | null
+  disposition_notes: string | null
+  dont_show: boolean
+}
+
+export type CommitmentException = {
+  id: string
+  order_id: string
+  description: string
+  notes: string | null
+  source_type: 'em' | null
+  source_id: string | null
+  disposition: string | null
+  disposition_notes: string | null
+  dont_show: boolean
+}
+
+export type CommitmentSchBSettings = {
+  id: string
+  order_id: string
+  begin_requirements_at: number | null
+  begin_exceptions_at: number
+}
