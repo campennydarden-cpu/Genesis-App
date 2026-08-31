@@ -124,3 +124,10 @@ export const LIEN_TYPES = [
 export const TAX_LIEN_TYPES = [
   'Income', 'Property', 'Franchise', 'Sales/Use', 'Estate', 'Other',
 ] as const
+
+export const COMMITMENT_FORM_TYPES = ['Standard', 'Short Form'] as const
+
+export const ALTA_POLICY_FORM_TYPES = [
+  "ALTA Owner's Policy", 'ALTA Loan Policy', "ALTA Homeowner's Policy",
+  "Leasehold Owner's Policy", 'Leasehold Loan Policy', 'Construction Loan Policy', 'Other',
+] as const

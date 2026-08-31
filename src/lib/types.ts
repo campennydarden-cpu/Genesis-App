@@ -160,3 +160,45 @@ export type ExceptionMatter = {
   page: string | null
   instrument_number: string | null
 }
+
+export type CommitmentScheduleA = {
+  id: string
+  order_id: string
+  form_type: string
+  company_state_of_org: string | null
+  requirements_time_period: string | null
+  env_protection_lien_statutes: string | null
+  issuing_agent: string | null
+  issuing_office: string | null
+  alta_universal_id: string | null
+  loan_id_number: string | null
+  commitment_number: string | null
+  revision_number: string | null
+  date_issued: string | null
+  time_issued: string | null
+  title_held_as: string | null
+  owner_policy_type: string | null
+  owner_coverage_amount: number | null
+  owner_coverage_tbd: boolean
+  owner_proposed_insured: string | null
+  loan_policy_type: string | null
+  loan_coverage_amount: number | null
+  loan_coverage_tbd: boolean
+  loan_proposed_insured: string | null
+  loan_mortgagee_clause: string | null
+  counter_signature: string | null
+  counter_signature_date: string | null
+}
+
+export type ChainOfTitleEntry = {
+  id: string
+  commitment_sch_a_id: string
+  instrument_type: string | null
+  grantor: string | null
+  grantee: string | null
+  dated_date: string | null
+  recorded_date: string | null
+  book: string | null
+  page: string | null
+  instrument_number: string | null
+}
