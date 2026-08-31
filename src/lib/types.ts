@@ -57,3 +57,106 @@ export type PropertyEasement = {
   other_type_text: string | null
   description: string | null
 }
+
+export type PrelimSearch = {
+  id: string
+  order_id: string
+  effective_date: string | null
+  effective_time: string | null
+  search_from_date: string | null
+  search_to_date: string | null
+  search_to_time: string | null
+  search_type: string | null
+  derivation_instrument_type: string | null
+  derivation_dated_date: string | null
+  derivation_recorded_date: string | null
+  derivation_book: string | null
+  derivation_page: string | null
+  derivation_instrument_number: string | null
+  derivation_consideration: number | null
+  derivation_grantee_name: string | null
+  derivation_grantee_entity_type: string | null
+  derivation_grantor_name: string | null
+  derivation_grantor_entity_type: string | null
+  derivation_is_portion: boolean
+  derivation_note: string | null
+  taxes_paid_through_year: string | null
+  taxes_now_due: string | null
+  taxes_not_yet_due: string | null
+  special_levies_assessments: string | null
+}
+
+export type DerivationPrincipal = {
+  id: string
+  prelim_search_id: string
+  side: 'grantee' | 'grantor'
+  name: string
+  role: string | null
+}
+
+export type SecurityInstrument = {
+  id: string
+  prelim_search_id: string
+  type: string
+  dated_date: string | null
+  recorded_date: string | null
+  book: string | null
+  page: string | null
+  instrument_number: string | null
+  original_amount: number | null
+  mortgagor: string | null
+  mortgagee: string | null
+  trustee: string | null
+}
+
+export type SecurityInstrumentRelatedDoc = {
+  id: string
+  security_instrument_id: string
+  type: string
+  dated_date: string | null
+  recorded_date: string | null
+  book: string | null
+  page: string | null
+  instrument_number: string | null
+  assignor: string | null
+  assignee: string | null
+  notes: string | null
+}
+
+export type Lien = {
+  id: string
+  prelim_search_id: string
+  type: string
+  dated_date: string | null
+  recorded_date: string | null
+  book: string | null
+  page: string | null
+  instrument_number: string | null
+  amount: number | null
+  debtor: string | null
+  creditor: string | null
+  docket_date: string | null
+  case_number: string | null
+  court: string | null
+  taxing_authority: string | null
+  tax_type: string | null
+  filed_date: string | null
+  hoa_company: string | null
+  materialman: string | null
+  last_service_date: string | null
+  plaintiff: string | null
+  defendant: string | null
+  certificate_id: string | null
+  redemption_expiration: string | null
+}
+
+export type ExceptionMatter = {
+  id: string
+  prelim_search_id: string
+  description: string
+  dated_date: string | null
+  recorded_date: string | null
+  book: string | null
+  page: string | null
+  instrument_number: string | null
+}

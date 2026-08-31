@@ -144,8 +144,8 @@ test.describe('Genesis foundation phase', () => {
     await expect(page.getByLabel('Order Status')).toBeVisible()
 
     await expect(
-      page.getByTestId('file-section-nav').getByTestId('nav-disabled').filter({ hasText: 'Prelim Title Search' })
-    ).toBeVisible()
+      page.getByTestId('file-section-nav').getByRole('link', { name: 'Prelim Title Search' })
+    ).toHaveCount(1)
     await expect(
       page.getByTestId('file-section-nav').getByRole('link', { name: 'Property' })
     ).toHaveCount(1)
@@ -377,5 +377,204 @@ test.describe('Genesis foundation phase', () => {
     await expect(page.getByTestId('dashboard-placeholder-tasks')).toContainText('Not built yet')
     await expect(page.getByTestId('dashboard-placeholder-analytics')).toContainText('Firm Analytics')
     await expect(page.getByTestId('dashboard-placeholder-analytics')).toContainText('Not built yet')
+  })
+
+  test('prelim search: Derivation form saves, generates Vesting/Derivation Clause, and manages Principals', async ({
+    page,
+  }) => {
+    await loginAsSeededUser(page)
+
+    await page.getByRole('link', { name: '+ New Order' }).click()
+    const fileNumber = `TEST-${Date.now()}`
+    await page.getByLabel('File Number').fill(fileNumber)
+    await page.getByLabel('County').fill('Lorain')
+    await page.getByRole('button', { name: 'Create Order' }).click()
+    await page.waitForURL('**/orders/**/order-entry')
+
+    await page.getByTestId('file-section-nav').getByRole('link', { name: 'Prelim Title Search' }).click()
+    await page.waitForURL('**/prelim-search')
+
+    await page.getByLabel('Effective Date').fill('2026-06-01')
+    await page.getByLabel('Instrument Type').click()
+    await page.getByRole('option', { name: 'Warranty Deed', exact: true }).click()
+    await page.getByLabel('Recorded Date').fill('2026-05-15')
+    await page.getByLabel('Grantee Name').fill('Test Trust Co')
+    await page.getByLabel('Grantee Entity Type').click()
+    await page.getByRole('option', { name: 'Trust' }).click()
+    await page.getByLabel('Grantor Name').fill('Original Owner LLC')
+    await page.getByLabel('Grantor Entity Type').click()
+    await page.getByRole('option', { name: 'LLC' }).click()
+
+    await page.getByRole('button', { name: 'Save Changes' }).click()
+    await page.waitForURL('**/prelim-search')
+    await page.waitForLoadState('networkidle')
+
+    // No trustees yet - Vesting Clause shows the "not yet added" fallback.
+    await expect(page.getByTestId('vesting-clause')).toContainText('[Trustee(s) not yet added] of the Test Trust Co')
+
+    // Add a Grantee (Trust) principal.
+    await page.getByTestId('grantee-principal-roster').getByText('Add Grantee Principal').click()
+    await page.locator('#grantee-new-name').fill('Jane Trustee')
+    await page.locator('#grantee-new-role').click()
+    await page.getByRole('option', { name: 'Trustee', exact: true }).click()
+    await page.getByTestId('grantee-principal-roster').getByRole('button', { name: 'Add' }).click()
+
+    await expect(page.getByTestId('grantee-principal-row')).toContainText('Jane Trustee')
+    await expect(page.getByTestId('vesting-clause')).toContainText('Jane Trustee, as Trustee of the Test Trust Co')
+    await expect(page.getByTestId('derivation-clause')).toContainText(
+      'Being the same parcel conveyed unto Jane Trustee, as Trustee of the Test Trust Co by Warranty Deed of Original Owner LLC recorded May 15, 2026 of the Lorain County records.'
+    )
+
+    // Edit the principal via the pencil/Edit control.
+    await page.getByTestId('grantee-principal-row').getByRole('button', { name: /Edit/ }).click();
+    await page.getByTestId('grantee-principal-row-editing').locator('input[name="name"]').fill('Jane A. Trustee');
+    await page.getByTestId('grantee-principal-row-editing').getByRole('button', { name: 'Save' }).click();
+    await expect(page.getByTestId('grantee-principal-row')).toContainText('Jane A. Trustee')
+
+    // Remove it.
+    await page.getByTestId('grantee-principal-row').getByRole('button', { name: 'Remove' }).click()
+    await expect(page.getByTestId('grantee-principal-row')).not.toBeVisible()
+  })
+
+  test('prelim search: Security Instruments add, edit, and remove', async ({ page }) => {
+    await loginAsSeededUser(page)
+
+    await page.getByRole('link', { name: '+ New Order' }).click()
+    const fileNumber = `TEST-${Date.now()}`
+    await page.getByLabel('File Number').fill(fileNumber)
+    await page.getByRole('button', { name: 'Create Order' }).click()
+    await page.waitForURL('**/orders/**/order-entry')
+
+    await page.getByTestId('file-section-nav').getByRole('link', { name: 'Prelim Title Search' }).click()
+    await page.waitForURL('**/prelim-search')
+
+    // Security Instruments need a saved prelim_search row first (foreign key) -
+    // save Derivation with the minimum required fields.
+    await page.getByRole('button', { name: 'Save Changes' }).click()
+    await page.waitForURL('**/prelim-search')
+    await page.waitForLoadState('networkidle')
+
+    await page.getByText('Add a Security Instrument').click()
+    await page.locator('#si-new-type').click()
+    await page.getByRole('option', { name: 'Deed of Trust' }).click()
+    await page.locator('#si-new-mortgagor').fill('Test Borrower')
+    await page.locator('#si-new-mortgagee').fill('Test Lender Bank')
+    await page.getByRole('button', { name: 'Add Security Instrument' }).click()
+
+    await expect(page.getByTestId('security-instrument-row')).toContainText('Deed of Trust')
+    await expect(page.getByTestId('security-instrument-row')).toContainText('Test Borrower → Test Lender Bank')
+
+    await page.getByTestId('security-instrument-row').getByRole('button', { name: /Edit/ }).click()
+    await page.getByTestId('security-instrument-row-editing').locator('[name="mortgagee"]').fill('Updated Lender Bank')
+    await page.getByTestId('security-instrument-row-editing').getByRole('button', { name: 'Save' }).click()
+    await expect(page.getByTestId('security-instrument-row')).toContainText('Test Borrower → Updated Lender Bank')
+
+    await page.getByTestId('security-instrument-row').getByRole('button', { name: 'Remove' }).click()
+    await expect(page.getByTestId('security-instrument-row')).not.toBeVisible()
+  })
+
+  test('prelim search: Related Documents show Assignor/Assignee only for Assignment-family types', async ({
+    page,
+  }) => {
+    await loginAsSeededUser(page)
+
+    await page.getByRole('link', { name: '+ New Order' }).click()
+    const fileNumber = `TEST-${Date.now()}`
+    await page.getByLabel('File Number').fill(fileNumber)
+    await page.getByRole('button', { name: 'Create Order' }).click()
+    await page.waitForURL('**/orders/**/order-entry')
+
+    await page.getByTestId('file-section-nav').getByRole('link', { name: 'Prelim Title Search' }).click()
+    await page.waitForURL('**/prelim-search')
+    await page.getByRole('button', { name: 'Save Changes' }).click()
+    await page.waitForURL('**/prelim-search')
+    await page.waitForLoadState('networkidle')
+
+    await page.getByText('Add a Security Instrument').click()
+    await page.locator('#si-new-type').click()
+    await page.getByRole('option', { name: 'Mortgage' }).click()
+    await page.getByRole('button', { name: 'Add Security Instrument' }).click()
+    await expect(page.getByTestId('security-instrument-row')).toBeVisible()
+
+    await page.getByText('Add a Related Document').click()
+    const relatedDocForm = page.locator('[data-testid="related-docs-section"] details')
+    await relatedDocForm.locator('button[role="combobox"]').click()
+    await page.getByRole('option', { name: 'Substitution of Trustee' }).click()
+    await expect(relatedDocForm.getByLabel('Assignor')).not.toBeVisible()
+
+    await relatedDocForm.locator('button[role="combobox"]').click()
+    await page.getByRole('option', { name: 'Assignment', exact: true }).click()
+    await expect(relatedDocForm.getByLabel('Assignor')).toBeVisible()
+    await relatedDocForm.getByLabel('Assignor').fill('Original Bank')
+    await relatedDocForm.getByLabel('Assignee').fill('New Bank')
+    await relatedDocForm.getByRole('button', { name: 'Add' }).click()
+
+    await expect(page.getByTestId('related-doc-row')).toContainText('Original Bank → New Bank')
+  })
+
+  test('prelim search: Liens show different fields per type', async ({ page }) => {
+    await loginAsSeededUser(page)
+
+    await page.getByRole('link', { name: '+ New Order' }).click()
+    const fileNumber = `TEST-${Date.now()}`
+    await page.getByLabel('File Number').fill(fileNumber)
+    await page.getByRole('button', { name: 'Create Order' }).click()
+    await page.waitForURL('**/orders/**/order-entry')
+
+    await page.getByTestId('file-section-nav').getByRole('link', { name: 'Prelim Title Search' }).click()
+    await page.waitForURL('**/prelim-search')
+    await page.getByRole('button', { name: 'Save Changes' }).click()
+    await page.waitForURL('**/prelim-search')
+    await page.waitForLoadState('networkidle')
+
+    await page.getByText('Add a Lien').click()
+    const lienForm = page.locator('#liens').locator('details')
+    await lienForm.locator('#lien-new-type').click()
+    await page.getByRole('option', { name: 'Judgment' }).click()
+    await expect(lienForm.getByLabel('Debtor')).toBeVisible()
+    await expect(lienForm.getByLabel('Court')).toBeVisible()
+    await expect(lienForm.getByLabel('Taxing Authority')).not.toBeVisible()
+
+    await lienForm.locator('#lien-new-type').click()
+    await page.getByRole('option', { name: 'Tax Lien' }).click()
+    await expect(lienForm.getByLabel('Taxing Authority')).toBeVisible()
+    await expect(lienForm.getByLabel('Court')).not.toBeVisible()
+
+    await lienForm.getByLabel('Debtor').fill('Test Debtor')
+    await lienForm.getByLabel('Taxing Authority').fill('County Tax Office')
+    await page.getByRole('button', { name: 'Add Lien' }).click()
+
+    await expect(page.getByTestId('lien-row')).toContainText('Tax Lien')
+    await expect(page.getByTestId('lien-row')).toContainText('Test Debtor')
+  })
+
+  test('prelim search: Exception Matters add, edit, and remove', async ({ page }) => {
+    await loginAsSeededUser(page)
+
+    await page.getByRole('link', { name: '+ New Order' }).click()
+    const fileNumber = `TEST-${Date.now()}`
+    await page.getByLabel('File Number').fill(fileNumber)
+    await page.getByRole('button', { name: 'Create Order' }).click()
+    await page.waitForURL('**/orders/**/order-entry')
+
+    await page.getByTestId('file-section-nav').getByRole('link', { name: 'Prelim Title Search' }).click()
+    await page.waitForURL('**/prelim-search')
+    await page.getByRole('button', { name: 'Save Changes' }).click()
+    await page.waitForURL('**/prelim-search')
+    await page.waitForLoadState('networkidle')
+
+    await page.getByText('Add an Exception Matter').click()
+    await page.locator('#em-new-description').fill('Easement of record affecting the rear 10 feet')
+    await page.getByRole('button', { name: 'Add Exception Matter' }).click()
+
+    await expect(page.getByTestId('exception-matter-row')).toContainText('Easement of record affecting the rear 10 feet')
+
+    await page.getByTestId('exception-matter-row').getByRole('button', { name: 'Edit exception matter' }).click()
+    await page.getByTestId('exception-matter-row-editing').locator('textarea[name="description"]').fill('Updated exception text')
+    await page.getByTestId('exception-matter-row-editing').getByRole('button', { name: 'Save' }).click()
+    await expect(page.getByTestId('exception-matter-row')).toContainText('Updated exception text')
+
+    await page.getByTestId('exception-matter-row').getByRole('button', { name: 'Remove' }).click()
+    await expect(page.getByTestId('exception-matter-row')).not.toBeVisible()
   })
 })

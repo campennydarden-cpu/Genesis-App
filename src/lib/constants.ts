@@ -84,3 +84,43 @@ export const EASEMENT_TYPES = [
   'Party Wall Agreement',
   'Other',
 ] as const
+
+export const DERIVATION_INSTRUMENT_TYPES = [
+  'Warranty Deed', 'Special Warranty Deed', 'Limited Warranty Deed', "Trustee's Deed",
+  'Deed of Distribution', 'Gift Deed', 'Quitclaim Deed', 'Grant Deed',
+  'Deed of Bargain and Sale', 'Interspousal Transfer Deed', 'Transfer on Death Deed',
+  'Affidavit', 'Death Certificate', 'Divorce Decree', 'Quiet Title Action', 'Confirmatory Deed',
+] as const
+
+export const PRELIM_ENTITY_TYPES = [
+  'Individual', 'LLC', 'Corporation', 'Partnership', 'Trust', 'Estate', 'Other',
+] as const
+
+export const PRINCIPAL_ROLES: Record<string, readonly string[]> = {
+  LLC: ['Member', 'Manager'],
+  Corporation: ['President', 'Vice President', 'Secretary', 'Treasurer', 'Director', 'Chairman'],
+  Partnership: ['General Partner', 'Limited Partner'],
+  Trust: ['Trustee', 'Successor Trustee', 'Co-Trustee'],
+}
+
+export const SECURITY_INSTRUMENT_TYPES = [
+  'Mortgage', 'Deed of Trust', 'Security Deed', 'UCC Financing Statement',
+] as const
+
+export const RELATED_DOC_TYPES = [
+  'Assignment', 'Assignment of Leases and Rents', 'Assignment of Beneficial Interest',
+  'Loan Modification Agreement', 'Substitution of Trustee', 'UCC Addendum - Continuation', 'Other',
+] as const
+
+export const RELATED_DOC_ASSIGNMENT_TYPES = [
+  'Assignment', 'Assignment of Leases and Rents', 'Assignment of Beneficial Interest',
+] as const
+
+export const LIEN_TYPES = [
+  'Judgment', 'Tax Lien', 'HOA/COA Lien', 'Mechanics Lien', 'Lis Pendens',
+  'Tax Sale Certificate', 'Municipal Lien', 'Utility Lien', 'Other',
+] as const
+
+export const TAX_LIEN_TYPES = [
+  'Income', 'Property', 'Franchise', 'Sales/Use', 'Estate', 'Other',
+] as const
