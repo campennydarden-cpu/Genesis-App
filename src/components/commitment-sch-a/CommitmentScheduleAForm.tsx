@@ -81,19 +81,17 @@ export function CommitmentScheduleAForm({
             />
           </div>
         </div>
-        {isShortForm && (
-          <div className="mt-4">
-            <Label htmlFor="env_protection_lien_statutes">
-              ALTA 8.1-06 Environmental Protection Lien Statutes
-            </Label>
-            <Textarea
-              id="env_protection_lien_statutes"
-              name="env_protection_lien_statutes"
-              defaultValue={commitmentSchA?.env_protection_lien_statutes ?? undefined}
-              placeholder="State statutes to be set forth on any ALTA 8.1-06 endorsement"
-            />
-          </div>
-        )}
+        <div className={`mt-4 ${isShortForm ? '' : 'hidden'}`}>
+          <Label htmlFor="env_protection_lien_statutes">
+            ALTA 8.1-06 Environmental Protection Lien Statutes
+          </Label>
+          <Textarea
+            id="env_protection_lien_statutes"
+            name="env_protection_lien_statutes"
+            defaultValue={commitmentSchA?.env_protection_lien_statutes ?? undefined}
+            placeholder="State statutes to be set forth on any ALTA 8.1-06 endorsement"
+          />
+        </div>
       </div>
 
       <div className="rounded border p-4" data-testid="transaction-id-card">
