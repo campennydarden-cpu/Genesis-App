@@ -577,4 +577,136 @@ test.describe('Genesis foundation phase', () => {
     await page.getByTestId('exception-matter-row').getByRole('button', { name: 'Remove' }).click()
     await expect(page.getByTestId('exception-matter-row')).not.toBeVisible()
   })
+
+  test('commitment sch A: Form Type and Policy Type drive Owner\'s/Loan Policy visibility', async ({ page }) => {
+    await loginAsSeededUser(page)
+
+    await page.getByRole('link', { name: '+ New Order' }).click()
+    const fileNumber = `TEST-${Date.now()}`
+    await page.getByLabel('File Number').fill(fileNumber)
+    await page.getByRole('button', { name: 'Create Order' }).click()
+    await page.waitForURL('**/orders/**/order-entry')
+
+    await page.getByLabel('Policy Type').selectOption('Simultaneous')
+    await page.getByRole('button', { name: 'Save Changes' }).click()
+    await page.waitForURL('**/order-entry')
+
+    await page.getByTestId('file-section-nav').getByRole('link', { name: 'Commitment Sch A' }).click()
+    await page.waitForURL('**/commitment-sch-a')
+
+    await expect(page.getByTestId('owner-policy-card')).toBeVisible()
+    await expect(page.getByTestId('loan-policy-card')).toBeVisible()
+
+    await page.locator('#form_type').click()
+    await page.getByRole('option', { name: 'Short Form' }).click()
+
+    await expect(page.getByTestId('owner-policy-card')).not.toBeVisible()
+    await expect(page.getByTestId('loan-policy-card')).toBeVisible()
+    await expect(page.getByTestId('estate-fact')).toContainText('Fee Simple')
+    await expect(page.getByLabel(/Environmental Protection Lien Statutes/)).toBeVisible()
+
+    await page.getByRole('button', { name: 'Save Changes' }).click()
+    await page.waitForURL('**/commitment-sch-a')
+    await page.waitForLoadState('networkidle')
+
+    await expect(page.getByTestId('estate-fact')).toContainText('Fee Simple')
+    await expect(page.getByLabel(/Environmental Protection Lien Statutes/)).toBeVisible()
+
+    // Real reload, not just leftover client state after the redirect - proves it persisted server-side.
+    await page.reload()
+    await expect(page.getByTestId('estate-fact')).toContainText('Fee Simple')
+    await expect(page.getByLabel(/Environmental Protection Lien Statutes/)).toBeVisible()
+  })
+
+  test('commitment sch A: Chain of Title add/edit/remove with Copy from Derivation seed, and contact seed chips', async ({
+    page,
+  }) => {
+    await loginAsSeededUser(page)
+
+    await page.getByRole('link', { name: '+ New Order' }).click()
+    const fileNumber = `TEST-${Date.now()}`
+    await page.getByLabel('File Number').fill(fileNumber)
+    await page.getByLabel('County').fill('Lorain')
+    await page.getByRole('button', { name: 'Create Order' }).click()
+    await page.waitForURL('**/orders/**/order-entry')
+
+    await page.getByLabel('Policy Type').selectOption('Simultaneous')
+    await page.getByRole('button', { name: 'Save Changes' }).click()
+    await page.waitForURL('**/order-entry')
+
+    // Derivation on Prelim Search, so the Chain of Title "Copy from Derivation" seed has data.
+    await page.getByTestId('file-section-nav').getByRole('link', { name: 'Prelim Title Search' }).click()
+    await page.waitForURL('**/prelim-search')
+    await page.getByLabel('Instrument Type').click()
+    await page.getByRole('option', { name: 'Warranty Deed', exact: true }).click()
+    await page.getByLabel('Grantee Name').fill('Test Trust Co')
+    await page.getByLabel('Grantor Name').fill('Original Owner LLC')
+    await page.getByRole('button', { name: 'Save Changes' }).click()
+    await page.waitForURL('**/prelim-search')
+    await page.waitForLoadState('networkidle')
+
+    // Add a Buyer/Borrower contact and a Lender contact (with a mortgagee clause) for the seed chips.
+    await page.getByTestId('file-section-nav').getByRole('link', { name: 'Contacts' }).click()
+    await page.waitForURL('**/contacts')
+
+    await page.getByText('Add a contact').click()
+    await page.getByLabel('Role').fill('Buyer/Borrower')
+    await page.getByLabel('Name').fill('Jane Buyer')
+    await page.getByRole('button', { name: 'Add Contact' }).click()
+    await expect(page.getByText('Jane Buyer')).toBeVisible()
+
+    await page.getByLabel('Role').fill('Lender')
+    await page.getByLabel('Name').fill('First National Bank')
+    await page.getByLabel('Mortgagee Clause').fill('First National Bank, its successors and/or assigns, ISAOA/ATIMA')
+    await page.getByRole('button', { name: 'Add Contact' }).click()
+    await expect(page.getByText('First National Bank')).toBeVisible()
+
+    await page.getByTestId('file-section-nav').getByRole('link', { name: 'Commitment Sch A' }).click()
+    await page.waitForURL('**/commitment-sch-a')
+
+    await expect(page.getByTestId('owner-insured-seed-chips')).toContainText('Jane Buyer')
+    await page.getByTestId('owner-policy-card').getByRole('button', { name: '+ Jane Buyer' }).click()
+    await expect(page.getByTestId('owner-policy-card').getByLabel('Proposed Insured')).toHaveValue('Jane Buyer')
+
+    await expect(page.getByTestId('loan-insured-seed-chips')).toContainText('First National Bank')
+    await page.getByTestId('loan-policy-card').getByRole('button', { name: '+ First National Bank' }).click()
+    await expect(page.getByTestId('loan-policy-card').getByLabel('Proposed Insured')).toHaveValue('First National Bank')
+
+    await expect(page.getByTestId('mortgagee-clause-seed-chips')).toContainText('Copy from First National Bank')
+    await page.getByTestId('mortgagee-clause-seed-chips').getByRole('button', { name: '+ Copy from First National Bank' }).click()
+    await expect(page.getByTestId('loan-policy-card').getByLabel('Mortgagee Clause')).toHaveValue(
+      'First National Bank, its successors and/or assigns, ISAOA/ATIMA'
+    )
+
+    // Save the main form first - chain_of_title needs the commitment_sch_a row's FK.
+    await page.getByRole('button', { name: 'Save Changes' }).click()
+    await page.waitForURL('**/commitment-sch-a')
+    await page.waitForLoadState('networkidle')
+
+    // Real reload, not just leftover client state after the redirect - proves it persisted server-side.
+    await page.reload()
+    await expect(page.getByTestId('owner-policy-card').getByLabel('Proposed Insured')).toHaveValue('Jane Buyer')
+
+    await expect(page.getByTestId('chain-of-title-list')).toBeVisible()
+    await page.getByText('Add a Chain of Title Entry').click()
+    await page.getByText(/Copy from Derivation/).click()
+
+    await expect(page.locator('#cot-new-instrument_type')).toHaveValue('Warranty Deed')
+    await expect(page.locator('#cot-new-grantor')).toHaveValue('Original Owner LLC')
+    await expect(page.locator('#cot-new-grantee')).toHaveValue('Test Trust Co')
+
+    await page.locator('#cot-new-book').fill('1234')
+    await page.locator('#cot-new-page').fill('567')
+    await page.getByRole('button', { name: 'Add Chain of Title Entry' }).click()
+
+    await expect(page.getByTestId('chain-of-title-row')).toContainText('Warranty Deed: Original Owner LLC → Test Trust Co')
+
+    await page.getByTestId('chain-of-title-row').getByRole('button', { name: /Edit/ }).click()
+    await page.getByTestId('chain-of-title-row-editing').locator('[name="grantee"]').fill('Updated Trust Co')
+    await page.getByTestId('chain-of-title-row-editing').getByRole('button', { name: 'Save' }).click()
+    await expect(page.getByTestId('chain-of-title-row')).toContainText('Updated Trust Co')
+
+    await page.getByTestId('chain-of-title-row').getByRole('button', { name: 'Remove' }).click()
+    await expect(page.getByTestId('chain-of-title-row')).not.toBeVisible()
+  })
 })
