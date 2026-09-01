@@ -153,3 +153,11 @@ export const STANDARD_BI_ITEM_COUNTS: Record<string, number> = {
   Standard: 4,
   'Short Form': 5,
 }
+
+export const REQUIREMENT_DISPOSITIONS = [
+  'Released', 'Expired', 'Insured Over', 'Waived', 'No Action',
+] as const
+
+export const EXCEPTION_DISPOSITIONS = [
+  'Removed by Affidavit', 'Deleted per Underwriter',
+] as const

@@ -236,3 +236,12 @@ export type CommitmentSchBSettings = {
   begin_requirements_at: number | null
   begin_exceptions_at: number
 }
+
+export type CurativeSettings = {
+  id: string
+  order_id: string
+  commitment_status: 'draft' | 'final'
+  finalized_at: string | null
+  ctc_issued_at: string | null
+  ctc_rescinded_at: string | null
+}
