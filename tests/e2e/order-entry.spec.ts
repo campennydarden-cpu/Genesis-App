@@ -820,4 +820,119 @@ test.describe('Genesis foundation phase', () => {
     await expect(page.getByTestId('requirement-list').getByTestId('requirement-row')).toHaveCount(4)
     await expect(page.getByTestId('exception-list').getByTestId('exception-row')).toHaveCount(1)
   })
+
+  test('curative: finalize, disposition, issue CTC, rescind, revert to draft', async ({ page }) => {
+    await loginAsSeededUser(page)
+
+    await page.getByRole('link', { name: '+ New Order' }).click()
+    const fileNumber = `TEST-${Date.now()}`
+    await page.getByLabel('File Number').fill(fileNumber)
+    await page.getByRole('button', { name: 'Create Order' }).click()
+    await page.waitForURL('**/orders/**/order-entry')
+
+    await page.getByTestId('file-section-nav').getByRole('link', { name: 'Prelim Title Search' }).click()
+    await page.waitForURL('**/prelim-search')
+    await page.getByRole('button', { name: 'Save Changes' }).click()
+    await page.waitForURL('**/prelim-search')
+    await page.waitForLoadState('networkidle')
+
+    await page.getByText('Add a Security Instrument').click()
+    const siForm = page.locator('details:has-text("Add a Security Instrument")')
+    await page.locator('#si-new-type').click()
+    await page.getByRole('option', { name: 'Deed of Trust' }).click()
+    await siForm.getByLabel('Mortgagor').fill('Test Owner')
+    await siForm.getByLabel('Mortgagee').fill('Test Lender')
+    await siForm.getByRole('button', { name: 'Add Security Instrument' }).click()
+    await expect(page.getByTestId('security-instrument-row')).toContainText('Deed of Trust')
+
+    await page.getByText('Add an Exception Matter').click()
+    const emForm = page.locator('details:has-text("Add an Exception Matter")')
+    await emForm.getByLabel('Description').fill('Utility easement of record')
+    await emForm.getByRole('button', { name: 'Add Exception Matter' }).click()
+    await expect(page.getByTestId('exception-matter-row')).toContainText('Utility easement of record')
+
+    await page.getByTestId('file-section-nav').getByRole('link', { name: 'Commitment Sch B-I/B-II' }).click()
+    await page.waitForURL('**/commitment-sch-b')
+    await page.getByTestId('si-req-chip').click()
+    await expect(page.getByTestId('requirement-row')).toContainText('Release of Deed of Trust')
+    await page.getByTestId('em-exc-chip').click()
+    await expect(page.getByTestId('exception-row')).toContainText('Utility easement of record')
+
+    await page.getByTestId('file-section-nav').getByRole('link', { name: 'Curative' }).click()
+    await page.waitForURL('**/curative')
+
+    // Draft: rows show a delete control, no disposition fields, Issue CTC disabled
+    await expect(page.getByTestId('curative-requirement-row')).toContainText('Release of Deed of Trust')
+    await expect(page.getByTestId('curative-requirement-row').getByRole('button', { name: 'Remove' })).toBeVisible()
+    await expect(page.getByTestId('curative-requirement-row').locator('select[name="disposition"]')).toHaveCount(0)
+    await expect(page.getByTestId('issue-ctc-button')).toBeDisabled()
+
+    // The Sch B screen is still fully editable pre-Finalize
+    await page.getByTestId('file-section-nav').getByRole('link', { name: 'Commitment Sch B-I/B-II' }).click()
+    await page.waitForURL('**/commitment-sch-b')
+    await expect(page.getByTestId('requirement-row').getByRole('button', { name: 'Remove' })).toBeVisible()
+
+    // Finalize
+    await page.getByTestId('file-section-nav').getByRole('link', { name: 'Curative' }).click()
+    await page.waitForURL('**/curative')
+    await page.getByTestId('finalize-button').click()
+    await expect(page.getByTestId('revert-to-draft-button')).toBeVisible()
+    await expect(page.getByTestId('curative-requirement-row').getByRole('button', { name: 'Remove' })).toHaveCount(0)
+    await expect(page.getByTestId('curative-requirement-row').locator('select[name="disposition"]')).toBeVisible()
+
+    // orders.title_status flips to Curative
+    await page.getByTestId('file-section-nav').getByRole('link', { name: 'Order Info' }).click()
+    await page.waitForURL('**/order-info')
+    await expect(page.locator('#title_status')).toHaveValue('Curative')
+
+    // Sch B is now read-only
+    await page.getByTestId('file-section-nav').getByRole('link', { name: 'Commitment Sch B-I/B-II' }).click()
+    await page.waitForURL('**/commitment-sch-b')
+    await expect(page.getByTestId('requirement-row').getByRole('button', { name: 'Remove' })).toHaveCount(0)
+    await expect(page.getByTestId('requirement-chips')).toHaveCount(0)
+
+    // Disposition the Requirement, but leave the Exception undispositioned - CTC stays gated
+    await page.getByTestId('file-section-nav').getByRole('link', { name: 'Curative' }).click()
+    await page.waitForURL('**/curative')
+    await page.getByTestId('curative-requirement-row').locator('select[name="disposition"]').selectOption('Released')
+    await page.getByTestId('curative-requirement-row').getByRole('button', { name: 'Save' }).click()
+    await expect(page.getByTestId('issue-ctc-button')).toBeDisabled()
+
+    // Don't Show the Exception instead of dispositioning it - still satisfies the CTC gate
+    await page.getByTestId('curative-exception-row').locator('input[name="dont_show"]').check()
+    await page.getByTestId('curative-exception-row').getByRole('button', { name: 'Save' }).click()
+    await expect(page.getByTestId('issue-ctc-button')).toBeEnabled()
+
+    // Issue CTC
+    await page.getByTestId('issue-ctc-button').click()
+    await expect(page.getByTestId('ctc-issued-label')).toBeVisible()
+    await expect(page.getByTestId('revert-to-draft-button')).toBeDisabled()
+
+    await page.getByTestId('file-section-nav').getByRole('link', { name: 'Order Info' }).click()
+    await page.waitForURL('**/order-info')
+    await expect(page.locator('#title_status')).toHaveValue('Cleared for Policy')
+
+    // Rescind CTC
+    await page.getByTestId('file-section-nav').getByRole('link', { name: 'Curative' }).click()
+    await page.waitForURL('**/curative')
+    await page.getByTestId('rescind-ctc-button').click()
+    await expect(page.getByTestId('issue-ctc-button')).toBeVisible()
+    await expect(page.getByTestId('revert-to-draft-button')).toBeEnabled()
+
+    await page.getByTestId('file-section-nav').getByRole('link', { name: 'Order Info' }).click()
+    await page.waitForURL('**/order-info')
+    await expect(page.locator('#title_status')).toHaveValue('Curative')
+
+    // Revert to Draft
+    await page.getByTestId('file-section-nav').getByRole('link', { name: 'Curative' }).click()
+    await page.waitForURL('**/curative')
+    await page.getByTestId('revert-to-draft-button').click()
+    await expect(page.getByTestId('finalize-button')).toBeVisible()
+    await expect(page.getByTestId('curative-requirement-row').getByRole('button', { name: 'Remove' })).toBeVisible()
+
+    // Sch B is editable again
+    await page.getByTestId('file-section-nav').getByRole('link', { name: 'Commitment Sch B-I/B-II' }).click()
+    await page.waitForURL('**/commitment-sch-b')
+    await expect(page.getByTestId('requirement-row').getByRole('button', { name: 'Remove' })).toBeVisible()
+  })
 })
