@@ -164,6 +164,8 @@ export async function deleteException(orderId: string, exceptionId: string) {
   revalidatePath(`/orders/${orderId}/commitment-sch-b`)
 }
 
+// Not dead code: backs the "Begin Requirements/Exceptions At" numbering-offset override UI,
+// which is not built yet (follow-up task).
 export async function upsertSchBSettings(orderId: string, formData: FormData) {
   const supabase = await createClient()
   const beginReq = formData.get('begin_requirements_at') as string

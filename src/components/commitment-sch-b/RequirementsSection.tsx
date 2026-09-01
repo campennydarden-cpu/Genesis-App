@@ -2,7 +2,7 @@
 
 import { useState } from 'react'
 import { REQUIREMENT_SEEDS } from '@/lib/constants'
-import { computeReqLabels } from '@/lib/commitment-text'
+import { computeReqLabels, reorderForNumbering } from '@/lib/commitment-text'
 import { addRequirementFromChip, addRequirementManual, updateRequirement, deleteRequirement } from '@/app/actions/commitment-sch-b'
 import type { CommitmentRequirement, SecurityInstrument, SecurityInstrumentRelatedDoc, Lien } from '@/lib/types'
 
@@ -40,7 +40,10 @@ export function RequirementsSection({
 
   const lienChips = liens.filter((l) => !usedSources.has(`lien:${l.id}`))
 
-  const labels = computeReqLabels(requirements, beginAt)
+  // Group each parent with its own sub-items before numbering, and render in that same
+  // order so a sub-item is displayed under the parent whose number it carries.
+  const orderedRequirements = reorderForNumbering(requirements)
+  const labels = computeReqLabels(orderedRequirements, beginAt)
 
   return (
     <div className="rounded border p-4">
@@ -73,7 +76,7 @@ export function RequirementsSection({
       )}
 
       <ul className="mb-4 space-y-2" data-testid="requirement-list">
-        {requirements.map((r, idx) =>
+        {orderedRequirements.map((r, idx) =>
           editingId === r.id ? (
             <li key={r.id} className="rounded border p-4" data-testid="requirement-row">
               <form
@@ -83,8 +86,8 @@ export function RequirementsSection({
                 }}
                 className="space-y-2"
               >
-                <textarea name="description" defaultValue={r.description} rows={2} className="w-full rounded border px-3 py-2" />
-                <input name="notes" defaultValue={r.notes ?? undefined} placeholder="Notes" className="w-full rounded border px-3 py-2" />
+                <textarea aria-label="Description" name="description" defaultValue={r.description} rows={2} className="w-full rounded border px-3 py-2" />
+                <input aria-label="Notes" name="notes" defaultValue={r.notes ?? undefined} placeholder="Notes" className="w-full rounded border px-3 py-2" />
                 <div className="flex gap-2">
                   <button type="submit" className="rounded bg-slate-900 px-3 py-1.5 text-sm text-white">
                     Save

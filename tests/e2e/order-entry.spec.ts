@@ -780,10 +780,19 @@ test.describe('Genesis foundation phase', () => {
 
     // Now the Related Document's sub-item chip appears
     await expect(page.getByTestId('rel-req-chip')).toBeVisible()
-    await page.getByTestId('rel-req-chip').click()
-    await expect(page.getByTestId('requirement-list').getByTestId('requirement-row').nth(1)).toContainText('5a.')
 
+    // Regression (numbering contiguity): add the Lien BEFORE the Related Document sub-item,
+    // so the sub-item row is stored after an unrelated top-level item. It must still be
+    // lettered under its true parent (the SI, item 5) and render grouped with it - not
+    // lettered "6a." under the Lien, which is what the created_at-order walk produced before
+    // reorderForNumbering existed.
     await page.getByTestId('lien-req-chip').click()
+    await expect(page.getByTestId('requirement-list').getByTestId('requirement-row').nth(1)).toContainText('6.')
+
+    await page.getByTestId('rel-req-chip').click()
+    const relRow = page.getByTestId('requirement-list').getByTestId('requirement-row').nth(1)
+    await expect(relRow).toContainText('Release of Assignment')
+    await expect(relRow).toContainText('5a.')
     await expect(page.getByTestId('requirement-list').getByTestId('requirement-row').nth(2)).toContainText('6.')
 
     await page.getByTestId('em-exc-chip').click()

@@ -48,8 +48,8 @@ export function ExceptionsSection({
                 }}
                 className="space-y-2"
               >
-                <textarea name="description" defaultValue={e.description} rows={2} className="w-full rounded border px-3 py-2" />
-                <input name="notes" defaultValue={e.notes ?? undefined} placeholder="Notes" className="w-full rounded border px-3 py-2" />
+                <textarea aria-label="Description" name="description" defaultValue={e.description} rows={2} className="w-full rounded border px-3 py-2" />
+                <input aria-label="Notes" name="notes" defaultValue={e.notes ?? undefined} placeholder="Notes" className="w-full rounded border px-3 py-2" />
                 <div className="flex gap-2">
                   <button type="submit" className="rounded bg-slate-900 px-3 py-1.5 text-sm text-white">
                     Save

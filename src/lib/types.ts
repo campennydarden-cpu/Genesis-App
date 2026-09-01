@@ -228,6 +228,8 @@ export type CommitmentException = {
   dont_show: boolean
 }
 
+// Not dead code: backs the "Begin Requirements/Exceptions At" numbering-offset override UI,
+// which is not built yet (follow-up task). Both values are inclusive first-item numbers.
 export type CommitmentSchBSettings = {
   id: string
   order_id: string

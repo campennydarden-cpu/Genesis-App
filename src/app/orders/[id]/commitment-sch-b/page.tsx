@@ -45,7 +45,10 @@ export default async function CommitmentScheduleBPage({
   const { data: exceptions } = await supabase.from('commitment_exceptions').select('*').eq('order_id', id).order('created_at')
   const { data: settings } = await supabase.from('commitment_sch_b_settings').select('*').eq('order_id', id).maybeSingle()
 
-  const beginRequirementsAt = settings?.begin_requirements_at ?? standardCount
+  // beginAt is inclusive (the first requirement renders as exactly this number), while
+  // STANDARD_BI_ITEM_COUNTS counts the pre-printed boilerplate items the form already has -
+  // so numbering starts at the item after them. A saved setting is already inclusive.
+  const beginRequirementsAt = settings?.begin_requirements_at ?? standardCount + 1
   const beginExceptionsAt = settings?.begin_exceptions_at ?? 1
 
   return (
