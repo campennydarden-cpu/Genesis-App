@@ -830,6 +830,19 @@ test.describe('Genesis foundation phase', () => {
     await page.getByRole('button', { name: 'Create Order' }).click()
     await page.waitForURL('**/orders/**/order-entry')
 
+    // C1 regression: a brand-new order has zero requirements/exceptions, so
+    // allDispositioned is vacuously true. Issue CTC must still be rejected
+    // because commitment_status is not 'final' (no curative_settings row yet).
+    await page.getByTestId('file-section-nav').getByRole('link', { name: 'Curative' }).click()
+    await page.waitForURL('**/curative')
+    await expect(page.getByTestId('issue-ctc-button')).toBeEnabled()
+    await page.getByTestId('issue-ctc-button').click()
+    await expect(page.locator('p.text-red-700')).toBeVisible()
+    await expect(page.getByTestId('ctc-issued-label')).toHaveCount(0)
+    await page.getByTestId('file-section-nav').getByRole('link', { name: 'Order Info' }).click()
+    await page.waitForURL('**/order-info')
+    await expect(page.locator('#title_status')).toHaveValue('In Progress')
+
     await page.getByTestId('file-section-nav').getByRole('link', { name: 'Prelim Title Search' }).click()
     await page.waitForURL('**/prelim-search')
     await page.getByRole('button', { name: 'Save Changes' }).click()

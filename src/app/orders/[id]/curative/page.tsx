@@ -42,7 +42,7 @@ export default async function CurativePage({
   const commitmentStatus: CurativeSettings['commitment_status'] = curativeSettingsError
     ? 'final'
     : (curativeSettings?.commitment_status ?? 'draft')
-  const ctcIssued = !!curativeSettings?.ctc_issued_at
+  const ctcIssued = curativeSettingsError ? true : !!curativeSettings?.ctc_issued_at
 
   const allDispositioned = [...(requirements ?? []), ...(exceptions ?? [])].every((r) => r.disposition || r.dont_show)
 

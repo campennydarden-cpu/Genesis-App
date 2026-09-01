@@ -141,13 +141,21 @@ export async function issueCTC(orderId: string, formData: FormData) {
     fail(orderId, "Every Requirement and Exception must have a Disposition set or Don't Show checked before issuing a CTC.")
   }
 
-  const { error: settingsError } = await supabase
+  const { data: issued, error: settingsError } = await supabase
     .from('curative_settings')
     .update({ ctc_issued_at: new Date().toISOString(), updated_at: new Date().toISOString() })
     .eq('order_id', orderId)
+    .eq('commitment_status', 'final')
+    .is('ctc_issued_at', null)
+    .select('id')
+
   if (settingsError) {
     console.error('issueCTC failed:', settingsError)
     fail(orderId, 'Could not save. Please check your entries and try again.')
+  }
+
+  if (!issued || issued.length === 0) {
+    fail(orderId, 'Finalize the commitment before issuing a Clear to Close.')
   }
 
   const { error: orderError } = await supabase.from('orders').update({ title_status: 'Cleared for Policy' }).eq('id', orderId)
@@ -157,6 +165,28 @@ export async function issueCTC(orderId: string, formData: FormData) {
   }
 
   revalidatePath(`/orders/${orderId}/curative`)
+}
+
+export async function deleteRequirementFromCurative(orderId: string, requirementId: string) {
+  const supabase = await createClient()
+  const { error } = await supabase.from('commitment_requirements').delete().eq('id', requirementId)
+  if (error) {
+    console.error('deleteRequirementFromCurative failed:', error)
+    fail(orderId, 'Could not save. Please check your entries and try again.')
+  }
+  revalidatePath(`/orders/${orderId}/curative`)
+  revalidatePath(`/orders/${orderId}/commitment-sch-b`)
+}
+
+export async function deleteExceptionFromCurative(orderId: string, exceptionId: string) {
+  const supabase = await createClient()
+  const { error } = await supabase.from('commitment_exceptions').delete().eq('id', exceptionId)
+  if (error) {
+    console.error('deleteExceptionFromCurative failed:', error)
+    fail(orderId, 'Could not save. Please check your entries and try again.')
+  }
+  revalidatePath(`/orders/${orderId}/curative`)
+  revalidatePath(`/orders/${orderId}/commitment-sch-b`)
 }
 
 export async function rescindCTC(orderId: string, formData: FormData) {

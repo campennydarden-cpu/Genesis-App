@@ -1,7 +1,6 @@
 import { REQUIREMENT_DISPOSITIONS } from '@/lib/constants'
 import { computeReqLabels, reorderForNumbering } from '@/lib/commitment-text'
-import { deleteRequirement } from '@/app/actions/commitment-sch-b'
-import { updateRequirementDisposition } from '@/app/actions/curative'
+import { deleteRequirementFromCurative, updateRequirementDisposition } from '@/app/actions/curative'
 import type { CommitmentRequirement } from '@/lib/types'
 
 export function CurativeRequirementsSection({
@@ -34,7 +33,7 @@ export function CurativeRequirementsSection({
             {r.notes && <p className="text-sm text-slate-500">{r.notes}</p>}
 
             {commitmentStatus === 'draft' ? (
-              <form action={deleteRequirement.bind(null, orderId, r.id)} className="mt-2">
+              <form action={deleteRequirementFromCurative.bind(null, orderId, r.id)} className="mt-2">
                 <button type="submit" className="text-sm text-red-600 hover:underline">
                   Remove
                 </button>

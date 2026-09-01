@@ -1,6 +1,5 @@
 import { EXCEPTION_DISPOSITIONS } from '@/lib/constants'
-import { deleteException } from '@/app/actions/commitment-sch-b'
-import { updateExceptionDisposition } from '@/app/actions/curative'
+import { deleteExceptionFromCurative, updateExceptionDisposition } from '@/app/actions/curative'
 import type { CommitmentException } from '@/lib/types'
 
 export function CurativeExceptionsSection({
@@ -26,7 +25,7 @@ export function CurativeExceptionsSection({
             {e.notes && <p className="text-sm text-slate-500">{e.notes}</p>}
 
             {commitmentStatus === 'draft' ? (
-              <form action={deleteException.bind(null, orderId, e.id)} className="mt-2">
+              <form action={deleteExceptionFromCurative.bind(null, orderId, e.id)} className="mt-2">
                 <button type="submit" className="text-sm text-red-600 hover:underline">
                   Remove
                 </button>
