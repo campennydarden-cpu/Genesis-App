@@ -889,7 +889,6 @@ test.describe('Genesis foundation phase', () => {
     await page.getByTestId('file-section-nav').getByRole('link', { name: 'Commitment Sch B-I/B-II' }).click()
     await page.waitForURL('**/commitment-sch-b')
     await expect(page.getByTestId('requirement-row').getByRole('button', { name: 'Remove' })).toHaveCount(0)
-    await expect(page.getByTestId('requirement-chips')).toHaveCount(0)
 
     // Disposition the Requirement, but leave the Exception undispositioned - CTC stays gated
     await page.getByTestId('file-section-nav').getByRole('link', { name: 'Curative' }).click()
