@@ -131,3 +131,25 @@ export const ALTA_POLICY_FORM_TYPES = [
   "ALTA Owner's Policy", 'ALTA Loan Policy', "ALTA Homeowner's Policy",
   "Leasehold Owner's Policy", 'Leasehold Loan Policy', 'Construction Loan Policy', 'Other',
 ] as const
+
+export const REQUIREMENT_SEEDS = [
+  'Warranty Deed from current owner to Buyer, to be recorded',
+  'Release of existing Deed of Trust, to be recorded',
+  'Payoff of existing mortgage',
+  'Payment of delinquent real estate taxes',
+  'Satisfaction of judgment against Seller',
+  'Affidavit of title from Seller',
+] as const
+
+export const EXCEPTION_SEEDS = [
+  'Real estate taxes for the current year, not yet due and payable',
+  'Easements, restrictions, and rights of way of record',
+  'Restrictive covenants of record',
+  'Rights of parties in possession, not shown of record',
+  'Matters that would be disclosed by an accurate survey',
+] as const
+
+export const STANDARD_BI_ITEM_COUNTS: Record<string, number> = {
+  Standard: 4,
+  'Short Form': 5,
+}
