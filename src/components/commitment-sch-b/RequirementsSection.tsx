@@ -13,6 +13,7 @@ export function RequirementsSection({
   relatedDocs,
   liens,
   beginAt,
+  readOnly = false,
 }: {
   orderId: string
   requirements: CommitmentRequirement[]
@@ -20,6 +21,7 @@ export function RequirementsSection({
   relatedDocs: SecurityInstrumentRelatedDoc[]
   liens: Lien[]
   beginAt: number
+  readOnly?: boolean
 }) {
   const [editingId, setEditingId] = useState<string | null>(null)
 
@@ -49,7 +51,7 @@ export function RequirementsSection({
     <div className="rounded border p-4">
       <p className="mb-4 text-lg font-semibold">Requirements</p>
 
-      {(siChips.length > 0 || relChips.length > 0 || lienChips.length > 0) && (
+      {!readOnly && (siChips.length > 0 || relChips.length > 0 || lienChips.length > 0) && (
         <div className="mb-4 flex flex-wrap gap-2" data-testid="requirement-chips">
           {siChips.map((si) => (
             <form key={si.id} action={addRequirementFromChip.bind(null, orderId, 'si', si.id, null)}>
@@ -77,7 +79,7 @@ export function RequirementsSection({
 
       <ul className="mb-4 space-y-2" data-testid="requirement-list">
         {orderedRequirements.map((r, idx) =>
-          editingId === r.id ? (
+          !readOnly && editingId === r.id ? (
             <li key={r.id} className="rounded border p-4" data-testid="requirement-row">
               <form
                 action={async (formData: FormData) => {
@@ -110,52 +112,56 @@ export function RequirementsSection({
                 </p>
                 {r.notes && <p className="text-sm text-slate-500">{r.notes}</p>}
               </div>
-              <div className="flex gap-3">
-                <button type="button" onClick={() => setEditingId(r.id)} className="text-sm text-slate-600 hover:underline">
-                  Edit
-                </button>
-                <form action={deleteRequirement.bind(null, orderId, r.id)}>
-                  <button type="submit" className="text-sm text-red-600 hover:underline">
-                    Remove
+              {!readOnly && (
+                <div className="flex gap-3">
+                  <button type="button" onClick={() => setEditingId(r.id)} className="text-sm text-slate-600 hover:underline">
+                    Edit
                   </button>
-                </form>
-              </div>
+                  <form action={deleteRequirement.bind(null, orderId, r.id)}>
+                    <button type="submit" className="text-sm text-red-600 hover:underline">
+                      Remove
+                    </button>
+                  </form>
+                </div>
+              )}
             </li>
           )
         )}
         {requirements.length === 0 && <p className="text-sm text-slate-500">No requirements added yet.</p>}
       </ul>
 
-      <details className="rounded border p-4">
-        <summary className="cursor-pointer font-medium">Add a requirement</summary>
-        <div className="mt-3 flex flex-wrap gap-2">
-          {REQUIREMENT_SEEDS.map((s) => (
-            <form key={s} action={addRequirementManual.bind(null, orderId)}>
-              <input type="hidden" name="description" value={s} />
-              <button type="submit" className="rounded-full border px-3 py-1 text-xs text-slate-600 hover:bg-slate-100">
-                + {s}
-              </button>
-            </form>
-          ))}
-        </div>
-        <form action={addRequirementManual.bind(null, orderId)} className="mt-4 space-y-3">
-          <div>
-            <label htmlFor="req-add-description" className="block text-sm font-medium">
-              Description
-            </label>
-            <textarea id="req-add-description" name="description" rows={2} required className="mt-1 w-full rounded border px-3 py-2" />
+      {!readOnly && (
+        <details className="rounded border p-4">
+          <summary className="cursor-pointer font-medium">Add a requirement</summary>
+          <div className="mt-3 flex flex-wrap gap-2">
+            {REQUIREMENT_SEEDS.map((s) => (
+              <form key={s} action={addRequirementManual.bind(null, orderId)}>
+                <input type="hidden" name="description" value={s} />
+                <button type="submit" className="rounded-full border px-3 py-1 text-xs text-slate-600 hover:bg-slate-100">
+                  + {s}
+                </button>
+              </form>
+            ))}
           </div>
-          <div>
-            <label htmlFor="req-add-notes" className="block text-sm font-medium">
-              Notes
-            </label>
-            <input id="req-add-notes" name="notes" className="mt-1 w-full rounded border px-3 py-2" />
-          </div>
-          <button type="submit" className="rounded bg-slate-900 px-4 py-2 text-white">
-            Add Requirement
-          </button>
-        </form>
-      </details>
+          <form action={addRequirementManual.bind(null, orderId)} className="mt-4 space-y-3">
+            <div>
+              <label htmlFor="req-add-description" className="block text-sm font-medium">
+                Description
+              </label>
+              <textarea id="req-add-description" name="description" rows={2} required className="mt-1 w-full rounded border px-3 py-2" />
+            </div>
+            <div>
+              <label htmlFor="req-add-notes" className="block text-sm font-medium">
+                Notes
+              </label>
+              <input id="req-add-notes" name="notes" className="mt-1 w-full rounded border px-3 py-2" />
+            </div>
+            <button type="submit" className="rounded bg-slate-900 px-4 py-2 text-white">
+              Add Requirement
+            </button>
+          </form>
+        </details>
+      )}
     </div>
   )
 }
