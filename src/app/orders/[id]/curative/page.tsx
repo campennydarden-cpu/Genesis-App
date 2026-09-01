@@ -34,8 +34,14 @@ export default async function CurativePage({
   const { data: requirements } = await supabase.from('commitment_requirements').select('*').eq('order_id', id).order('created_at')
   const { data: exceptions } = await supabase.from('commitment_exceptions').select('*').eq('order_id', id).order('created_at')
 
-  const { data: curativeSettings } = await supabase.from('curative_settings').select('*').eq('order_id', id).maybeSingle()
-  const commitmentStatus: CurativeSettings['commitment_status'] = curativeSettings?.commitment_status ?? 'draft'
+  const { data: curativeSettings, error: curativeSettingsError } = await supabase
+    .from('curative_settings')
+    .select('*')
+    .eq('order_id', id)
+    .maybeSingle()
+  const commitmentStatus: CurativeSettings['commitment_status'] = curativeSettingsError
+    ? 'final'
+    : (curativeSettings?.commitment_status ?? 'draft')
   const ctcIssued = !!curativeSettings?.ctc_issued_at
 
   const allDispositioned = [...(requirements ?? []), ...(exceptions ?? [])].every((r) => r.disposition || r.dont_show)
