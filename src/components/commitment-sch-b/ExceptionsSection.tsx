@@ -10,11 +10,13 @@ export function ExceptionsSection({
   exceptions,
   exceptionMatters,
   beginAt,
+  readOnly = false,
 }: {
   orderId: string
   exceptions: CommitmentException[]
   exceptionMatters: ExceptionMatter[]
   beginAt: number
+  readOnly?: boolean
 }) {
   const [editingId, setEditingId] = useState<string | null>(null)
 
@@ -25,7 +27,7 @@ export function ExceptionsSection({
     <div className="mt-6 rounded border p-4">
       <p className="mb-4 text-lg font-semibold">Exceptions</p>
 
-      {emChips.length > 0 && (
+      {!readOnly && emChips.length > 0 && (
         <div className="mb-4 flex flex-wrap gap-2" data-testid="exception-chips">
           {emChips.map((em) => (
             <form key={em.id} action={addExceptionFromChip.bind(null, orderId, em.id)}>
@@ -39,7 +41,7 @@ export function ExceptionsSection({
 
       <ul className="mb-4 space-y-2" data-testid="exception-list">
         {exceptions.map((e, idx) =>
-          editingId === e.id ? (
+          !readOnly && editingId === e.id ? (
             <li key={e.id} className="rounded border p-4" data-testid="exception-row">
               <form
                 action={async (formData: FormData) => {
@@ -68,52 +70,56 @@ export function ExceptionsSection({
                 </p>
                 {e.notes && <p className="text-sm text-slate-500">{e.notes}</p>}
               </div>
-              <div className="flex gap-3">
-                <button type="button" onClick={() => setEditingId(e.id)} className="text-sm text-slate-600 hover:underline">
-                  Edit
-                </button>
-                <form action={deleteException.bind(null, orderId, e.id)}>
-                  <button type="submit" className="text-sm text-red-600 hover:underline">
-                    Remove
+              {!readOnly && (
+                <div className="flex gap-3">
+                  <button type="button" onClick={() => setEditingId(e.id)} className="text-sm text-slate-600 hover:underline">
+                    Edit
                   </button>
-                </form>
-              </div>
+                  <form action={deleteException.bind(null, orderId, e.id)}>
+                    <button type="submit" className="text-sm text-red-600 hover:underline">
+                      Remove
+                    </button>
+                  </form>
+                </div>
+              )}
             </li>
           )
         )}
         {exceptions.length === 0 && <p className="text-sm text-slate-500">No exceptions added yet.</p>}
       </ul>
 
-      <details className="rounded border p-4">
-        <summary className="cursor-pointer font-medium">Add an exception</summary>
-        <div className="mt-3 flex flex-wrap gap-2">
-          {EXCEPTION_SEEDS.map((s) => (
-            <form key={s} action={addExceptionManual.bind(null, orderId)}>
-              <input type="hidden" name="description" value={s} />
-              <button type="submit" className="rounded-full border px-3 py-1 text-xs text-slate-600 hover:bg-slate-100">
-                + {s}
-              </button>
-            </form>
-          ))}
-        </div>
-        <form action={addExceptionManual.bind(null, orderId)} className="mt-4 space-y-3">
-          <div>
-            <label htmlFor="exc-add-description" className="block text-sm font-medium">
-              Description
-            </label>
-            <textarea id="exc-add-description" name="description" rows={2} required className="mt-1 w-full rounded border px-3 py-2" />
+      {!readOnly && (
+        <details className="rounded border p-4">
+          <summary className="cursor-pointer font-medium">Add an exception</summary>
+          <div className="mt-3 flex flex-wrap gap-2">
+            {EXCEPTION_SEEDS.map((s) => (
+              <form key={s} action={addExceptionManual.bind(null, orderId)}>
+                <input type="hidden" name="description" value={s} />
+                <button type="submit" className="rounded-full border px-3 py-1 text-xs text-slate-600 hover:bg-slate-100">
+                  + {s}
+                </button>
+              </form>
+            ))}
           </div>
-          <div>
-            <label htmlFor="exc-add-notes" className="block text-sm font-medium">
-              Notes
-            </label>
-            <input id="exc-add-notes" name="notes" className="mt-1 w-full rounded border px-3 py-2" />
-          </div>
-          <button type="submit" className="rounded bg-slate-900 px-4 py-2 text-white">
-            Add Exception
-          </button>
-        </form>
-      </details>
+          <form action={addExceptionManual.bind(null, orderId)} className="mt-4 space-y-3">
+            <div>
+              <label htmlFor="exc-add-description" className="block text-sm font-medium">
+                Description
+              </label>
+              <textarea id="exc-add-description" name="description" rows={2} required className="mt-1 w-full rounded border px-3 py-2" />
+            </div>
+            <div>
+              <label htmlFor="exc-add-notes" className="block text-sm font-medium">
+                Notes
+              </label>
+              <input id="exc-add-notes" name="notes" className="mt-1 w-full rounded border px-3 py-2" />
+            </div>
+            <button type="submit" className="rounded bg-slate-900 px-4 py-2 text-white">
+              Add Exception
+            </button>
+          </form>
+        </details>
+      )}
     </div>
   )
 }
