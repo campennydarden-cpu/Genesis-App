@@ -45,12 +45,12 @@ export default async function CommitmentScheduleBPage({
   const { data: exceptions } = await supabase.from('commitment_exceptions').select('*').eq('order_id', id).order('created_at')
   const { data: settings } = await supabase.from('commitment_sch_b_settings').select('*').eq('order_id', id).maybeSingle()
 
-  const { data: curativeSettings } = await supabase
+  const { data: curativeSettings, error: curativeSettingsError } = await supabase
     .from('curative_settings')
     .select('commitment_status')
     .eq('order_id', id)
     .maybeSingle()
-  const readOnly = curativeSettings?.commitment_status === 'final'
+  const readOnly = curativeSettingsError ? true : curativeSettings?.commitment_status === 'final'
 
   // beginAt is inclusive (the first requirement renders as exactly this number), while
   // STANDARD_BI_ITEM_COUNTS counts the pre-printed boilerplate items the form already has -
