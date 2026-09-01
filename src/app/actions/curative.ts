@@ -76,24 +76,35 @@ export async function revertToDraft(orderId: string, formData: FormData) {
   void formData
   const supabase = await createClient()
 
-  const { data: settings } = await supabase
+  const { data: settings, error: settingsFetchError } = await supabase
     .from('curative_settings')
     .select('ctc_issued_at')
     .eq('order_id', orderId)
     .maybeSingle()
 
+  if (settingsFetchError) {
+    console.error('revertToDraft failed:', settingsFetchError)
+    fail(orderId, 'Could not save. Please check your entries and try again.')
+  }
+
   if (settings?.ctc_issued_at) {
     fail(orderId, 'Cannot revert to Draft while a Clear to Close has been issued. Rescind the CTC first.')
   }
 
-  const { error } = await supabase
+  const { data: updated, error } = await supabase
     .from('curative_settings')
     .update({ commitment_status: 'draft', updated_at: new Date().toISOString() })
     .eq('order_id', orderId)
+    .is('ctc_issued_at', null)
+    .select('id')
 
   if (error) {
     console.error('revertToDraft failed:', error)
     fail(orderId, 'Could not save. Please check your entries and try again.')
+  }
+
+  if (!updated || updated.length === 0) {
+    fail(orderId, 'Cannot revert to Draft while a Clear to Close has been issued. Rescind the CTC first.')
   }
 
   revalidatePath(`/orders/${orderId}/curative`)
@@ -104,14 +115,23 @@ export async function issueCTC(orderId: string, formData: FormData) {
   void formData
   const supabase = await createClient()
 
-  const { data: requirements } = await supabase
+  const { data: requirements, error: reqError } = await supabase
     .from('commitment_requirements')
     .select('disposition, dont_show')
     .eq('order_id', orderId)
-  const { data: exceptions } = await supabase
+  if (reqError) {
+    console.error('issueCTC failed:', reqError)
+    fail(orderId, 'Could not save. Please check your entries and try again.')
+  }
+
+  const { data: exceptions, error: excError } = await supabase
     .from('commitment_exceptions')
     .select('disposition, dont_show')
     .eq('order_id', orderId)
+  if (excError) {
+    console.error('issueCTC failed:', excError)
+    fail(orderId, 'Could not save. Please check your entries and try again.')
+  }
 
   const allDispositioned = [...(requirements ?? []), ...(exceptions ?? [])].every(
     (r) => r.disposition || r.dont_show
