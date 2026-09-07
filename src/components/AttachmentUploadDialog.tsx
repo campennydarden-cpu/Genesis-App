@@ -22,6 +22,7 @@ export function AttachmentUploadDialog({
   const [isPending, startTransition] = useTransition()
 
   function handleSubmit(formData: FormData) {
+    setError(null)
     startTransition(async () => {
       const result = await uploadAttachment(orderId, folderId, formData)
       if (result.error) {
