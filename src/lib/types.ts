@@ -49,10 +49,6 @@ export type Contact = {
 export type PropertyDetails = {
   id: string
   order_id: string
-  house_number: string | null
-  street_name: string | null
-  street_suffix: string | null
-  directional: string | null
   city: string | null
   county: string | null
   state: string | null
