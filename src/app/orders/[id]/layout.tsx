@@ -51,7 +51,7 @@ export default async function OrderLayout({
             </form>
           </div>
         </div>
-        <OrderToolbar>{children}</OrderToolbar>
+        <OrderToolbar orderId={id}>{children}</OrderToolbar>
       </main>
     </div>
   )

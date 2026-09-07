@@ -2,6 +2,7 @@
 
 import { useState } from 'react'
 import { usePathname } from 'next/navigation'
+import { AttachmentsPanel } from '@/components/AttachmentsPanel'
 
 type ToolbarTab = 'requested-tasks' | 'checklist' | 'attachments' | 'history'
 
@@ -12,7 +13,7 @@ const TOOLBAR_TABS: { key: ToolbarTab; label: string }[] = [
   { key: 'history', label: 'File History' },
 ]
 
-export function OrderToolbar({ children }: { children: React.ReactNode }) {
+export function OrderToolbar({ orderId, children }: { orderId: string; children: React.ReactNode }) {
   const pathname = usePathname()
   const [activeTab, setActiveTab] = useState<ToolbarTab | null>(null)
   const [prevPathname, setPrevPathname] = useState(pathname)
@@ -42,7 +43,9 @@ export function OrderToolbar({ children }: { children: React.ReactNode }) {
         ))}
       </div>
 
-      {activeTab ? (
+      {activeTab === 'attachments' ? (
+        <AttachmentsPanel orderId={orderId} />
+      ) : activeTab ? (
         <p className="text-sm text-muted-foreground" data-testid="toolbar-placeholder">
           Not built yet.
         </p>
