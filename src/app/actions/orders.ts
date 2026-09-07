@@ -4,6 +4,7 @@ import { revalidatePath } from 'next/cache'
 import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
 import { ORDER_STATUSES, TITLE_STATUSES, ESCROW_STATUSES, FUNCTIONAL_ROLES } from '@/lib/constants'
+import { copyFolderTemplateForOrder } from '@/app/actions/attachments'
 
 export async function createOrder(formData: FormData) {
   const supabase = await createClient()
@@ -79,6 +80,8 @@ export async function createOrder(formData: FormData) {
       `/orders/new?error=${encodeURIComponent('Could not save. Please check your entries and try again.')}`
     )
   }
+
+  await copyFolderTemplateForOrder(data.id)
 
   revalidatePath('/orders')
   redirect(`/orders/${data.id}/order-entry`)
