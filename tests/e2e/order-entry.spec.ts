@@ -106,7 +106,7 @@ test.describe('Genesis foundation phase', () => {
     await page.getByRole('button', { name: 'Create Order' }).click()
     await page.waitForURL('**/orders/**/order-entry')
     const orderId = page.url().match(/\/orders\/([^/]+)\/order-entry/)?.[1]
-    const fileNumber = await page.getByLabel('File Number').inputValue()
+    const fileNumber = await page.getByLabel('File Number', { exact: true }).inputValue()
 
     await page.goto(`/orders/${orderId}/order-info`)
     await page.getByLabel('Title Status').click()
@@ -129,7 +129,7 @@ test.describe('Genesis foundation phase', () => {
     await page.getByRole('link', { name: '+ New Order' }).click()
     await page.getByRole('button', { name: 'Create Order' }).click()
     await page.waitForURL('**/orders/**/order-entry')
-    const fileNumber = await page.getByLabel('File Number').inputValue()
+    const fileNumber = await page.getByLabel('File Number', { exact: true }).inputValue()
 
     await expect(page.getByTestId('order-sidebar')).toContainText(fileNumber)
 
@@ -156,11 +156,11 @@ test.describe('Genesis foundation phase', () => {
     await page.getByRole('button', { name: 'Create Order' }).click()
     await page.waitForURL('**/orders/**/order-entry')
 
-    await expect(page.getByLabel('File Number')).toBeVisible()
+    await expect(page.getByLabel('File Number', { exact: true })).toBeVisible()
 
     await page.getByTestId('toolbar-tab-attachments').click()
     await expect(page.getByTestId('toolbar-placeholder')).toContainText('Not built yet')
-    await expect(page.getByLabel('File Number')).not.toBeVisible()
+    await expect(page.getByLabel('File Number', { exact: true })).not.toBeVisible()
 
     await page.getByTestId('file-section-nav').getByRole('link', { name: 'Order Info' }).click()
     await page.waitForURL('**/order-info')
@@ -218,6 +218,8 @@ test.describe('Genesis foundation phase', () => {
     await expect(page.getByTestId('easement-row')).toContainText('Utility Easement')
     await expect(page.getByTestId('easement-row')).toContainText('Rear yard utility line')
 
+    // Playwright auto-dismisses native window.confirm() dialogs unless a handler accepts them.
+    page.once('dialog', (dialog) => dialog.accept())
     await page.getByRole('button', { name: 'Remove' }).click()
     await expect(page.getByTestId('easement-row')).not.toBeVisible()
   })
@@ -286,7 +288,7 @@ test.describe('Genesis foundation phase', () => {
     await page.getByRole('button', { name: 'Create Order' }).click()
     await page.waitForURL('**/orders/**/order-entry')
     const orderId = page.url().match(/\/orders\/([^/]+)\/order-entry/)?.[1]
-    const fileNumber = await page.getByLabel('File Number').inputValue()
+    const fileNumber = await page.getByLabel('File Number', { exact: true }).inputValue()
 
     await page.goto(`/orders/${orderId}/contacts`)
     await page.getByText('Add a contact').click()
@@ -330,7 +332,7 @@ test.describe('Genesis foundation phase', () => {
     await page.getByRole('button', { name: 'Create Order' }).click()
     await page.waitForURL('**/orders/**/order-entry')
     const orderId = page.url().match(/\/orders\/([^/]+)\/order-entry/)?.[1]
-    const fileNumber = await page.getByLabel('File Number').inputValue()
+    const fileNumber = await page.getByLabel('File Number', { exact: true }).inputValue()
 
     await page.goto(`/orders/${orderId}/order-info`)
     await page.getByLabel('Title Status').click()

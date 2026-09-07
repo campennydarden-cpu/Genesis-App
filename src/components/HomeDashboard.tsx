@@ -22,9 +22,11 @@ import Link from 'next/link'
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Input } from '@/components/ui/input'
-import { TITLE_STATUSES, ESCROW_STATUSES } from '@/lib/constants'
+import { TITLE_STATUSES, ESCROW_STATUSES, CONTACT_ROLES_WITH_ENTITY_TYPE } from '@/lib/constants'
 
-const PARTY_ROLE_PATTERN = /buyer|borrower|seller/i
+// Buyer/Borrower and Seller only — not "Listing Agent (Seller's Agent)" or
+// "Selling Agent (Buyer's Agent)", whose role labels contain those words too.
+const PARTY_ROLES = new Set<string>(CONTACT_ROLES_WITH_ENTITY_TYPE)
 
 function matchesSearch(
   order: OrderSummary,
@@ -39,7 +41,7 @@ function matchesSearch(
 
   const contacts = contactsByOrder.get(order.id) ?? []
   return contacts.some(
-    (c) => PARTY_ROLE_PATTERN.test(c.role) && c.name.toLowerCase().includes(q)
+    (c) => PARTY_ROLES.has(c.role) && c.name.toLowerCase().includes(q)
   )
 }
 
