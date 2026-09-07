@@ -234,3 +234,16 @@ export const REQUIREMENT_DISPOSITIONS = [
 export const EXCEPTION_DISPOSITIONS = [
   'Removed by Affidavit', 'Deleted per Underwriter',
 ] as const
+
+// Attachments upload validation (Genesis Rebuild - Attachments Core Design.md).
+export const ATTACHMENT_MAX_SIZE_BYTES = 25 * 1024 * 1024 // 25 MB
+
+export const ATTACHMENT_ALLOWED_MIME_TYPES = [
+  'application/pdf',
+  'application/msword',
+  'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+  'application/vnd.ms-excel',
+  'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+  'image/png',
+  'image/jpeg',
+] as const

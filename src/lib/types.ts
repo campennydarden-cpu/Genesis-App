@@ -293,3 +293,34 @@ export type CurativeSettings = {
   ctc_issued_at: string | null
   ctc_rescinded_at: string | null
 }
+
+export type FolderTemplate = {
+  id: string
+  name: string
+  sort_order: number
+  parent_folder_template_id: string | null
+}
+
+export type AttachmentFolder = {
+  id: string
+  order_id: string
+  name: string
+  sort_order: number
+  parent_folder_id: string | null
+  source_template_id: string | null
+}
+
+export type Attachment = {
+  id: string
+  order_id: string
+  folder_id: string
+  name: string
+  description: string | null
+  storage_path: string
+  mime_type: string
+  size_bytes: number
+  source: 'Attached' | 'Merged'
+  uploaded_by: string
+  created_at: string
+  updated_at: string
+}
