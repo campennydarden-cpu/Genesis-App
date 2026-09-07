@@ -3,7 +3,7 @@
 import { revalidatePath } from 'next/cache'
 import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
-import { ORDER_STATUSES, TITLE_STATUSES, ESCROW_STATUSES } from '@/lib/constants'
+import { ORDER_STATUSES, TITLE_STATUSES, ESCROW_STATUSES, FUNCTIONAL_ROLES } from '@/lib/constants'
 
 export async function createOrder(formData: FormData) {
   const supabase = await createClient()
@@ -169,6 +169,10 @@ export async function updateOrderInfo(orderId: string, formData: FormData) {
     title_status: titleStatus,
     escrow_status: escrowStatus,
     updated_at: now,
+  }
+
+  for (const { key } of FUNCTIONAL_ROLES) {
+    update[key] = (formData.get(key) as string) || null
   }
 
   // Auto-timestamp the first time a status leaves its default "In Progress" state.

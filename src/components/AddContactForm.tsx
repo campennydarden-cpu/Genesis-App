@@ -9,6 +9,7 @@ import {
   CONTACT_ROLES_WITH_MORTGAGEE_CLAUSE,
   ENTITY_TYPES,
 } from '@/lib/constants'
+import type { Contact } from '@/lib/types'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
@@ -16,11 +17,13 @@ import { OrderFormSubmitButton } from '@/components/OrderFormSubmitButton'
 
 export function AddContactForm({
   action,
+  contact,
 }: {
   action: (formData: FormData) => void | Promise<void>
+  contact?: Contact
 }) {
-  const [role, setRole] = useState('')
-  const [entityType, setEntityType] = useState('Individual')
+  const [role, setRole] = useState(contact?.role ?? '')
+  const [entityType, setEntityType] = useState(contact?.entity_type ?? 'Individual')
 
   const showEntityType = CONTACT_ROLES_WITH_ENTITY_TYPE.includes(role)
   const showSsnDob = showEntityType && entityType === 'Individual'
@@ -73,27 +76,47 @@ export function AddContactForm({
 
       <div>
         <Label htmlFor="name">Name</Label>
-        <Input id="name" name="name" required className="mt-1" />
+        <Input id="name" name="name" required className="mt-1" defaultValue={contact?.name} />
       </div>
 
       {showSingleAddress ? (
         <div>
           <Label htmlFor="current_address">Address</Label>
-          <Input id="current_address" name="current_address" className="mt-1" />
+          <Input
+            id="current_address"
+            name="current_address"
+            className="mt-1"
+            defaultValue={contact?.current_address ?? undefined}
+          />
         </div>
       ) : (
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
           <div>
             <Label htmlFor="current_address">Current Address</Label>
-            <Input id="current_address" name="current_address" className="mt-1" />
+            <Input
+              id="current_address"
+              name="current_address"
+              className="mt-1"
+              defaultValue={contact?.current_address ?? undefined}
+            />
           </div>
           <div>
             <Label htmlFor="mailing_address">Mailing Address</Label>
-            <Input id="mailing_address" name="mailing_address" className="mt-1" />
+            <Input
+              id="mailing_address"
+              name="mailing_address"
+              className="mt-1"
+              defaultValue={contact?.mailing_address ?? undefined}
+            />
           </div>
           <div>
             <Label htmlFor="forwarding_address">Forwarding Address</Label>
-            <Input id="forwarding_address" name="forwarding_address" className="mt-1" />
+            <Input
+              id="forwarding_address"
+              name="forwarding_address"
+              className="mt-1"
+              defaultValue={contact?.forwarding_address ?? undefined}
+            />
           </div>
         </div>
       )}
@@ -101,11 +124,17 @@ export function AddContactForm({
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
         <div>
           <Label htmlFor="phone">Phone</Label>
-          <Input id="phone" name="phone" className="mt-1" />
+          <Input id="phone" name="phone" className="mt-1" defaultValue={contact?.phone ?? undefined} />
         </div>
         <div>
           <Label htmlFor="email">Email</Label>
-          <Input id="email" name="email" type="email" className="mt-1" />
+          <Input
+            id="email"
+            name="email"
+            type="email"
+            className="mt-1"
+            defaultValue={contact?.email ?? undefined}
+          />
         </div>
       </div>
 
@@ -113,11 +142,23 @@ export function AddContactForm({
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
           <div>
             <Label htmlFor="ssn">SSN</Label>
-            <Input id="ssn" name="ssn" autoComplete="off" className="mt-1" />
+            <Input
+              id="ssn"
+              name="ssn"
+              autoComplete="off"
+              className="mt-1"
+              defaultValue={contact?.ssn ?? undefined}
+            />
           </div>
           <div>
             <Label htmlFor="dob">Date of Birth</Label>
-            <Input id="dob" name="dob" type="date" className="mt-1" />
+            <Input
+              id="dob"
+              name="dob"
+              type="date"
+              className="mt-1"
+              defaultValue={contact?.dob ?? undefined}
+            />
           </div>
         </div>
       )}
@@ -128,24 +169,39 @@ export function AddContactForm({
             <>
               <div>
                 <Label htmlFor="license_number">License Number</Label>
-                <Input id="license_number" name="license_number" className="mt-1" />
+                <Input
+                  id="license_number"
+                  name="license_number"
+                  className="mt-1"
+                  defaultValue={contact?.license_number ?? undefined}
+                />
               </div>
               <div>
                 <Label htmlFor="alta_id">ALTA ID</Label>
-                <Input id="alta_id" name="alta_id" className="mt-1" />
+                <Input
+                  id="alta_id"
+                  name="alta_id"
+                  className="mt-1"
+                  defaultValue={contact?.alta_id ?? undefined}
+                />
               </div>
             </>
           )}
           {showMortgagee && (
             <div>
               <Label htmlFor="mortgagee_clause">Mortgagee Clause</Label>
-              <Input id="mortgagee_clause" name="mortgagee_clause" className="mt-1" />
+              <Input
+                id="mortgagee_clause"
+                name="mortgagee_clause"
+                className="mt-1"
+                defaultValue={contact?.mortgagee_clause ?? undefined}
+              />
             </div>
           )}
         </div>
       )}
 
-      <OrderFormSubmitButton label="Add Contact" />
+      <OrderFormSubmitButton label={contact ? 'Save Changes' : 'Add Contact'} />
     </form>
   )
 }

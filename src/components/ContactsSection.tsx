@@ -1,23 +1,8 @@
+import Link from 'next/link'
 import { addContact, deleteContact } from '@/app/actions/contacts'
 import { Button } from '@/components/ui/button'
 import { AddContactForm } from '@/components/AddContactForm'
-
-type Contact = {
-  id: string
-  role: string
-  entity_type: string
-  name: string
-  current_address: string | null
-  mailing_address: string | null
-  forwarding_address: string | null
-  phone: string | null
-  email: string | null
-  ssn: string | null
-  dob: string | null
-  license_number: string | null
-  alta_id: string | null
-  mortgagee_clause: string | null
-}
+import type { Contact } from '@/lib/types'
 
 export function ContactsSection({
   orderId,
@@ -49,11 +34,19 @@ export function ContactsSection({
                 {c.email ? ` · ${c.email}` : ''}
               </p>
             </div>
-            <form action={deleteContact.bind(null, orderId, c.id)}>
-              <Button type="submit" variant="destructive" size="sm">
-                Remove
-              </Button>
-            </form>
+            <div className="flex items-center gap-2">
+              <Button
+                variant="outline"
+                size="sm"
+                className="min-h-11"
+                render={<Link href={`/orders/${orderId}/contacts/${c.id}/edit`}>Edit</Link>}
+              />
+              <form action={deleteContact.bind(null, orderId, c.id)}>
+                <Button type="submit" variant="destructive" size="sm" className="min-h-11">
+                  Remove
+                </Button>
+              </form>
+            </div>
           </li>
         ))}
         {contacts.length === 0 && (

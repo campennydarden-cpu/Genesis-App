@@ -39,6 +39,20 @@ export const ESCROW_STATUSES = [
   'Closed',
 ] as const
 
+// Order Info functional-role assignments — each maps to its own free-text `orders`
+// column (no active-user roster exists yet, so these are names, not a picker).
+// Abstractor is deliberately excluded: it's auto-assigned elsewhere, not entered here.
+export const FUNCTIONAL_ROLES = [
+  { key: 'title_officer', label: 'Title Officer' },
+  { key: 'curative_title_officer', label: 'Curative Title Officer' },
+  { key: 'escrow_assistant', label: 'Escrow Assistant' },
+  { key: 'escrow_officer', label: 'Escrow Officer' },
+  { key: 'closing_coordinator', label: 'Closing Coordinator' },
+  { key: 'funder', label: 'Funder' },
+  { key: 'recording_specialist', label: 'Recording Specialist' },
+  { key: 'post_closer', label: 'Post-Closer' },
+] as const
+
 export const ENTITY_TYPES = [
   'Individual',
   'LLC',

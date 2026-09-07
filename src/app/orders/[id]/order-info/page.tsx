@@ -17,7 +17,9 @@ export default async function OrderInfoPage({
 
   const { data: order } = await supabase
     .from('orders')
-    .select('order_status, title_status, escrow_status, title_opened_date, escrow_opened_date')
+    .select(
+      'order_status, title_status, escrow_status, title_opened_date, escrow_opened_date, title_officer, curative_title_officer, escrow_assistant, escrow_officer, closing_coordinator, funder, recording_specialist, post_closer'
+    )
     .eq('id', id)
     .single()
 

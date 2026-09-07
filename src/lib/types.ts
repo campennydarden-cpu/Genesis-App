@@ -19,6 +19,31 @@ export type Order = {
   rush_order: boolean
   title_opened_date: string | null
   escrow_opened_date: string | null
+  title_officer: string | null
+  curative_title_officer: string | null
+  escrow_assistant: string | null
+  escrow_officer: string | null
+  closing_coordinator: string | null
+  funder: string | null
+  recording_specialist: string | null
+  post_closer: string | null
+}
+
+export type Contact = {
+  id: string
+  role: string
+  entity_type: string
+  name: string
+  current_address: string | null
+  mailing_address: string | null
+  forwarding_address: string | null
+  phone: string | null
+  email: string | null
+  ssn: string | null
+  dob: string | null
+  license_number: string | null
+  alta_id: string | null
+  mortgagee_clause: string | null
 }
 
 export type PropertyDetails = {

@@ -1,8 +1,9 @@
 import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { StatusBadge } from '@/components/ui/status-badge'
-import { ORDER_STATUSES, TITLE_STATUSES, ESCROW_STATUSES } from '@/lib/constants'
+import { ORDER_STATUSES, TITLE_STATUSES, ESCROW_STATUSES, FUNCTIONAL_ROLES } from '@/lib/constants'
 import type { Order } from '@/lib/types'
 
 function formatOpenedDate(value: string | null) {
@@ -21,14 +22,26 @@ export function OrderInfoForm({
   action: (formData: FormData) => void
   order: Pick<
     Order,
-    'order_status' | 'title_status' | 'escrow_status' | 'title_opened_date' | 'escrow_opened_date'
+    | 'order_status'
+    | 'title_status'
+    | 'escrow_status'
+    | 'title_opened_date'
+    | 'escrow_opened_date'
+    | 'title_officer'
+    | 'curative_title_officer'
+    | 'escrow_assistant'
+    | 'escrow_officer'
+    | 'closing_coordinator'
+    | 'funder'
+    | 'recording_specialist'
+    | 'post_closer'
   >
 }) {
   const titleOpenedDate = formatOpenedDate(order.title_opened_date)
   const escrowOpenedDate = formatOpenedDate(order.escrow_opened_date)
 
   return (
-    <form action={action} className="max-w-md space-y-4">
+    <form action={action} className="max-w-2xl space-y-4">
       <div>
         <div className="flex items-center justify-between">
           <Label htmlFor="order_status">Order Status</Label>
@@ -89,6 +102,15 @@ export function OrderInfoForm({
           <p className="mt-1 text-xs text-muted-foreground">Escrow opened {escrowOpenedDate}</p>
         )}
       </div>
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+        {FUNCTIONAL_ROLES.map(({ key, label }) => (
+          <div key={key}>
+            <Label htmlFor={key}>{label}</Label>
+            <Input id={key} name={key} className="mt-1" defaultValue={order[key] ?? undefined} />
+          </div>
+        ))}
+      </div>
+
       <Button type="submit">Save Changes</Button>
     </form>
   )
