@@ -46,6 +46,13 @@ export type Contact = {
   mortgagee_clause: string | null
 }
 
+export type ContactPrincipal = {
+  id: string
+  contact_id: string
+  name: string
+  role: string | null
+}
+
 export type PropertyDetails = {
   id: string
   order_id: string

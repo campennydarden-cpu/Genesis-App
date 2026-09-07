@@ -113,3 +113,57 @@ export async function deleteContact(orderId: string, contactId: string) {
   revalidatePath(`/orders/${orderId}`)
   revalidatePath('/orders')
 }
+
+export async function addContactPrincipal(contactId: string, orderId: string, formData: FormData) {
+  const supabase = await createClient()
+
+  const name = formData.get('name') as string
+  const role = (formData.get('role') as string) || null
+
+  const { error } = await supabase.from('contact_principals').insert({
+    contact_id: contactId,
+    name,
+    role,
+  })
+
+  if (error) {
+    console.error('addContactPrincipal failed:', error)
+    redirect(
+      `/orders/${orderId}/contacts?error=${encodeURIComponent('Could not save. Please check your entries and try again.')}`
+    )
+  }
+
+  revalidatePath(`/orders/${orderId}/contacts`)
+}
+
+export async function updateContactPrincipal(id: string, orderId: string, formData: FormData) {
+  const supabase = await createClient()
+
+  const name = formData.get('name') as string
+  const role = (formData.get('role') as string) || null
+
+  const { error } = await supabase.from('contact_principals').update({ name, role }).eq('id', id)
+
+  if (error) {
+    console.error('updateContactPrincipal failed:', error)
+    redirect(
+      `/orders/${orderId}/contacts?error=${encodeURIComponent('Could not save. Please check your entries and try again.')}`
+    )
+  }
+
+  revalidatePath(`/orders/${orderId}/contacts`)
+}
+
+export async function deleteContactPrincipal(orderId: string, id: string) {
+  const supabase = await createClient()
+  const { error } = await supabase.from('contact_principals').delete().eq('id', id)
+
+  if (error) {
+    console.error('deleteContactPrincipal failed:', error)
+    redirect(
+      `/orders/${orderId}/contacts?error=${encodeURIComponent('Could not save. Please check your entries and try again.')}`
+    )
+  }
+
+  revalidatePath(`/orders/${orderId}/contacts`)
+}
