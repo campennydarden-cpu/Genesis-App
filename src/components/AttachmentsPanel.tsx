@@ -4,6 +4,7 @@ import { useEffect, useState, useTransition } from 'react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { FolderTree } from '@/components/FolderTree'
+import { AttachmentUploadDialog } from '@/components/AttachmentUploadDialog'
 import {
   listAttachments,
   searchAttachments,
@@ -140,9 +141,15 @@ export function AttachmentsPanel({ orderId }: { orderId: string }) {
       </div>
 
       {uploadOpen && selectedFolderId && (
-        <p className="text-sm text-muted-foreground" data-testid="upload-dialog-placeholder">
-          Upload dialog not wired yet — see Task 7.
-        </p>
+        <AttachmentUploadDialog
+          orderId={orderId}
+          folderId={selectedFolderId}
+          onClose={() => setUploadOpen(false)}
+          onUploaded={() => {
+            setUploadOpen(false)
+            refresh()
+          }}
+        />
       )}
 
       {previewAttachment && (
