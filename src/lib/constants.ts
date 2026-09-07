@@ -11,6 +11,21 @@ export const PRODUCT_TYPES = [
 
 export const POLICY_TYPES = ['None', "Owner's", 'Loan', 'Simultaneous'] as const
 
+export const TRANSACTION_TYPES = ['Purchase', 'Refinance', 'Equity', 'Other'] as const
+
+// Auto-suggested Transaction Type when Product Type changes — a starting point only,
+// never locked; the user can always override it.
+export const PRODUCT_TYPE_TO_TRANSACTION_TYPE: Record<string, (typeof TRANSACTION_TYPES)[number]> = {
+  Purchase: 'Purchase',
+  'Cash Purchase': 'Purchase',
+  'Reverse Mortgage (Purchase)': 'Purchase',
+  Refinance: 'Refinance',
+  'Reverse Mortgage (Refi)': 'Refinance',
+  HELOC: 'Equity',
+  HELOAN: 'Equity',
+  'Tract Search': 'Other',
+}
+
 export const ORDER_STATUSES = [
   'In Progress',
   'Canceled',

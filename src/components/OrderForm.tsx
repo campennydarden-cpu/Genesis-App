@@ -2,13 +2,15 @@
 
 import { useState } from 'react'
 import { Pencil } from 'lucide-react'
-import { PRODUCT_TYPES, POLICY_TYPES } from '@/lib/constants'
+import { PRODUCT_TYPES, POLICY_TYPES, TRANSACTION_TYPES, PRODUCT_TYPE_TO_TRANSACTION_TYPE } from '@/lib/constants'
 import type { Order } from '@/lib/types'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Checkbox } from '@/components/ui/checkbox'
 import { Button } from '@/components/ui/button'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group'
+import { ZipCountyField } from '@/components/ZipCountyField'
 import { OrderFormSubmitButton } from '@/components/OrderFormSubmitButton'
 
 export function OrderForm({
@@ -19,6 +21,10 @@ export function OrderForm({
   order?: Order
 }) {
   const [fileNumberUnlocked, setFileNumberUnlocked] = useState(false)
+  const [transactionType, setTransactionType] = useState(
+    order?.transaction_type ?? PRODUCT_TYPE_TO_TRANSACTION_TYPE[order?.product_type ?? 'Purchase'] ?? 'Purchase'
+  )
+  const [transactionTypeTouched, setTransactionTypeTouched] = useState(false)
 
   return (
     <form action={action} className="space-y-4">
@@ -51,7 +57,16 @@ export function OrderForm({
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
         <div>
           <Label htmlFor="product_type">Product Type</Label>
-          <Select name="product_type" defaultValue={order?.product_type ?? 'Purchase'}>
+          <Select
+            name="product_type"
+            defaultValue={order?.product_type ?? 'Purchase'}
+            onValueChange={(v) => {
+              if (!transactionTypeTouched) {
+                const suggested = PRODUCT_TYPE_TO_TRANSACTION_TYPE[v as string]
+                if (suggested) setTransactionType(suggested)
+              }
+            }}
+          >
             <SelectTrigger id="product_type" className="w-full">
               <SelectValue />
             </SelectTrigger>
@@ -79,6 +94,26 @@ export function OrderForm({
             </SelectContent>
           </Select>
         </div>
+      </div>
+
+      <div>
+        <Label>Transaction Type</Label>
+        <RadioGroup
+          name="transaction_type"
+          required
+          value={transactionType}
+          onValueChange={(v) => {
+            setTransactionType(v as string)
+            setTransactionTypeTouched(true)
+          }}
+          className="mt-1"
+        >
+          {TRANSACTION_TYPES.map((t) => (
+            <RadioGroupItem key={t} value={t}>
+              {t}
+            </RadioGroupItem>
+          ))}
+        </RadioGroup>
       </div>
 
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
@@ -116,26 +151,12 @@ export function OrderForm({
       </div>
 
       <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
-        <div>
-          <Label htmlFor="property_city">City</Label>
-          <Input id="property_city" name="property_city" defaultValue={order?.property_city ?? undefined} />
-        </div>
-        <div>
-          <Label htmlFor="property_county">County</Label>
-          <Input
-            id="property_county"
-            name="property_county"
-            defaultValue={order?.property_county ?? undefined}
-          />
-        </div>
-        <div>
-          <Label htmlFor="property_state">State</Label>
-          <Input id="property_state" name="property_state" defaultValue={order?.property_state ?? undefined} />
-        </div>
-        <div>
-          <Label htmlFor="property_zip">Zip</Label>
-          <Input id="property_zip" name="property_zip" defaultValue={order?.property_zip ?? undefined} />
-        </div>
+        <ZipCountyField
+          defaultCity={order?.property_city}
+          defaultCounty={order?.property_county}
+          defaultState={order?.property_state}
+          defaultZip={order?.property_zip}
+        />
       </div>
 
       <div>

@@ -2,6 +2,7 @@ export type Order = {
   id: string
   file_number: string
   product_type: string
+  transaction_type: string
   policy_type: string
   purchase_price: number | null
   loan_amount: number | null
@@ -27,6 +28,17 @@ export type Order = {
   funder: string | null
   recording_specialist: string | null
   post_closer: string | null
+}
+
+export type ZipLookupCounty = { name: string; fips: string | null; weight: number }
+
+export type ZipLookupRow = {
+  zip: string
+  city: string
+  state: string
+  state_name: string
+  primary_county: string
+  counties: ZipLookupCounty[]
 }
 
 export type Contact = {

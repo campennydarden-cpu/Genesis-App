@@ -17,6 +17,7 @@ export async function createOrder(formData: FormData) {
   }
 
   const productType = formData.get('product_type') as string
+  const transactionType = formData.get('transaction_type') as string
   const policyType = formData.get('policy_type') as string
   const purchasePrice = formData.get('purchase_price') as string
   const loanAmount = formData.get('loan_amount') as string
@@ -32,6 +33,7 @@ export async function createOrder(formData: FormData) {
 
   const orderFields = {
     product_type: productType,
+    transaction_type: transactionType,
     policy_type: policyType,
     purchase_price: purchasePrice ? Number(purchasePrice) : null,
     loan_amount: loanAmount ? Number(loanAmount) : null,
@@ -87,6 +89,7 @@ export async function updateOrderEntry(orderId: string, formData: FormData) {
 
   const fileNumber = formData.get('file_number') as string
   const productType = formData.get('product_type') as string
+  const transactionType = formData.get('transaction_type') as string
   const policyType = formData.get('policy_type') as string
   const purchasePrice = formData.get('purchase_price') as string
   const loanAmount = formData.get('loan_amount') as string
@@ -105,6 +108,7 @@ export async function updateOrderEntry(orderId: string, formData: FormData) {
     .update({
       file_number: fileNumber,
       product_type: productType,
+      transaction_type: transactionType,
       policy_type: policyType,
       purchase_price: purchasePrice ? Number(purchasePrice) : null,
       loan_amount: loanAmount ? Number(loanAmount) : null,
