@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { FolderTree } from '@/components/FolderTree'
 import { AttachmentUploadDialog } from '@/components/AttachmentUploadDialog'
+import { AttachmentPreview } from '@/components/AttachmentPreview'
 import {
   listAttachments,
   searchAttachments,
@@ -153,9 +154,7 @@ export function AttachmentsPanel({ orderId }: { orderId: string }) {
       )}
 
       {previewAttachment && (
-        <p className="text-sm text-muted-foreground" data-testid="preview-placeholder">
-          Preview not wired yet — see Task 8.
-        </p>
+        <AttachmentPreview attachment={previewAttachment} onClose={() => setPreviewAttachment(null)} />
       )}
     </div>
   )
