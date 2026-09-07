@@ -77,8 +77,6 @@ test.describe('Genesis foundation phase', () => {
     await page.getByRole('link', { name: '+ New Order' }).click()
     await page.waitForURL('**/orders/new')
 
-    const fileNumber = `TEST-${Date.now()}`
-    await page.getByLabel('File Number').fill(fileNumber)
     await page.getByLabel('Purchase Price').fill('250000')
     await page.getByLabel('Property Address').fill('123 Main St')
     await page.getByRole('button', { name: 'Create Order' }).click()
@@ -88,7 +86,8 @@ test.describe('Genesis foundation phase', () => {
 
     await page.goto(`/orders/${orderId}/contacts`)
     await page.getByText('Add a contact').click()
-    await page.getByLabel('Role').fill('Buyer/Borrower')
+    await page.getByLabel('Role').click()
+    await page.getByRole('option', { name: 'Buyer/Borrower', exact: true }).click()
     await page.getByLabel('Name').fill('Jane Test Buyer')
     await page.getByLabel('Phone').fill('555-0100')
     await page.getByRole('button', { name: 'Add Contact' }).click()
@@ -104,17 +103,17 @@ test.describe('Genesis foundation phase', () => {
     await loginAsSeededUser(page)
 
     await page.getByRole('link', { name: '+ New Order' }).click()
-    const fileNumber = `TEST-${Date.now()}`
-    await page.getByLabel('File Number').fill(fileNumber)
     await page.getByRole('button', { name: 'Create Order' }).click()
     await page.waitForURL('**/orders/**/order-entry')
     const orderId = page.url().match(/\/orders\/([^/]+)\/order-entry/)?.[1]
+    const fileNumber = await page.getByLabel('File Number').inputValue()
 
     await page.goto(`/orders/${orderId}/order-info`)
-    await page.getByLabel('Title Status').selectOption('Searching')
+    await page.getByLabel('Title Status').click()
+    await page.getByRole('option', { name: 'Searching' }).click()
     await page.getByRole('button', { name: 'Save Changes' }).click()
     await page.waitForURL('**/order-info')
-    await expect(page.getByLabel('Title Status')).toHaveValue('Searching')
+    await expect(page.getByLabel('Title Status')).toContainText('Searching')
 
     await page.goto('/orders')
     await expect(page.getByTestId('order-list')).toContainText(fileNumber)
@@ -128,10 +127,9 @@ test.describe('Genesis foundation phase', () => {
     await loginAsSeededUser(page)
 
     await page.getByRole('link', { name: '+ New Order' }).click()
-    const fileNumber = `TEST-${Date.now()}`
-    await page.getByLabel('File Number').fill(fileNumber)
     await page.getByRole('button', { name: 'Create Order' }).click()
     await page.waitForURL('**/orders/**/order-entry')
+    const fileNumber = await page.getByLabel('File Number').inputValue()
 
     await expect(page.getByTestId('order-sidebar')).toContainText(fileNumber)
 
@@ -155,8 +153,6 @@ test.describe('Genesis foundation phase', () => {
     await loginAsSeededUser(page)
 
     await page.getByRole('link', { name: '+ New Order' }).click()
-    const fileNumber = `TEST-${Date.now()}`
-    await page.getByLabel('File Number').fill(fileNumber)
     await page.getByRole('button', { name: 'Create Order' }).click()
     await page.waitForURL('**/orders/**/order-entry')
 
@@ -176,8 +172,6 @@ test.describe('Genesis foundation phase', () => {
     await loginAsSeededUser(page)
 
     await page.getByRole('link', { name: '+ New Order' }).click()
-    const fileNumber = `TEST-${Date.now()}`
-    await page.getByLabel('File Number').fill(fileNumber)
     await page.getByLabel('City').fill('Lorain')
     await page.getByLabel('County').fill('Lorain')
     await page.getByLabel('State').fill('OH')
@@ -194,13 +188,14 @@ test.describe('Genesis foundation phase', () => {
     await expect(page.getByLabel('State')).toHaveValue('OH')
     await expect(page.getByLabel('Zip')).toHaveValue('44053')
 
-    await page.getByLabel('House Number').fill('640')
-    await page.getByLabel('Street Name').fill('Bayberry Rd')
-    await page.getByLabel('Use Type').selectOption('Single Family')
+    await page.getByLabel('Property Address').fill('640 Bayberry Rd')
+    await page.getByLabel('Use Type').click()
+    await page.getByRole('option', { name: 'Single Family' }).click()
 
     await page.getByTestId('property-tab-legal').click()
     await expect(page.getByLabel('Parcel Number', { exact: true })).toHaveValue('12-34-567')
-    await page.getByLabel('Parcel Number Type').selectOption('APN')
+    await page.getByLabel('Parcel Number Type').click()
+    await page.getByRole('option', { name: 'APN' }).click()
     await page.getByLabel('Full Legal Description').fill('Lot 5, Block 2, Test Subdivision')
 
     await page.getByRole('button', { name: 'Save Changes' }).click()
@@ -208,14 +203,15 @@ test.describe('Genesis foundation phase', () => {
     await page.waitForLoadState('networkidle')
 
     await page.getByTestId('property-tab-identification').click()
-    await expect(page.getByLabel('House Number')).toHaveValue('640')
-    await expect(page.getByLabel('Use Type')).toHaveValue('Single Family')
+    await expect(page.getByLabel('Property Address')).toHaveValue('640 Bayberry Rd')
+    await expect(page.getByLabel('Use Type')).toContainText('Single Family')
 
     await page.getByTestId('property-tab-legal').click()
     await expect(page.getByLabel('Full Legal Description')).toHaveValue('Lot 5, Block 2, Test Subdivision')
 
     await page.getByText('Add an easement').click()
-    await page.locator('#easement_type').selectOption('Utility Easement')
+    await page.locator('#easement_type').click()
+    await page.getByRole('option', { name: 'Utility Easement' }).click()
     await page.locator('#description').fill('Rear yard utility line')
     await page.getByRole('button', { name: 'Add Easement' }).click()
 
@@ -230,8 +226,6 @@ test.describe('Genesis foundation phase', () => {
     await loginAsSeededUser(page)
 
     await page.getByRole('link', { name: '+ New Order' }).click()
-    const fileNumber = `TEST-${Date.now()}`
-    await page.getByLabel('File Number').fill(fileNumber)
     await page.getByLabel('City').fill('Lorain')
     await page.getByLabel('County').fill('Lorain')
     await page.getByLabel('State').fill('OH')
@@ -288,16 +282,16 @@ test.describe('Genesis foundation phase', () => {
     await loginAsSeededUser(page)
 
     await page.getByRole('link', { name: '+ New Order' }).click()
-    const fileNumber = `TEST-${Date.now()}`
-    await page.getByLabel('File Number').fill(fileNumber)
     await page.getByLabel('Property Address').fill('789 Search Test Ave')
     await page.getByRole('button', { name: 'Create Order' }).click()
     await page.waitForURL('**/orders/**/order-entry')
     const orderId = page.url().match(/\/orders\/([^/]+)\/order-entry/)?.[1]
+    const fileNumber = await page.getByLabel('File Number').inputValue()
 
     await page.goto(`/orders/${orderId}/contacts`)
     await page.getByText('Add a contact').click()
-    await page.getByLabel('Role').fill('Buyer/Borrower')
+    await page.getByLabel('Role').click()
+    await page.getByRole('option', { name: 'Buyer/Borrower', exact: true }).click()
     await page.getByLabel('Name').fill('Search Test Buyer')
     await page.getByRole('button', { name: 'Add Contact' }).click()
     await expect(page.getByTestId('contact-row')).toContainText('Search Test Buyer')
@@ -305,7 +299,8 @@ test.describe('Genesis foundation phase', () => {
     // The "Add a contact" <details> disclosure stays open after a successful
     // submit (the form resets, but the disclosure itself isn't re-closed) —
     // clicking the summary again here would toggle it CLOSED, not reopen it.
-    await page.getByLabel('Role').fill('Listing Agent')
+    await page.getByLabel('Role').click()
+    await page.getByRole('option', { name: "Listing Agent (Seller's Agent)", exact: true }).click()
     await page.getByLabel('Name').fill('Nonmatching Agent')
     await page.getByRole('button', { name: 'Add Contact' }).click()
     await expect(page.getByTestId('contact-row').filter({ hasText: 'Nonmatching Agent' })).toBeVisible()
@@ -332,17 +327,17 @@ test.describe('Genesis foundation phase', () => {
     await loginAsSeededUser(page)
 
     await page.getByRole('link', { name: '+ New Order' }).click()
-    const fileNumber = `TEST-${Date.now()}`
-    await page.getByLabel('File Number').fill(fileNumber)
     await page.getByRole('button', { name: 'Create Order' }).click()
     await page.waitForURL('**/orders/**/order-entry')
     const orderId = page.url().match(/\/orders\/([^/]+)\/order-entry/)?.[1]
+    const fileNumber = await page.getByLabel('File Number').inputValue()
 
     await page.goto(`/orders/${orderId}/order-info`)
-    await page.getByLabel('Title Status').selectOption('Exam')
+    await page.getByLabel('Title Status').click()
+    await page.getByRole('option', { name: 'Exam' }).click()
     await page.getByRole('button', { name: 'Save Changes' }).click()
     await page.waitForURL('**/order-info')
-    await expect(page.getByLabel('Title Status')).toHaveValue('Exam')
+    await expect(page.getByLabel('Title Status')).toContainText('Exam')
 
     await page.goto('/orders')
     await expect(page.getByTestId('order-list')).toContainText(fileNumber)
@@ -385,8 +380,6 @@ test.describe('Genesis foundation phase', () => {
     await loginAsSeededUser(page)
 
     await page.getByRole('link', { name: '+ New Order' }).click()
-    const fileNumber = `TEST-${Date.now()}`
-    await page.getByLabel('File Number').fill(fileNumber)
     await page.getByLabel('County').fill('Lorain')
     await page.getByRole('button', { name: 'Create Order' }).click()
     await page.waitForURL('**/orders/**/order-entry')
@@ -440,8 +433,6 @@ test.describe('Genesis foundation phase', () => {
     await loginAsSeededUser(page)
 
     await page.getByRole('link', { name: '+ New Order' }).click()
-    const fileNumber = `TEST-${Date.now()}`
-    await page.getByLabel('File Number').fill(fileNumber)
     await page.getByRole('button', { name: 'Create Order' }).click()
     await page.waitForURL('**/orders/**/order-entry')
 
@@ -479,8 +470,6 @@ test.describe('Genesis foundation phase', () => {
     await loginAsSeededUser(page)
 
     await page.getByRole('link', { name: '+ New Order' }).click()
-    const fileNumber = `TEST-${Date.now()}`
-    await page.getByLabel('File Number').fill(fileNumber)
     await page.getByRole('button', { name: 'Create Order' }).click()
     await page.waitForURL('**/orders/**/order-entry')
 
@@ -516,8 +505,6 @@ test.describe('Genesis foundation phase', () => {
     await loginAsSeededUser(page)
 
     await page.getByRole('link', { name: '+ New Order' }).click()
-    const fileNumber = `TEST-${Date.now()}`
-    await page.getByLabel('File Number').fill(fileNumber)
     await page.getByRole('button', { name: 'Create Order' }).click()
     await page.waitForURL('**/orders/**/order-entry')
 
@@ -552,8 +539,6 @@ test.describe('Genesis foundation phase', () => {
     await loginAsSeededUser(page)
 
     await page.getByRole('link', { name: '+ New Order' }).click()
-    const fileNumber = `TEST-${Date.now()}`
-    await page.getByLabel('File Number').fill(fileNumber)
     await page.getByRole('button', { name: 'Create Order' }).click()
     await page.waitForURL('**/orders/**/order-entry')
 
@@ -582,12 +567,11 @@ test.describe('Genesis foundation phase', () => {
     await loginAsSeededUser(page)
 
     await page.getByRole('link', { name: '+ New Order' }).click()
-    const fileNumber = `TEST-${Date.now()}`
-    await page.getByLabel('File Number').fill(fileNumber)
     await page.getByRole('button', { name: 'Create Order' }).click()
     await page.waitForURL('**/orders/**/order-entry')
 
-    await page.getByLabel('Policy Type').selectOption('Simultaneous')
+    await page.getByLabel('Policy Type').click()
+    await page.getByRole('option', { name: 'Simultaneous' }).click()
     await page.getByRole('button', { name: 'Save Changes' }).click()
     await page.waitForURL('**/order-entry')
 
@@ -624,13 +608,12 @@ test.describe('Genesis foundation phase', () => {
     await loginAsSeededUser(page)
 
     await page.getByRole('link', { name: '+ New Order' }).click()
-    const fileNumber = `TEST-${Date.now()}`
-    await page.getByLabel('File Number').fill(fileNumber)
     await page.getByLabel('County').fill('Lorain')
     await page.getByRole('button', { name: 'Create Order' }).click()
     await page.waitForURL('**/orders/**/order-entry')
 
-    await page.getByLabel('Policy Type').selectOption('Simultaneous')
+    await page.getByLabel('Policy Type').click()
+    await page.getByRole('option', { name: 'Simultaneous' }).click()
     await page.getByRole('button', { name: 'Save Changes' }).click()
     await page.waitForURL('**/order-entry')
 
@@ -650,12 +633,14 @@ test.describe('Genesis foundation phase', () => {
     await page.waitForURL('**/contacts')
 
     await page.getByText('Add a contact').click()
-    await page.getByLabel('Role').fill('Buyer/Borrower')
+    await page.getByLabel('Role').click()
+    await page.getByRole('option', { name: 'Buyer/Borrower', exact: true }).click()
     await page.getByLabel('Name').fill('Jane Buyer')
     await page.getByRole('button', { name: 'Add Contact' }).click()
     await expect(page.getByText('Jane Buyer')).toBeVisible()
 
-    await page.getByLabel('Role').fill('Lender')
+    await page.getByLabel('Role').click()
+    await page.getByRole('option', { name: 'Lender', exact: true }).click()
     await page.getByLabel('Name').fill('First National Bank')
     await page.getByLabel('Mortgagee Clause').fill('First National Bank, its successors and/or assigns, ISAOA/ATIMA')
     await page.getByRole('button', { name: 'Add Contact' }).click()
@@ -714,8 +699,6 @@ test.describe('Genesis foundation phase', () => {
     await loginAsSeededUser(page)
 
     await page.getByRole('link', { name: '+ New Order' }).click()
-    const fileNumber = `TEST-${Date.now()}`
-    await page.getByLabel('File Number').fill(fileNumber)
     await page.getByRole('button', { name: 'Create Order' }).click()
     await page.waitForURL('**/orders/**/order-entry')
 
@@ -825,8 +808,6 @@ test.describe('Genesis foundation phase', () => {
     await loginAsSeededUser(page)
 
     await page.getByRole('link', { name: '+ New Order' }).click()
-    const fileNumber = `TEST-${Date.now()}`
-    await page.getByLabel('File Number').fill(fileNumber)
     await page.getByRole('button', { name: 'Create Order' }).click()
     await page.waitForURL('**/orders/**/order-entry')
 
@@ -841,7 +822,7 @@ test.describe('Genesis foundation phase', () => {
     await expect(page.getByTestId('ctc-issued-label')).toHaveCount(0)
     await page.getByTestId('file-section-nav').getByRole('link', { name: 'Order Info' }).click()
     await page.waitForURL('**/order-info')
-    await expect(page.locator('#title_status')).toHaveValue('In Progress')
+    await expect(page.locator('#title_status')).toContainText('In Progress')
 
     await page.getByTestId('file-section-nav').getByRole('link', { name: 'Prelim Title Search' }).click()
     await page.waitForURL('**/prelim-search')
@@ -896,7 +877,7 @@ test.describe('Genesis foundation phase', () => {
     // orders.title_status flips to Curative
     await page.getByTestId('file-section-nav').getByRole('link', { name: 'Order Info' }).click()
     await page.waitForURL('**/order-info')
-    await expect(page.locator('#title_status')).toHaveValue('Curative')
+    await expect(page.locator('#title_status')).toContainText('Curative')
 
     // Sch B is now read-only
     await page.getByTestId('file-section-nav').getByRole('link', { name: 'Commitment Sch B-I/B-II' }).click()
@@ -922,7 +903,7 @@ test.describe('Genesis foundation phase', () => {
 
     await page.getByTestId('file-section-nav').getByRole('link', { name: 'Order Info' }).click()
     await page.waitForURL('**/order-info')
-    await expect(page.locator('#title_status')).toHaveValue('Cleared for Policy')
+    await expect(page.locator('#title_status')).toContainText('Cleared for Policy')
 
     // Rescind CTC
     await page.getByTestId('file-section-nav').getByRole('link', { name: 'Curative' }).click()
@@ -933,7 +914,7 @@ test.describe('Genesis foundation phase', () => {
 
     await page.getByTestId('file-section-nav').getByRole('link', { name: 'Order Info' }).click()
     await page.waitForURL('**/order-info')
-    await expect(page.locator('#title_status')).toHaveValue('Curative')
+    await expect(page.locator('#title_status')).toContainText('Curative')
 
     // Revert to Draft
     await page.getByTestId('file-section-nav').getByRole('link', { name: 'Curative' }).click()

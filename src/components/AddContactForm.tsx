@@ -1,0 +1,151 @@
+'use client'
+
+import { useState } from 'react'
+import {
+  CONTACT_ROLES,
+  CONTACT_ROLES_SINGLE_ADDRESS,
+  CONTACT_ROLES_WITH_ENTITY_TYPE,
+  CONTACT_ROLES_WITH_LICENSE,
+  CONTACT_ROLES_WITH_MORTGAGEE_CLAUSE,
+  ENTITY_TYPES,
+} from '@/lib/constants'
+import { Input } from '@/components/ui/input'
+import { Label } from '@/components/ui/label'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+import { OrderFormSubmitButton } from '@/components/OrderFormSubmitButton'
+
+export function AddContactForm({
+  action,
+}: {
+  action: (formData: FormData) => void | Promise<void>
+}) {
+  const [role, setRole] = useState('')
+  const [entityType, setEntityType] = useState('Individual')
+
+  const showEntityType = CONTACT_ROLES_WITH_ENTITY_TYPE.includes(role)
+  const showSsnDob = showEntityType && entityType === 'Individual'
+  const showSingleAddress = CONTACT_ROLES_SINGLE_ADDRESS.includes(role)
+  const showLicense = CONTACT_ROLES_WITH_LICENSE.includes(role)
+  const showMortgagee = CONTACT_ROLES_WITH_MORTGAGEE_CLAUSE.includes(role)
+
+  return (
+    <form action={action} className="mt-4 space-y-4">
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+        <div>
+          <Label htmlFor="role">Role</Label>
+          <Select name="role" required value={role} onValueChange={(v) => setRole(v as string)}>
+            <SelectTrigger id="role" className="mt-1 w-full">
+              <SelectValue placeholder="— Select —" />
+            </SelectTrigger>
+            <SelectContent>
+              {CONTACT_ROLES.map((r) => (
+                <SelectItem key={r} value={r}>
+                  {r}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+        {showEntityType ? (
+          <div>
+            <Label htmlFor="entity_type">Entity Type</Label>
+            <Select
+              name="entity_type"
+              value={entityType}
+              onValueChange={(v) => setEntityType(v as string)}
+            >
+              <SelectTrigger id="entity_type" className="mt-1 w-full">
+                <SelectValue placeholder="— Select —" />
+              </SelectTrigger>
+              <SelectContent>
+                {ENTITY_TYPES.map((t) => (
+                  <SelectItem key={t} value={t}>
+                    {t}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+        ) : (
+          <input type="hidden" name="entity_type" value="Individual" />
+        )}
+      </div>
+
+      <div>
+        <Label htmlFor="name">Name</Label>
+        <Input id="name" name="name" required className="mt-1" />
+      </div>
+
+      {showSingleAddress ? (
+        <div>
+          <Label htmlFor="current_address">Address</Label>
+          <Input id="current_address" name="current_address" className="mt-1" />
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+          <div>
+            <Label htmlFor="current_address">Current Address</Label>
+            <Input id="current_address" name="current_address" className="mt-1" />
+          </div>
+          <div>
+            <Label htmlFor="mailing_address">Mailing Address</Label>
+            <Input id="mailing_address" name="mailing_address" className="mt-1" />
+          </div>
+          <div>
+            <Label htmlFor="forwarding_address">Forwarding Address</Label>
+            <Input id="forwarding_address" name="forwarding_address" className="mt-1" />
+          </div>
+        </div>
+      )}
+
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+        <div>
+          <Label htmlFor="phone">Phone</Label>
+          <Input id="phone" name="phone" className="mt-1" />
+        </div>
+        <div>
+          <Label htmlFor="email">Email</Label>
+          <Input id="email" name="email" type="email" className="mt-1" />
+        </div>
+      </div>
+
+      {showSsnDob && (
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+          <div>
+            <Label htmlFor="ssn">SSN</Label>
+            <Input id="ssn" name="ssn" autoComplete="off" className="mt-1" />
+          </div>
+          <div>
+            <Label htmlFor="dob">Date of Birth</Label>
+            <Input id="dob" name="dob" type="date" className="mt-1" />
+          </div>
+        </div>
+      )}
+
+      {(showLicense || showMortgagee) && (
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+          {showLicense && (
+            <>
+              <div>
+                <Label htmlFor="license_number">License Number</Label>
+                <Input id="license_number" name="license_number" className="mt-1" />
+              </div>
+              <div>
+                <Label htmlFor="alta_id">ALTA ID</Label>
+                <Input id="alta_id" name="alta_id" className="mt-1" />
+              </div>
+            </>
+          )}
+          {showMortgagee && (
+            <div>
+              <Label htmlFor="mortgagee_clause">Mortgagee Clause</Label>
+              <Input id="mortgagee_clause" name="mortgagee_clause" className="mt-1" />
+            </div>
+          )}
+        </div>
+      )}
+
+      <OrderFormSubmitButton label="Add Contact" />
+    </form>
+  )
+}

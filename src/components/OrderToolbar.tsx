@@ -31,10 +31,10 @@ export function OrderToolbar({ children }: { children: React.ReactNode }) {
             type="button"
             data-testid={`toolbar-tab-${tab.key}`}
             onClick={() => setActiveTab(tab.key)}
-            className={`px-3 py-2 text-sm ${
+            className={`cursor-pointer px-3 py-2.5 text-sm transition-colors duration-200 ${
               activeTab === tab.key
-                ? 'border-b-2 border-slate-900 font-medium text-slate-900'
-                : 'text-slate-500 hover:text-slate-900'
+                ? 'border-b-2 border-foreground font-medium text-foreground'
+                : 'text-muted-foreground hover:text-foreground'
             }`}
           >
             {tab.label}
@@ -43,7 +43,7 @@ export function OrderToolbar({ children }: { children: React.ReactNode }) {
       </div>
 
       {activeTab ? (
-        <p className="text-sm text-slate-500" data-testid="toolbar-placeholder">
+        <p className="text-sm text-muted-foreground" data-testid="toolbar-placeholder">
           Not built yet.
         </p>
       ) : (

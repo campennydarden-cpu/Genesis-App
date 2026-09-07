@@ -8,7 +8,9 @@ export async function addContact(orderId: string, formData: FormData) {
   const supabase = await createClient()
 
   const role = formData.get('role') as string
-  const entityType = formData.get('entity_type') as string
+  // Entity Type is hidden in the UI for roles it doesn't apply to; the column
+  // is NOT NULL, so fall back to the DB default when the field is absent.
+  const entityType = (formData.get('entity_type') as string) || 'Individual'
   const name = formData.get('name') as string
   const currentAddress = formData.get('current_address') as string
   const mailingAddress = formData.get('mailing_address') as string

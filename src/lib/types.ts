@@ -14,6 +14,11 @@ export type Order = {
   order_status: string
   title_status: string
   escrow_status: string
+  settlement_date: string | null
+  settlement_time: string | null
+  rush_order: boolean
+  title_opened_date: string | null
+  escrow_opened_date: string | null
 }
 
 export type PropertyDetails = {
@@ -28,6 +33,10 @@ export type PropertyDetails = {
   state: string | null
   zip: string | null
   section_township_range: string | null
+  property_address: string | null
+  section: string | null
+  township: string | null
+  range: string | null
   brief_legal: string | null
   lot: string | null
   block: string | null

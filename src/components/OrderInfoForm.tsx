@@ -1,69 +1,95 @@
+import { Button } from '@/components/ui/button'
+import { Label } from '@/components/ui/label'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+import { StatusBadge } from '@/components/ui/status-badge'
 import { ORDER_STATUSES, TITLE_STATUSES, ESCROW_STATUSES } from '@/lib/constants'
 import type { Order } from '@/lib/types'
+
+function formatOpenedDate(value: string | null) {
+  if (!value) return null
+  return new Date(value).toLocaleDateString('en-US', {
+    year: 'numeric',
+    month: 'short',
+    day: 'numeric',
+  })
+}
 
 export function OrderInfoForm({
   action,
   order,
 }: {
   action: (formData: FormData) => void
-  order: Pick<Order, 'order_status' | 'title_status' | 'escrow_status'>
+  order: Pick<
+    Order,
+    'order_status' | 'title_status' | 'escrow_status' | 'title_opened_date' | 'escrow_opened_date'
+  >
 }) {
+  const titleOpenedDate = formatOpenedDate(order.title_opened_date)
+  const escrowOpenedDate = formatOpenedDate(order.escrow_opened_date)
+
   return (
     <form action={action} className="max-w-md space-y-4">
       <div>
-        <label htmlFor="order_status" className="block text-sm font-medium">
-          Order Status
-        </label>
-        <select
-          id="order_status"
-          name="order_status"
-          defaultValue={order.order_status}
-          className="mt-1 w-full rounded border px-3 py-2"
-        >
-          {ORDER_STATUSES.map((s) => (
-            <option key={s} value={s}>
-              {s}
-            </option>
-          ))}
-        </select>
+        <div className="flex items-center justify-between">
+          <Label htmlFor="order_status">Order Status</Label>
+          <StatusBadge status={order.order_status} />
+        </div>
+        <Select name="order_status" defaultValue={order.order_status}>
+          <SelectTrigger id="order_status" className="mt-1 w-full">
+            <SelectValue placeholder="— Select —" />
+          </SelectTrigger>
+          <SelectContent>
+            {ORDER_STATUSES.map((s) => (
+              <SelectItem key={s} value={s}>
+                {s}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
       </div>
       <div>
-        <label htmlFor="title_status" className="block text-sm font-medium">
-          Title Status
-        </label>
-        <select
-          id="title_status"
-          name="title_status"
-          defaultValue={order.title_status}
-          className="mt-1 w-full rounded border px-3 py-2"
-        >
-          {TITLE_STATUSES.map((s) => (
-            <option key={s} value={s}>
-              {s}
-            </option>
-          ))}
-        </select>
+        <div className="flex items-center justify-between">
+          <Label htmlFor="title_status">Title Status</Label>
+          <StatusBadge status={order.title_status} />
+        </div>
+        <Select name="title_status" defaultValue={order.title_status}>
+          <SelectTrigger id="title_status" className="mt-1 w-full">
+            <SelectValue placeholder="— Select —" />
+          </SelectTrigger>
+          <SelectContent>
+            {TITLE_STATUSES.map((s) => (
+              <SelectItem key={s} value={s}>
+                {s}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+        {titleOpenedDate && (
+          <p className="mt-1 text-xs text-muted-foreground">Title opened {titleOpenedDate}</p>
+        )}
       </div>
       <div>
-        <label htmlFor="escrow_status" className="block text-sm font-medium">
-          Escrow Status
-        </label>
-        <select
-          id="escrow_status"
-          name="escrow_status"
-          defaultValue={order.escrow_status}
-          className="mt-1 w-full rounded border px-3 py-2"
-        >
-          {ESCROW_STATUSES.map((s) => (
-            <option key={s} value={s}>
-              {s}
-            </option>
-          ))}
-        </select>
+        <div className="flex items-center justify-between">
+          <Label htmlFor="escrow_status">Escrow Status</Label>
+          <StatusBadge status={order.escrow_status} />
+        </div>
+        <Select name="escrow_status" defaultValue={order.escrow_status}>
+          <SelectTrigger id="escrow_status" className="mt-1 w-full">
+            <SelectValue placeholder="— Select —" />
+          </SelectTrigger>
+          <SelectContent>
+            {ESCROW_STATUSES.map((s) => (
+              <SelectItem key={s} value={s}>
+                {s}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+        {escrowOpenedDate && (
+          <p className="mt-1 text-xs text-muted-foreground">Escrow opened {escrowOpenedDate}</p>
+        )}
       </div>
-      <button type="submit" className="rounded bg-slate-900 px-4 py-2 text-white">
-        Save Changes
-      </button>
+      <Button type="submit">Save Changes</Button>
     </form>
   )
 }

@@ -2,6 +2,7 @@ import { notFound } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
 import { updateOrderInfo } from '@/app/actions/orders'
 import { OrderInfoForm } from '@/components/OrderInfoForm'
+import { Alert, AlertDescription } from '@/components/ui/alert'
 
 export default async function OrderInfoPage({
   params,
@@ -16,7 +17,7 @@ export default async function OrderInfoPage({
 
   const { data: order } = await supabase
     .from('orders')
-    .select('order_status, title_status, escrow_status')
+    .select('order_status, title_status, escrow_status, title_opened_date, escrow_opened_date')
     .eq('id', id)
     .single()
 
@@ -28,7 +29,11 @@ export default async function OrderInfoPage({
 
   return (
     <div>
-      {error && <p className="mb-4 rounded bg-red-50 p-3 text-sm text-red-700">{error}</p>}
+      {error && (
+        <Alert variant="destructive" className="mb-4">
+          <AlertDescription>{error}</AlertDescription>
+        </Alert>
+      )}
       <OrderInfoForm action={updateOrderInfoWithId} order={order} />
     </div>
   )

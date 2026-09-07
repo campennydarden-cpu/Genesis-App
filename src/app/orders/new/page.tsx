@@ -1,5 +1,6 @@
 import { createOrder } from '@/app/actions/orders'
 import { OrderForm } from '@/components/OrderForm'
+import { Alert, AlertDescription } from '@/components/ui/alert'
 
 export default async function NewOrderPage({
   searchParams,
@@ -12,7 +13,9 @@ export default async function NewOrderPage({
     <div className="mx-auto max-w-2xl p-8">
       <h1 className="mb-6 text-2xl font-semibold">New Order</h1>
       {error && (
-        <p className="mb-4 rounded bg-red-50 p-3 text-sm text-red-700">{error}</p>
+        <Alert variant="destructive" className="mb-4">
+          <AlertDescription>{error}</AlertDescription>
+        </Alert>
       )}
       <OrderForm action={createOrder} />
     </div>

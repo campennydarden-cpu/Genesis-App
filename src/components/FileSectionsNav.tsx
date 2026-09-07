@@ -1,7 +1,9 @@
 'use client'
 
+import { useState } from 'react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
+import { ChevronDown } from 'lucide-react'
 
 type NavItem = { label: string; segment?: string }
 type NavGroup = { heading: string; items: NavItem[] }
@@ -52,24 +54,53 @@ const NAV_GROUPS: NavGroup[] = [
   },
 ]
 
+function slugify(heading: string) {
+  return heading.toLowerCase().replace(/[^a-z0-9]+/g, '-')
+}
+
 export function FileSectionsNav({ orderId }: { orderId: string }) {
   const pathname = usePathname()
+  const [openGroups, setOpenGroups] = useState<Record<string, boolean>>(() =>
+    Object.fromEntries(NAV_GROUPS.map((group) => [group.heading, true]))
+  )
 
   return (
     <div className="space-y-6">
-      {NAV_GROUPS.map((group) => (
+      {NAV_GROUPS.map((group) => {
+        const open = openGroups[group.heading]
+        const listId = `nav-group-${slugify(group.heading)}`
+
+        return (
         <div key={group.heading}>
-          <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-slate-400">
+          <button
+            type="button"
+            aria-expanded={open}
+            aria-controls={listId}
+            onClick={() =>
+              setOpenGroups((prev) => ({ ...prev, [group.heading]: !prev[group.heading] }))
+            }
+            className="mb-2 flex w-full items-center gap-1 text-xs font-semibold uppercase tracking-wide text-muted-foreground"
+          >
+            <ChevronDown
+              className={`size-3.5 shrink-0 transition-transform duration-200 motion-reduce:transition-none ${
+                open ? 'rotate-0' : '-rotate-90'
+              }`}
+              aria-hidden="true"
+            />
             {group.heading}
-          </p>
-          <ul className="space-y-1">
+          </button>
+          <ul
+            id={listId}
+            hidden={!open}
+            className="space-y-1"
+          >
             {group.items.map((item) => {
               if (!item.segment) {
                 return (
                   <li key={item.label}>
                     <span
                       data-testid="nav-disabled"
-                      className="block cursor-not-allowed rounded p-2 text-sm text-slate-300"
+                      className="block cursor-not-allowed rounded p-2.5 text-sm text-muted-foreground"
                     >
                       {item.label}
                     </span>
@@ -85,8 +116,9 @@ export function FileSectionsNav({ orderId }: { orderId: string }) {
                   <Link
                     href={href}
                     data-testid="nav-link"
-                    className={`block rounded p-2 text-sm ${
-                      active ? 'bg-slate-900 text-white' : 'text-slate-700 hover:bg-slate-100'
+                    aria-current={active ? 'page' : undefined}
+                    className={`block rounded p-2.5 text-sm transition-colors duration-200 ${
+                      active ? 'bg-primary text-primary-foreground' : 'text-foreground hover:bg-muted'
                     }`}
                   >
                     {item.label}
@@ -96,7 +128,8 @@ export function FileSectionsNav({ orderId }: { orderId: string }) {
             })}
           </ul>
         </div>
-      ))}
+        )
+      })}
     </div>
   )
 }

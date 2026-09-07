@@ -16,7 +16,9 @@ export default async function PropertyPage({
 
   const { data: order } = await supabase
     .from('orders')
-    .select('id, property_city, property_county, property_state, property_zip, parcel_number')
+    .select(
+      'id, property_address, property_city, property_county, property_state, property_zip, parcel_number'
+    )
     .eq('id', id)
     .single()
 
@@ -48,6 +50,7 @@ export default async function PropertyPage({
         orderId={id}
         property={property}
         orderDefaults={{
+          property_address: order.property_address,
           city: order.property_city,
           county: order.property_county,
           state: order.property_state,

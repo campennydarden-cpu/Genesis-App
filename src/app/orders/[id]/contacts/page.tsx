@@ -1,6 +1,7 @@
 import { notFound } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
 import { ContactsSection } from '@/components/ContactsSection'
+import { Alert, AlertDescription } from '@/components/ui/alert'
 
 export default async function OrderContactsPage({
   params,
@@ -27,7 +28,11 @@ export default async function OrderContactsPage({
 
   return (
     <div>
-      {error && <p className="mb-4 rounded bg-red-50 p-3 text-sm text-red-700">{error}</p>}
+      {error && (
+        <Alert variant="destructive" className="mb-4">
+          <AlertDescription>{error}</AlertDescription>
+        </Alert>
+      )}
       <ContactsSection orderId={id} contacts={contacts ?? []} />
     </div>
   )

@@ -48,6 +48,41 @@ export const ENTITY_TYPES = [
   'Estate',
 ] as const
 
+// Focus set of 9 contact roles. Deliberately not the full 24-value role list —
+// the rest are deferred to a later pass.
+export const CONTACT_ROLES = [
+  'Buyer/Borrower',
+  'Seller',
+  'Lender',
+  'Mortgage Broker',
+  'Underwriter',
+  'Settlement Agent',
+  'Title Company',
+  "Listing Agent (Seller's Agent)",
+  "Selling Agent (Buyer's Agent)",
+] as const
+
+// Roles where Entity Type applies in the UI (and, when Individual, SSN/DOB show).
+export const CONTACT_ROLES_WITH_ENTITY_TYPE: readonly string[] = ['Buyer/Borrower', 'Seller']
+
+// Roles that get a single Address field (stored in current_address) instead of
+// separate Current/Mailing/Forwarding Address fields.
+export const CONTACT_ROLES_SINGLE_ADDRESS: readonly string[] = [
+  'Lender',
+  'Mortgage Broker',
+  'Underwriter',
+  'Settlement Agent',
+  'Title Company',
+  "Listing Agent (Seller's Agent)",
+  "Selling Agent (Buyer's Agent)",
+]
+
+// Roles with License Number + ALTA ID fields.
+export const CONTACT_ROLES_WITH_LICENSE: readonly string[] = ['Title Company', 'Settlement Agent']
+
+// Roles with a Mortgagee Clause field.
+export const CONTACT_ROLES_WITH_MORTGAGEE_CLAUSE: readonly string[] = ['Lender']
+
 export const USE_TYPES = [
   '1-4 Family',
   'Single Family',

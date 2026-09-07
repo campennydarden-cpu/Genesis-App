@@ -28,13 +28,20 @@ export default async function OrderLayout({
 
   return (
     <div className="flex min-h-screen">
-      <aside className="w-64 shrink-0 border-r bg-slate-50 p-4" data-testid="order-sidebar">
+      <aside
+        className="w-64 shrink-0 border-r bg-muted p-4"
+        data-testid="order-sidebar"
+        aria-label="Orders"
+      >
         <div className="mb-4 flex items-center justify-between">
-          <Link href="/orders/new" className="rounded bg-slate-900 px-3 py-1.5 text-sm text-white">
+          <Link href="/orders/new" className="rounded bg-primary px-3 py-1.5 text-sm text-primary-foreground">
             + New Order
           </Link>
           <form action={logout}>
-            <button type="submit" className="text-xs text-slate-500 hover:underline">
+            <button
+              type="submit"
+              className="cursor-pointer text-xs text-muted-foreground transition-colors duration-200 hover:underline"
+            >
               Sign Out
             </button>
           </form>
@@ -46,12 +53,13 @@ export default async function OrderLayout({
                 href={`/orders/${o.id}/order-entry`}
                 data-testid="sidebar-order-row"
                 data-order-id={o.id}
-                className={`block rounded p-2 text-sm ${
-                  o.id === id ? 'bg-slate-900 text-white' : 'hover:bg-slate-100'
+                aria-current={o.id === id ? 'page' : undefined}
+                className={`block rounded p-2 text-sm transition-colors duration-200 ${
+                  o.id === id ? 'bg-primary text-primary-foreground' : 'hover:bg-muted'
                 }`}
               >
                 <p className="font-medium">{o.file_number}</p>
-                <p className={o.id === id ? 'text-slate-300' : 'text-slate-500'}>
+                <p className={o.id === id ? 'text-primary-foreground/80' : 'text-muted-foreground'}>
                   {o.product_type} · {o.order_status}
                 </p>
               </Link>
@@ -60,7 +68,11 @@ export default async function OrderLayout({
         </ul>
       </aside>
 
-      <nav className="w-56 shrink-0 border-r p-4" data-testid="file-section-nav">
+      <nav
+        className="w-56 shrink-0 border-r p-4"
+        data-testid="file-section-nav"
+        aria-label="File sections"
+      >
         <FileSectionsNav orderId={id} />
       </nav>
 
