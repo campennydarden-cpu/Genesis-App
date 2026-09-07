@@ -1,4 +1,37 @@
 import { test, expect, type Page } from '@playwright/test'
+import { createClient } from '@supabase/supabase-js'
+
+// Public URL + anon key — same values the app itself ships to the browser
+// (NEXT_PUBLIC_*), not secrets. Used only to clean up orders this run created.
+const SUPABASE_URL = 'https://hlahrypglnmjjxrdtfkm.supabase.co'
+const SUPABASE_ANON_KEY =
+  'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImhsYWhyeXBnbG5tamp4cmR0ZmttIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODc3MzYyMDEsImV4cCI6MjEwMzMxMjIwMX0.dhgrZ8ei_NY2wG6bs6Ah--AHPEagl36gI7tcAX8llsY'
+
+// Every test that creates an order lands on /orders/<id>/order-entry right
+// after — tracked here via a page-navigation listener (see beforeEach below)
+// rather than editing each test, so cleanup can't silently miss a creation
+// site. Cleaned up once in afterAll instead of per-test so a test that fails
+// mid-way still gets its order removed.
+const createdOrderIds = new Set<string>()
+
+async function deleteTrackedOrders() {
+  if (createdOrderIds.size === 0) return
+  const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY)
+  const { error: authError } = await supabase.auth.signInWithPassword({
+    email: SEEDED_EMAIL,
+    password: SEEDED_PASSWORD,
+  })
+  if (authError) {
+    console.error('e2e cleanup: could not sign in to delete test orders:', authError.message)
+    return
+  }
+  const { error } = await supabase.from('orders').delete().in('id', [...createdOrderIds])
+  if (error) {
+    console.error('e2e cleanup: failed to delete tracked orders:', error.message)
+  } else {
+    console.log(`e2e cleanup: deleted ${createdOrderIds.size} order(s) created by this run.`)
+  }
+}
 
 function uniqueEmail() {
   // NOTE: @example.com is deliberately avoided — Supabase Auth (GoTrue) hard-rejects
@@ -28,6 +61,18 @@ async function loginAsSeededUser(page: Page) {
 }
 
 test.describe('Genesis foundation phase', () => {
+  test.beforeEach(async ({ page }) => {
+    page.on('framenavigated', (frame) => {
+      if (frame !== page.mainFrame()) return
+      const match = frame.url().match(/\/orders\/([^/?#]+)\/order-entry/)
+      if (match) createdOrderIds.add(match[1])
+    })
+  })
+
+  test.afterAll(async () => {
+    await deleteTrackedOrders()
+  })
+
   test('redirects unauthenticated users to /login', async ({ page }) => {
     await page.goto('/orders')
     await page.waitForURL('**/login**')
