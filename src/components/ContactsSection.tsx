@@ -15,10 +15,12 @@ export function ContactsSection({
   orderId,
   contacts,
   principalsByContact,
+  propertyAddress,
 }: {
   orderId: string
   contacts: Contact[]
   principalsByContact: Map<string, ContactPrincipal[]>
+  propertyAddress?: string | null
 }) {
   const addContactWithOrderId = addContact.bind(null, orderId)
 
@@ -75,7 +77,7 @@ export function ContactsSection({
 
       <details className="rounded border p-4">
         <summary className="cursor-pointer font-medium">Add a contact</summary>
-        <AddContactForm action={addContactWithOrderId} />
+        <AddContactForm action={addContactWithOrderId} propertyAddress={propertyAddress} />
       </details>
     </div>
   )

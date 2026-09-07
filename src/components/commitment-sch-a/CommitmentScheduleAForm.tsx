@@ -7,10 +7,19 @@ import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
 import { Checkbox } from '@/components/ui/checkbox'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+import { CurrencyInput } from '@/components/ui/currency-input'
 import { COMMITMENT_FORM_TYPES, ALTA_POLICY_FORM_TYPES } from '@/lib/constants'
 import type { CommitmentScheduleA } from '@/lib/types'
 
-type ContactSeed = { id: string; name: string; role: string; mortgagee_clause: string | null }
+type ContactSeed = {
+  id: string
+  name: string
+  role: string
+  mortgagee_clause: string | null
+  trusteeLabel?: string | null
+  current_address?: string | null
+}
+type TitleCompanyContact = { name: string; current_address: string | null; alta_id: string | null } | null
 
 export function CommitmentScheduleAForm({
   action,
@@ -19,6 +28,10 @@ export function CommitmentScheduleAForm({
   effectiveDateDisplay,
   buyerBorrowerContacts,
   lenderContacts,
+  titleCompanyContact,
+  purchasePrice,
+  loanAmount,
+  readOnly,
 }: {
   action: (formData: FormData) => void
   commitmentSchA: CommitmentScheduleA | null
@@ -26,11 +39,14 @@ export function CommitmentScheduleAForm({
   effectiveDateDisplay: string
   buyerBorrowerContacts: ContactSeed[]
   lenderContacts: ContactSeed[]
+  titleCompanyContact?: TitleCompanyContact
+  purchasePrice?: number | null
+  loanAmount?: number | null
+  readOnly?: boolean
 }) {
   const [formType, setFormType] = useState<string>(commitmentSchA?.form_type ?? 'Standard')
   const [ownerProposedInsured, setOwnerProposedInsured] = useState(commitmentSchA?.owner_proposed_insured ?? '')
   const [loanProposedInsured, setLoanProposedInsured] = useState(commitmentSchA?.loan_proposed_insured ?? '')
-  const [loanMortgageeClause, setLoanMortgageeClause] = useState(commitmentSchA?.loan_mortgagee_clause ?? '')
 
   const isShortForm = formType === 'Short Form'
   const showOwnerPolicy = !isShortForm && (policyType === "Owner's" || policyType === 'Simultaneous')
@@ -39,18 +55,24 @@ export function CommitmentScheduleAForm({
   const contactsWithMortgageeClause = lenderContacts.filter((c) => c.mortgagee_clause)
 
   return (
-    <form action={action} className="space-y-8">
-      <div className="rounded border p-4" data-testid="commitment-form-card">
-        <h3 className="mb-4 font-semibold">Commitment Form</h3>
+    <fieldset disabled={readOnly} className="space-y-8 border-0 p-0">
+      {readOnly && (
+        <p className="rounded border border-amber-300 bg-amber-50 p-3 text-sm text-amber-800">
+          This commitment is finalized and locked. Revert to Draft in Curative to edit.
+        </p>
+      )}
+      <form action={action} className="space-y-8">
+      <div className="rounded border p-4" data-testid="transaction-id-card">
+        <h3 className="mb-4 font-semibold">Transaction Identification Data</h3>
         <div className="grid grid-cols-3 gap-4">
           <div>
-            <Label htmlFor="form_type">Form Type</Label>
+            <Label htmlFor="form_type">Commitment Form</Label>
             <Select
               name="form_type"
               defaultValue={commitmentSchA?.form_type ?? 'Standard'}
               onValueChange={(value) => setFormType(value ?? 'Standard')}
             >
-              <SelectTrigger id="form_type">
+              <SelectTrigger id="form_type" className="w-full">
                 <SelectValue placeholder="— Select —" />
               </SelectTrigger>
               <SelectContent>
@@ -63,51 +85,28 @@ export function CommitmentScheduleAForm({
             </Select>
           </div>
           <div>
-            <Label htmlFor="company_state_of_org">Company&apos;s State of Organization</Label>
-            <Input
-              id="company_state_of_org"
-              name="company_state_of_org"
-              defaultValue={commitmentSchA?.company_state_of_org ?? undefined}
-              placeholder="e.g. Ohio corporation"
-            />
-          </div>
-          <div>
-            <Label htmlFor="requirements_time_period">Requirements Time Period</Label>
-            <Input
-              id="requirements_time_period"
-              name="requirements_time_period"
-              defaultValue={commitmentSchA?.requirements_time_period ?? undefined}
-              placeholder="e.g. 6 months"
-            />
-          </div>
-        </div>
-        <div className={`mt-4 ${isShortForm ? '' : 'hidden'}`}>
-          <Label htmlFor="env_protection_lien_statutes">
-            ALTA 8.1-06 Environmental Protection Lien Statutes
-          </Label>
-          <Textarea
-            id="env_protection_lien_statutes"
-            name="env_protection_lien_statutes"
-            defaultValue={commitmentSchA?.env_protection_lien_statutes ?? undefined}
-            placeholder="State statutes to be set forth on any ALTA 8.1-06 endorsement"
-          />
-        </div>
-      </div>
-
-      <div className="rounded border p-4" data-testid="transaction-id-card">
-        <h3 className="mb-4 font-semibold">Transaction Identification Data</h3>
-        <div className="grid grid-cols-3 gap-4">
-          <div>
             <Label htmlFor="issuing_agent">Issuing Agent</Label>
-            <Input id="issuing_agent" name="issuing_agent" defaultValue={commitmentSchA?.issuing_agent ?? undefined} />
+            <Input
+              id="issuing_agent"
+              name="issuing_agent"
+              defaultValue={commitmentSchA?.issuing_agent ?? titleCompanyContact?.name ?? undefined}
+            />
           </div>
           <div>
             <Label htmlFor="issuing_office">Issuing Office</Label>
-            <Input id="issuing_office" name="issuing_office" defaultValue={commitmentSchA?.issuing_office ?? undefined} />
+            <Input
+              id="issuing_office"
+              name="issuing_office"
+              defaultValue={commitmentSchA?.issuing_office ?? titleCompanyContact?.current_address ?? undefined}
+            />
           </div>
           <div>
             <Label htmlFor="alta_universal_id">ALTA Universal ID</Label>
-            <Input id="alta_universal_id" name="alta_universal_id" defaultValue={commitmentSchA?.alta_universal_id ?? undefined} />
+            <Input
+              id="alta_universal_id"
+              name="alta_universal_id"
+              defaultValue={commitmentSchA?.alta_universal_id ?? titleCompanyContact?.alta_id ?? undefined}
+            />
           </div>
           <div>
             <Label htmlFor="loan_id_number">Loan ID Number</Label>
@@ -121,6 +120,17 @@ export function CommitmentScheduleAForm({
             <Label htmlFor="revision_number">Revision Number</Label>
             <Input id="revision_number" name="revision_number" defaultValue={commitmentSchA?.revision_number ?? undefined} />
           </div>
+        </div>
+        <div className={`mt-4 ${isShortForm ? '' : 'hidden'}`}>
+          <Label htmlFor="env_protection_lien_statutes">
+            ALTA 8.1-06 Environmental Protection Lien Statutes
+          </Label>
+          <Textarea
+            id="env_protection_lien_statutes"
+            name="env_protection_lien_statutes"
+            defaultValue={commitmentSchA?.env_protection_lien_statutes ?? undefined}
+            placeholder="State statutes to be set forth on any ALTA 8.1-06 endorsement"
+          />
         </div>
       </div>
 
@@ -190,13 +200,10 @@ export function CommitmentScheduleAForm({
           </div>
           <div>
             <Label htmlFor="owner_coverage_amount">Coverage Amount</Label>
-            <Input
+            <CurrencyInput
               id="owner_coverage_amount"
               name="owner_coverage_amount"
-              type="number"
-              step="0.01"
-              defaultValue={commitmentSchA?.owner_coverage_amount ?? undefined}
-              placeholder="0.00"
+              defaultValue={commitmentSchA?.owner_coverage_amount ?? purchasePrice ?? undefined}
             />
           </div>
           <div className="flex items-end gap-2 pb-2">
@@ -226,6 +233,19 @@ export function CommitmentScheduleAForm({
                 + {c.name}
               </button>
             ))}
+            {buyerBorrowerContacts
+              .filter((c) => c.trusteeLabel)
+              .map((c) => (
+                <button
+                  key={`${c.id}-trustee`}
+                  type="button"
+                  className="rounded border px-2 py-1 text-xs hover:bg-slate-50"
+                  title={c.trusteeLabel ?? undefined}
+                  onClick={() => setOwnerProposedInsured(c.trusteeLabel ?? '')}
+                >
+                  + {c.name} (with Trustees)
+                </button>
+              ))}
           </div>
         )}
       </div>
@@ -250,13 +270,10 @@ export function CommitmentScheduleAForm({
           </div>
           <div>
             <Label htmlFor="loan_coverage_amount">Coverage Amount</Label>
-            <Input
+            <CurrencyInput
               id="loan_coverage_amount"
               name="loan_coverage_amount"
-              type="number"
-              step="0.01"
-              defaultValue={commitmentSchA?.loan_coverage_amount ?? undefined}
-              placeholder="0.00"
+              defaultValue={commitmentSchA?.loan_coverage_amount ?? loanAmount ?? undefined}
             />
           </div>
           <div className="flex items-end gap-2 pb-2">
@@ -266,7 +283,7 @@ export function CommitmentScheduleAForm({
         </div>
         <div className="mt-4">
           <Label htmlFor="loan_proposed_insured">Proposed Insured</Label>
-          <Input
+          <Textarea
             id="loan_proposed_insured"
             name="loan_proposed_insured"
             value={loanProposedInsured}
@@ -288,28 +305,20 @@ export function CommitmentScheduleAForm({
             ))}
           </div>
         )}
-        <div className="mt-4">
-          <Label htmlFor="loan_mortgagee_clause">Mortgagee Clause</Label>
-          <Textarea
-            id="loan_mortgagee_clause"
-            name="loan_mortgagee_clause"
-            value={loanMortgageeClause}
-            onChange={(e) => setLoanMortgageeClause(e.target.value)}
-            placeholder="ISAOA/ATIMA clause language"
-          />
-        </div>
         {contactsWithMortgageeClause.length > 0 && (
           <div className="mt-2 flex flex-wrap gap-2" data-testid="mortgagee-clause-seed-chips">
-            <span className="text-xs text-slate-500">From Lender contact on file:</span>
+            <span className="text-xs text-slate-500">Full clause (Name, Mortgagee Clause: Address):</span>
             {contactsWithMortgageeClause.map((c) => (
               <button
                 key={c.id}
                 type="button"
                 className="rounded border px-2 py-1 text-xs hover:bg-slate-50"
-                title={c.mortgagee_clause ?? undefined}
-                onClick={() => setLoanMortgageeClause(c.mortgagee_clause ?? '')}
+                title={`${c.name}, ${c.mortgagee_clause}: ${c.current_address ?? ''}`}
+                onClick={() =>
+                  setLoanProposedInsured(`${c.name}, ${c.mortgagee_clause}: ${c.current_address ?? ''}`.trim())
+                }
               >
-                + Copy from {c.name}
+                + Use {c.name}
               </button>
             ))}
           </div>
@@ -342,5 +351,6 @@ export function CommitmentScheduleAForm({
 
       <Button type="submit">Save Changes</Button>
     </form>
+    </fieldset>
   )
 }

@@ -28,6 +28,14 @@ export default async function EditContactPage({
     notFound()
   }
 
+  const { data: order } = await supabase.from('orders').select('property_address').eq('id', id).single()
+  const { data: property } = await supabase
+    .from('property_details')
+    .select('property_address')
+    .eq('order_id', id)
+    .maybeSingle()
+  const propertyAddress = property?.property_address ?? order?.property_address ?? null
+
   const editContactWithIds = editContact.bind(null, id, contactId)
 
   return (
@@ -38,7 +46,7 @@ export default async function EditContactPage({
           <AlertDescription>{error}</AlertDescription>
         </Alert>
       )}
-      <AddContactForm action={editContactWithIds} contact={contact} />
+      <AddContactForm action={editContactWithIds} contact={contact} propertyAddress={propertyAddress} />
       <Button
         variant="ghost"
         size="sm"

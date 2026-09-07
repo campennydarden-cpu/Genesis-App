@@ -77,8 +77,9 @@ export const ENTITY_TYPES = [
   'Estate',
 ] as const
 
-// Focus set of 9 contact roles. Deliberately not the full 24-value role list —
-// the rest are deferred to a later pass.
+// Focus set of contact roles. Deliberately not the full 24-value role list —
+// the rest are deferred to a later pass. Recording Office/Tax Collector/Payoff
+// Lender added 2026-09-07 per Cam's call; the remaining 12 stay deferred.
 export const CONTACT_ROLES = [
   'Buyer/Borrower',
   'Seller',
@@ -89,6 +90,9 @@ export const CONTACT_ROLES = [
   'Title Company',
   "Listing Agent (Seller's Agent)",
   "Selling Agent (Buyer's Agent)",
+  'Recording Office',
+  'Tax Collector',
+  'Payoff Lender',
 ] as const
 
 // Roles where Entity Type applies in the UI (and, when Individual, SSN/DOB show).
@@ -104,7 +108,12 @@ export const CONTACT_ROLES_SINGLE_ADDRESS: readonly string[] = [
   'Title Company',
   "Listing Agent (Seller's Agent)",
   "Selling Agent (Buyer's Agent)",
+  'Recording Office',
+  'Tax Collector',
+  'Payoff Lender',
 ]
+
+export const MARITAL_STATUSES = ['Single', 'Married', 'Divorced', 'Widowed', 'Separated'] as const
 
 // Roles with License Number + ALTA ID fields.
 export const CONTACT_ROLES_WITH_LICENSE: readonly string[] = ['Title Company', 'Settlement Agent']
@@ -219,7 +228,7 @@ export const STANDARD_BI_ITEM_COUNTS: Record<string, number> = {
 }
 
 export const REQUIREMENT_DISPOSITIONS = [
-  'Released', 'Expired', 'Insured Over', 'Waived', 'No Action',
+  'Released/Satisfied', 'Insured Over', 'Waived', 'Paying off at Close', 'Expired', 'No Action',
 ] as const
 
 export const EXCEPTION_DISPOSITIONS = [

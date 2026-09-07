@@ -56,6 +56,8 @@ export type Contact = {
   license_number: string | null
   alta_id: string | null
   mortgagee_clause: string | null
+  poa: boolean
+  marital_status: string | null
 }
 
 export type ContactPrincipal = {
@@ -214,8 +216,6 @@ export type CommitmentScheduleA = {
   id: string
   order_id: string
   form_type: string
-  company_state_of_org: string | null
-  requirements_time_period: string | null
   env_protection_lien_statutes: string | null
   issuing_agent: string | null
   issuing_office: string | null
@@ -234,7 +234,6 @@ export type CommitmentScheduleA = {
   loan_coverage_amount: number | null
   loan_coverage_tbd: boolean
   loan_proposed_insured: string | null
-  loan_mortgagee_clause: string | null
   counter_signature: string | null
   counter_signature_date: string | null
 }

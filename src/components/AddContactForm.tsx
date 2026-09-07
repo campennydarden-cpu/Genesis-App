@@ -8,28 +8,36 @@ import {
   CONTACT_ROLES_WITH_LICENSE,
   CONTACT_ROLES_WITH_MORTGAGEE_CLAUSE,
   ENTITY_TYPES,
+  MARITAL_STATUSES,
 } from '@/lib/constants'
 import type { Contact } from '@/lib/types'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
+import { Checkbox } from '@/components/ui/checkbox'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { OrderFormSubmitButton } from '@/components/OrderFormSubmitButton'
 
 export function AddContactForm({
   action,
   contact,
+  propertyAddress,
 }: {
   action: (formData: FormData) => void | Promise<void>
   contact?: Contact
+  propertyAddress?: string | null
 }) {
   const [role, setRole] = useState(contact?.role ?? '')
   const [entityType, setEntityType] = useState(contact?.entity_type ?? 'Individual')
+  const [currentAddress, setCurrentAddress] = useState(contact?.current_address ?? '')
+  const [mailingAddress, setMailingAddress] = useState(contact?.mailing_address ?? '')
+  const [forwardingAddress, setForwardingAddress] = useState(contact?.forwarding_address ?? '')
 
   const showEntityType = CONTACT_ROLES_WITH_ENTITY_TYPE.includes(role)
   const showSsnDob = showEntityType && entityType === 'Individual'
   const showSingleAddress = CONTACT_ROLES_SINGLE_ADDRESS.includes(role)
   const showLicense = CONTACT_ROLES_WITH_LICENSE.includes(role)
   const showMortgagee = CONTACT_ROLES_WITH_MORTGAGEE_CLAUSE.includes(role)
+  const showFillFromProperty = !showSingleAddress && !!propertyAddress
 
   return (
     <form action={action} className="mt-4 space-y-4">
@@ -79,6 +87,11 @@ export function AddContactForm({
         <Input id="name" name="name" required className="mt-1" defaultValue={contact?.name} />
       </div>
 
+      <label className="flex items-center gap-2 text-sm">
+        <Checkbox id="poa" name="poa" defaultChecked={contact?.poa ?? false} />
+        Power of Attorney (POA)
+      </label>
+
       {showSingleAddress ? (
         <div>
           <Label htmlFor="current_address">Address</Label>
@@ -97,8 +110,17 @@ export function AddContactForm({
               id="current_address"
               name="current_address"
               className="mt-1"
-              defaultValue={contact?.current_address ?? undefined}
+              value={currentAddress}
+              onChange={(e) => setCurrentAddress(e.target.value)}
             />
+            {showFillFromProperty && (
+              <label className="mt-1 flex items-center gap-1.5 text-xs text-muted-foreground">
+                <Checkbox
+                  onCheckedChange={(checked) => checked && setCurrentAddress(propertyAddress ?? '')}
+                />
+                Same as Property Address
+              </label>
+            )}
           </div>
           <div>
             <Label htmlFor="mailing_address">Mailing Address</Label>
@@ -106,8 +128,17 @@ export function AddContactForm({
               id="mailing_address"
               name="mailing_address"
               className="mt-1"
-              defaultValue={contact?.mailing_address ?? undefined}
+              value={mailingAddress}
+              onChange={(e) => setMailingAddress(e.target.value)}
             />
+            {showFillFromProperty && (
+              <label className="mt-1 flex items-center gap-1.5 text-xs text-muted-foreground">
+                <Checkbox
+                  onCheckedChange={(checked) => checked && setMailingAddress(propertyAddress ?? '')}
+                />
+                Same as Property Address
+              </label>
+            )}
           </div>
           <div>
             <Label htmlFor="forwarding_address">Forwarding Address</Label>
@@ -115,8 +146,17 @@ export function AddContactForm({
               id="forwarding_address"
               name="forwarding_address"
               className="mt-1"
-              defaultValue={contact?.forwarding_address ?? undefined}
+              value={forwardingAddress}
+              onChange={(e) => setForwardingAddress(e.target.value)}
             />
+            {showFillFromProperty && (
+              <label className="mt-1 flex items-center gap-1.5 text-xs text-muted-foreground">
+                <Checkbox
+                  onCheckedChange={(checked) => checked && setForwardingAddress(propertyAddress ?? '')}
+                />
+                Same as Property Address
+              </label>
+            )}
           </div>
         </div>
       )}
@@ -139,7 +179,7 @@ export function AddContactForm({
       </div>
 
       {showSsnDob && (
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
           <div>
             <Label htmlFor="ssn">SSN</Label>
             <Input
@@ -149,6 +189,21 @@ export function AddContactForm({
               className="mt-1"
               defaultValue={contact?.ssn ?? undefined}
             />
+          </div>
+          <div>
+            <Label htmlFor="marital_status">Marital Status</Label>
+            <Select name="marital_status" defaultValue={contact?.marital_status ?? undefined}>
+              <SelectTrigger id="marital_status" className="mt-1 w-full">
+                <SelectValue placeholder="— Select —" />
+              </SelectTrigger>
+              <SelectContent>
+                {MARITAL_STATUSES.map((s) => (
+                  <SelectItem key={s} value={s}>
+                    {s}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
           <div>
             <Label htmlFor="dob">Date of Birth</Label>

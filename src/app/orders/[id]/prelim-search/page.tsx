@@ -102,7 +102,7 @@ export default async function PrelimSearchPage({
         data-testid="prelim-search-anchor-nav"
       >
         <a href="#derivation" className="text-slate-600 hover:text-slate-900 hover:underline">
-          Derivation
+          Title History
         </a>
         <a href="#security-instruments" className="text-slate-600 hover:text-slate-900 hover:underline">
           Security Instruments

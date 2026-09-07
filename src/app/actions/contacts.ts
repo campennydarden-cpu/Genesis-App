@@ -22,6 +22,8 @@ export async function addContact(orderId: string, formData: FormData) {
   const licenseNumber = formData.get('license_number') as string
   const altaId = formData.get('alta_id') as string
   const mortgageeClause = formData.get('mortgagee_clause') as string
+  const poa = formData.get('poa') === 'on'
+  const maritalStatus = formData.get('marital_status') as string
 
   const { error } = await supabase.from('contacts').insert({
     order_id: orderId,
@@ -38,6 +40,8 @@ export async function addContact(orderId: string, formData: FormData) {
     license_number: licenseNumber || null,
     alta_id: altaId || null,
     mortgagee_clause: mortgageeClause || null,
+    poa,
+    marital_status: maritalStatus || null,
   })
 
   if (error) {
@@ -67,6 +71,8 @@ export async function editContact(orderId: string, contactId: string, formData: 
   const licenseNumber = formData.get('license_number') as string
   const altaId = formData.get('alta_id') as string
   const mortgageeClause = formData.get('mortgagee_clause') as string
+  const poa = formData.get('poa') === 'on'
+  const maritalStatus = formData.get('marital_status') as string
 
   const { error } = await supabase
     .from('contacts')
@@ -84,6 +90,8 @@ export async function editContact(orderId: string, contactId: string, formData: 
       license_number: licenseNumber || null,
       alta_id: altaId || null,
       mortgagee_clause: mortgageeClause || null,
+      poa,
+      marital_status: maritalStatus || null,
     })
     .eq('id', contactId)
 

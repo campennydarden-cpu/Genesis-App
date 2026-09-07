@@ -7,6 +7,8 @@ import { Textarea } from '@/components/ui/textarea'
 import { Label } from '@/components/ui/label'
 import { Checkbox } from '@/components/ui/checkbox'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+import { DateTimeField } from '@/components/ui/datetime-field'
+import { CurrencyInput } from '@/components/ui/currency-input'
 import { DERIVATION_INSTRUMENT_TYPES, PRELIM_ENTITY_TYPES } from '@/lib/constants'
 import { upsertPrelimSearch } from '@/app/actions/prelim-search'
 import { fullDerivationClause, derivationVestingClause } from '@/lib/derivation-clause'
@@ -62,18 +64,18 @@ export function DerivationSection({
 
   return (
     <section id="derivation" className="scroll-mt-24">
-      <h2 className="mb-4 text-lg font-semibold">Derivation</h2>
+      <h2 className="mb-4 text-lg font-semibold">Title History</h2>
 
       <form action={action} className="space-y-6">
         <div className="grid grid-cols-3 gap-4">
-          <div>
-            <Label htmlFor="effective_date">Effective Date</Label>
-            <Input id="effective_date" name="effective_date" type="date" defaultValue={prelimSearch?.effective_date ?? undefined} />
-          </div>
-          <div>
-            <Label htmlFor="effective_time">Effective Time</Label>
-            <Input id="effective_time" name="effective_time" type="time" defaultValue={prelimSearch?.effective_time ?? undefined} />
-          </div>
+          <DateTimeField
+            id="effective_datetime"
+            label="Effective Date"
+            dateName="effective_date"
+            timeName="effective_time"
+            defaultDate={prelimSearch?.effective_date}
+            defaultTime={prelimSearch?.effective_time}
+          />
           <div>
             <Label htmlFor="search_type">Search Type</Label>
             <Input id="search_type" name="search_type" defaultValue={prelimSearch?.search_type ?? undefined} />
@@ -82,27 +84,52 @@ export function DerivationSection({
             <Label htmlFor="search_from_date">Search From Date</Label>
             <Input id="search_from_date" name="search_from_date" type="date" defaultValue={prelimSearch?.search_from_date ?? undefined} />
           </div>
-          <div>
-            <Label htmlFor="search_to_date">Search To Date</Label>
-            <Input id="search_to_date" name="search_to_date" type="date" defaultValue={prelimSearch?.search_to_date ?? undefined} />
-          </div>
-          <div>
-            <Label htmlFor="search_to_time">Search To Time</Label>
-            <Input id="search_to_time" name="search_to_time" type="time" defaultValue={prelimSearch?.search_to_time ?? undefined} />
-          </div>
+          <DateTimeField
+            id="search_to_datetime"
+            label="Search To Date"
+            dateName="search_to_date"
+            timeName="search_to_time"
+            defaultDate={prelimSearch?.search_to_date}
+            defaultTime={prelimSearch?.search_to_time}
+          />
         </div>
 
         <div className="border-t pt-4">
           <p className="mb-3 text-sm font-medium">Derivation Record</p>
-          <div className="grid grid-cols-3 gap-4">
+
+          <div className="mb-4">
+            <Label htmlFor="derivation_instrument_type">Deed Type</Label>
+            <Select name="derivation_instrument_type" defaultValue={prelimSearch?.derivation_instrument_type ?? undefined}>
+              <SelectTrigger id="derivation_instrument_type" className="w-full">
+                <SelectValue placeholder="— Select —" />
+              </SelectTrigger>
+              <SelectContent>
+                {DERIVATION_INSTRUMENT_TYPES.map((t) => (
+                  <SelectItem key={t} value={t}>
+                    {t}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+
+          <div className="mb-4 grid grid-cols-2 gap-4">
             <div>
-              <Label htmlFor="derivation_instrument_type">Instrument Type</Label>
-              <Select name="derivation_instrument_type" defaultValue={prelimSearch?.derivation_instrument_type ?? undefined}>
-                <SelectTrigger id="derivation_instrument_type">
+              <Label htmlFor="derivation_grantor_name">Grantor Name</Label>
+              <Input id="derivation_grantor_name" name="derivation_grantor_name" defaultValue={prelimSearch?.derivation_grantor_name ?? undefined} />
+            </div>
+            <div>
+              <Label htmlFor="derivation_grantor_entity_type">Grantor Entity Type</Label>
+              <Select
+                name="derivation_grantor_entity_type"
+                defaultValue={prelimSearch?.derivation_grantor_entity_type ?? undefined}
+                onValueChange={(value) => setGrantorType(value ?? '')}
+              >
+                <SelectTrigger id="derivation_grantor_entity_type">
                   <SelectValue placeholder="— Select —" />
                 </SelectTrigger>
                 <SelectContent>
-                  {DERIVATION_INSTRUMENT_TYPES.map((t) => (
+                  {PRELIM_ENTITY_TYPES.map((t) => (
                     <SelectItem key={t} value={t}>
                       {t}
                     </SelectItem>
@@ -110,33 +137,6 @@ export function DerivationSection({
                 </SelectContent>
               </Select>
             </div>
-            <div>
-              <Label htmlFor="derivation_dated_date">Dated Date</Label>
-              <Input id="derivation_dated_date" name="derivation_dated_date" type="date" defaultValue={prelimSearch?.derivation_dated_date ?? undefined} />
-            </div>
-            <div>
-              <Label htmlFor="derivation_recorded_date">Recorded Date</Label>
-              <Input id="derivation_recorded_date" name="derivation_recorded_date" type="date" defaultValue={prelimSearch?.derivation_recorded_date ?? undefined} />
-            </div>
-            <div>
-              <Label htmlFor="derivation_book">Book</Label>
-              <Input id="derivation_book" name="derivation_book" defaultValue={prelimSearch?.derivation_book ?? undefined} />
-            </div>
-            <div>
-              <Label htmlFor="derivation_page">Page</Label>
-              <Input id="derivation_page" name="derivation_page" defaultValue={prelimSearch?.derivation_page ?? undefined} />
-            </div>
-            <div>
-              <Label htmlFor="derivation_instrument_number">Instrument Number</Label>
-              <Input id="derivation_instrument_number" name="derivation_instrument_number" defaultValue={prelimSearch?.derivation_instrument_number ?? undefined} />
-            </div>
-            <div>
-              <Label htmlFor="derivation_consideration">Consideration</Label>
-              <Input id="derivation_consideration" name="derivation_consideration" type="number" step="0.01" defaultValue={prelimSearch?.derivation_consideration ?? undefined} />
-            </div>
-          </div>
-
-          <div className="mt-4 grid grid-cols-2 gap-4">
             <div>
               <Label htmlFor="derivation_grantee_name">Grantee Name</Label>
               <Input id="derivation_grantee_name" name="derivation_grantee_name" defaultValue={prelimSearch?.derivation_grantee_name ?? undefined} />
@@ -160,28 +160,32 @@ export function DerivationSection({
                 </SelectContent>
               </Select>
             </div>
+          </div>
+
+          <div className="grid grid-cols-3 gap-4">
             <div>
-              <Label htmlFor="derivation_grantor_name">Grantor Name</Label>
-              <Input id="derivation_grantor_name" name="derivation_grantor_name" defaultValue={prelimSearch?.derivation_grantor_name ?? undefined} />
+              <Label htmlFor="derivation_dated_date">Dated Date</Label>
+              <Input id="derivation_dated_date" name="derivation_dated_date" type="date" defaultValue={prelimSearch?.derivation_dated_date ?? undefined} />
             </div>
             <div>
-              <Label htmlFor="derivation_grantor_entity_type">Grantor Entity Type</Label>
-              <Select
-                name="derivation_grantor_entity_type"
-                defaultValue={prelimSearch?.derivation_grantor_entity_type ?? undefined}
-                onValueChange={(value) => setGrantorType(value ?? '')}
-              >
-                <SelectTrigger id="derivation_grantor_entity_type">
-                  <SelectValue placeholder="— Select —" />
-                </SelectTrigger>
-                <SelectContent>
-                  {PRELIM_ENTITY_TYPES.map((t) => (
-                    <SelectItem key={t} value={t}>
-                      {t}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              <Label htmlFor="derivation_recorded_date">Recorded Date</Label>
+              <Input id="derivation_recorded_date" name="derivation_recorded_date" type="date" defaultValue={prelimSearch?.derivation_recorded_date ?? undefined} />
+            </div>
+            <div>
+              <Label htmlFor="derivation_book">Book</Label>
+              <Input id="derivation_book" name="derivation_book" defaultValue={prelimSearch?.derivation_book ?? undefined} />
+            </div>
+            <div>
+              <Label htmlFor="derivation_page">Page</Label>
+              <Input id="derivation_page" name="derivation_page" defaultValue={prelimSearch?.derivation_page ?? undefined} />
+            </div>
+            <div>
+              <Label htmlFor="derivation_instrument_number">Instrument Number</Label>
+              <Input id="derivation_instrument_number" name="derivation_instrument_number" defaultValue={prelimSearch?.derivation_instrument_number ?? undefined} />
+            </div>
+            <div>
+              <Label htmlFor="derivation_consideration">Consideration</Label>
+              <CurrencyInput id="derivation_consideration" name="derivation_consideration" defaultValue={prelimSearch?.derivation_consideration ?? undefined} />
             </div>
           </div>
 

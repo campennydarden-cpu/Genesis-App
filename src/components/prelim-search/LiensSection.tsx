@@ -4,6 +4,7 @@ import { useState } from 'react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
+import { CurrencyInput } from '@/components/ui/currency-input'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { LIEN_TYPES, TAX_LIEN_TYPES } from '@/lib/constants'
 import { addLien, updateLien, deleteLien } from '@/app/actions/prelim-search'
@@ -106,7 +107,7 @@ function LienFields({ lien, idPrefix }: { lien?: Lien; idPrefix: string }) {
             return (
               <div key={f}>
                 <Label htmlFor={fieldId}>{FIELD_LABELS[f]}</Label>
-                <Input id={fieldId} name={f} type="number" step="0.01" defaultValue={lien?.amount ?? undefined} />
+                <CurrencyInput id={fieldId} name={f} defaultValue={lien?.amount ?? undefined} />
               </div>
             )
           }

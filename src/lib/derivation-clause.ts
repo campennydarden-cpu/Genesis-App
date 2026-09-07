@@ -1,5 +1,8 @@
 // src/lib/derivation-clause.ts
 
+import { fmtDate } from '@/lib/format'
+export { fmtDate }
+
 export type EntityType = 'Individual' | 'LLC' | 'Corporation' | 'Partnership' | 'Trust' | 'Estate' | 'Other'
 
 export type PrincipalRecord = {
@@ -22,14 +25,6 @@ export type DerivationClauseInput = {
 }
 
 const ROSTER_ENTITY_TYPES: EntityType[] = ['LLC', 'Corporation', 'Partnership', 'Trust']
-
-/** Formats a `YYYY-MM-DD` date string as "January 5, 2026". Returns '' for falsy input. */
-export function fmtDate(value: string | null): string {
-  if (!value) return ''
-  const d = new Date(`${value}T00:00:00`)
-  if (Number.isNaN(d.getTime())) return value
-  return d.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })
-}
 
 /**
  * Builds the "qualified name" used in generated clauses: a plain name for

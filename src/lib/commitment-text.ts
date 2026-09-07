@@ -1,4 +1,5 @@
 import type { SecurityInstrument, SecurityInstrumentRelatedDoc, Lien, ExceptionMatter, CommitmentRequirement } from '@/lib/types'
+import { fmtDate, fmtCurrency } from '@/lib/format'
 
 export function siRequirementText(si: SecurityInstrument): string {
   const instr = si.type || 'Security Instrument'
@@ -6,15 +7,15 @@ export function siRequirementText(si: SecurityInstrument): string {
     ? `executed by ${si.mortgagor || '[Mortgagor]'} to ${si.trustee}, Trustee, for the benefit of ${si.mortgagee || '[Mortgagee]'}`
     : `executed by ${si.mortgagor || '[Mortgagor]'} to ${si.mortgagee || '[Mortgagee]'}`
   const parts: string[] = [partyClause]
-  if (si.dated_date) parts.push(`dated ${si.dated_date}`)
+  if (si.dated_date) parts.push(`dated ${fmtDate(si.dated_date)}`)
   const recParts: string[] = []
-  if (si.recorded_date) recParts.push(`recorded ${si.recorded_date}`)
+  if (si.recorded_date) recParts.push(`recorded ${fmtDate(si.recorded_date)}`)
   const locBits: string[] = []
   if (si.book || si.page) locBits.push(`in Book ${si.book || '—'}, Page ${si.page || '—'}`)
   if (si.instrument_number) locBits.push(`Instrument No. ${si.instrument_number}`)
   if (locBits.length) recParts.push(locBits.join(', '))
   if (recParts.length) parts.push(recParts.join(' '))
-  if (si.original_amount) parts.push(`securing an original amount of ${si.original_amount}`)
+  if (si.original_amount) parts.push(`securing an original amount of ${fmtCurrency(si.original_amount)}`)
   return `Release of ${instr} ${parts.join(', ')}, to be released of record prior to closing.`
 }
 
@@ -22,9 +23,9 @@ export function relRequirementText(rel: SecurityInstrumentRelatedDoc, si: Securi
   const docType = rel.type || 'Related Document'
   const parts: string[] = []
   if (rel.assignor || rel.assignee) parts.push(`from ${rel.assignor || '[Assignor]'} to ${rel.assignee || '[Assignee]'}`)
-  if (rel.dated_date) parts.push(`dated ${rel.dated_date}`)
+  if (rel.dated_date) parts.push(`dated ${fmtDate(rel.dated_date)}`)
   const recParts: string[] = []
-  if (rel.recorded_date) recParts.push(`recorded ${rel.recorded_date}`)
+  if (rel.recorded_date) recParts.push(`recorded ${fmtDate(rel.recorded_date)}`)
   const locBits: string[] = []
   if (rel.book || rel.page) locBits.push(`in Book ${rel.book || '—'}, Page ${rel.page || '—'}`)
   if (rel.instrument_number) locBits.push(`Instrument No. ${rel.instrument_number}`)
@@ -60,19 +61,19 @@ export function lienRequirementText(lien: Lien): string {
   if (lien.case_number) parts.push(`Case No. ${lien.case_number}`)
   if (lien.certificate_id) parts.push(`Certificate No. ${lien.certificate_id}`)
   const datedDate = lien.dated_date || lien.docket_date
-  if (datedDate) parts.push(`dated ${datedDate}`)
+  if (datedDate) parts.push(`dated ${fmtDate(datedDate)}`)
   const filedParts: string[] = []
   const filed = lien.filed_date || lien.recorded_date
-  if (filed) filedParts.push(`filed ${filed}`)
+  if (filed) filedParts.push(`filed ${fmtDate(filed)}`)
   if (lien.court) filedParts.push(`in ${lien.court}`)
   if (filedParts.length) parts.push(filedParts.join(' '))
   const recParts: string[] = []
   if (lien.book || lien.page) recParts.push(`Book ${lien.book || '—'}, Page ${lien.page || '—'}`)
   if (lien.instrument_number) recParts.push(`Instrument No. ${lien.instrument_number}`)
   if (recParts.length) parts.push(recParts.join(', '))
-  if (lien.amount) parts.push(`in the amount of ${lien.amount}`)
+  if (lien.amount) parts.push(`in the amount of ${fmtCurrency(lien.amount)}`)
   if (lien.type === 'Tax Sale Certificate' && lien.redemption_expiration) {
-    parts.push(`redemption period expiring ${lien.redemption_expiration}`)
+    parts.push(`redemption period expiring ${fmtDate(lien.redemption_expiration)}`)
   }
   return `Satisfaction of ${lien.type} ${parts.join(', ')}, to be released of record prior to closing.`
 }
@@ -80,8 +81,8 @@ export function lienRequirementText(lien: Lien): string {
 export function emExceptionText(em: ExceptionMatter): string {
   const parts: string[] = [em.description || '(matter of record)']
   const recParts: string[] = []
-  if (em.recorded_date) recParts.push(`recorded ${em.recorded_date}`)
-  else if (em.dated_date) recParts.push(`dated ${em.dated_date}`)
+  if (em.recorded_date) recParts.push(`recorded ${fmtDate(em.recorded_date)}`)
+  else if (em.dated_date) recParts.push(`dated ${fmtDate(em.dated_date)}`)
   const locBits: string[] = []
   if (em.book || em.page) locBits.push(`in Book ${em.book || '—'}, Page ${em.page || '—'}`)
   if (em.instrument_number) locBits.push(`Instrument No. ${em.instrument_number}`)

@@ -17,8 +17,6 @@ export async function upsertCommitmentScheduleA(orderId: string, formData: FormD
     {
       order_id: orderId,
       form_type: field('form_type') ?? 'Standard',
-      company_state_of_org: field('company_state_of_org'),
-      requirements_time_period: field('requirements_time_period'),
       env_protection_lien_statutes: field('env_protection_lien_statutes'),
       issuing_agent: field('issuing_agent'),
       issuing_office: field('issuing_office'),
@@ -37,7 +35,6 @@ export async function upsertCommitmentScheduleA(orderId: string, formData: FormD
       loan_coverage_amount: numField('loan_coverage_amount'),
       loan_coverage_tbd: formData.get('loan_coverage_tbd') === 'on',
       loan_proposed_insured: field('loan_proposed_insured'),
-      loan_mortgagee_clause: field('loan_mortgagee_clause'),
       counter_signature: field('counter_signature'),
       counter_signature_date: field('counter_signature_date'),
       updated_at: new Date().toISOString(),

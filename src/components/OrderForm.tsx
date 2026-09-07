@@ -8,6 +8,7 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Checkbox } from '@/components/ui/checkbox'
 import { Button } from '@/components/ui/button'
+import { CurrencyInput } from '@/components/ui/currency-input'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group'
 import { ZipCountyField } from '@/components/ZipCountyField'
@@ -119,25 +120,11 @@ export function OrderForm({
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
         <div>
           <Label htmlFor="purchase_price">Purchase Price</Label>
-          <Input
-            id="purchase_price"
-            name="purchase_price"
-            type="number"
-            step="0.01"
-            min="0"
-            defaultValue={order?.purchase_price ?? undefined}
-          />
+          <CurrencyInput id="purchase_price" name="purchase_price" defaultValue={order?.purchase_price ?? undefined} />
         </div>
         <div>
           <Label htmlFor="loan_amount">Loan Amount</Label>
-          <Input
-            id="loan_amount"
-            name="loan_amount"
-            type="number"
-            step="0.01"
-            min="0"
-            defaultValue={order?.loan_amount ?? undefined}
-          />
+          <CurrencyInput id="loan_amount" name="loan_amount" defaultValue={order?.loan_amount ?? undefined} />
         </div>
       </div>
 

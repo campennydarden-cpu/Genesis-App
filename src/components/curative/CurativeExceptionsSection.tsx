@@ -31,7 +31,11 @@ export function CurativeExceptionsSection({
                 </button>
               </form>
             ) : (
-              <form action={updateExceptionDisposition.bind(null, orderId, e.id)} className="mt-2 flex flex-wrap items-end gap-3">
+              <form
+                key={`${e.id}-${e.disposition}-${e.disposition_notes}-${e.dont_show}`}
+                action={updateExceptionDisposition.bind(null, orderId, e.id)}
+                className="mt-2 flex flex-wrap items-end gap-3"
+              >
                 <div>
                   <label htmlFor={`exc-disposition-${e.id}`} className="block text-xs font-medium">
                     Disposition

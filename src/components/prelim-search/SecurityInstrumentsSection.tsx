@@ -4,6 +4,7 @@ import { useState } from 'react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
+import { CurrencyInput } from '@/components/ui/currency-input'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { SECURITY_INSTRUMENT_TYPES } from '@/lib/constants'
 import {
@@ -53,7 +54,7 @@ function SecurityInstrumentFields({ instrument, idPrefix }: { instrument?: Secur
       </div>
       <div>
         <Label htmlFor={`${idPrefix}-original_amount`}>Original Amount</Label>
-        <Input id={`${idPrefix}-original_amount`} name="original_amount" type="number" step="0.01" defaultValue={instrument?.original_amount ?? undefined} />
+        <CurrencyInput id={`${idPrefix}-original_amount`} name="original_amount" defaultValue={instrument?.original_amount ?? undefined} />
       </div>
       <div>
         <Label htmlFor={`${idPrefix}-mortgagor`}>Mortgagor</Label>

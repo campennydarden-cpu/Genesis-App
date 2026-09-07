@@ -39,7 +39,11 @@ export function CurativeRequirementsSection({
                 </button>
               </form>
             ) : (
-              <form action={updateRequirementDisposition.bind(null, orderId, r.id)} className="mt-2 flex flex-wrap items-end gap-3">
+              <form
+                key={`${r.id}-${r.disposition}-${r.disposition_notes}-${r.dont_show}`}
+                action={updateRequirementDisposition.bind(null, orderId, r.id)}
+                className="mt-2 flex flex-wrap items-end gap-3"
+              >
                 <div>
                   <label htmlFor={`req-disposition-${r.id}`} className="block text-xs font-medium">
                     Disposition
