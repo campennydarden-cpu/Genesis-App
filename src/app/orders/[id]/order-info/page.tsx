@@ -1,18 +1,9 @@
 import { notFound } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
-import { updateOrderInfo } from '@/app/actions/orders'
 import { OrderInfoForm } from '@/components/OrderInfoForm'
-import { Alert, AlertDescription } from '@/components/ui/alert'
 
-export default async function OrderInfoPage({
-  params,
-  searchParams,
-}: {
-  params: Promise<{ id: string }>
-  searchParams: Promise<{ error?: string }>
-}) {
+export default async function OrderInfoPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params
-  const { error } = await searchParams
   const supabase = await createClient()
 
   const { data: order } = await supabase
@@ -27,16 +18,5 @@ export default async function OrderInfoPage({
     notFound()
   }
 
-  const updateOrderInfoWithId = updateOrderInfo.bind(null, id)
-
-  return (
-    <div>
-      {error && (
-        <Alert variant="destructive" className="mb-4">
-          <AlertDescription>{error}</AlertDescription>
-        </Alert>
-      )}
-      <OrderInfoForm action={updateOrderInfoWithId} order={order} />
-    </div>
-  )
+  return <OrderInfoForm orderId={id} order={order} />
 }
