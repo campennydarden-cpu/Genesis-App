@@ -10,9 +10,10 @@ import { DateTimeField } from '@/components/ui/datetime-field'
 import { CurrencyInput } from '@/components/ui/currency-input'
 import { SaveIndicator } from '@/components/SaveIndicator'
 import { useAutosave } from '@/lib/use-autosave'
-import { DERIVATION_INSTRUMENT_TYPES, PRELIM_ENTITY_TYPES } from '@/lib/constants'
+import { DERIVATION_INSTRUMENT_TYPES } from '@/lib/constants'
 import { upsertPrelimSearch } from '@/app/actions/prelim-search'
 import { fullDerivationClause, derivationVestingClause } from '@/lib/derivation-clause'
+import { detectEntityType } from '@/lib/detect-entity-type'
 import type { PrelimSearch, DerivationPrincipal, SecurityInstrument, Lien, ExceptionMatter } from '@/lib/types'
 import { DerivationPrincipalRoster } from './DerivationPrincipalRoster'
 import { SecurityInstrumentsSection } from './SecurityInstrumentsSection'
@@ -180,30 +181,13 @@ export function DerivationSection({
                 name="derivation_grantor_name"
                 value={grantorName}
                 onChange={(e) => setGrantorName(e.target.value)}
-                onBlur={() => handleSave()}
-              />
-            </div>
-            <div>
-              <Label htmlFor="derivation_grantor_entity_type">Grantor Entity Type</Label>
-              <Select
-                name="derivation_grantor_entity_type"
-                defaultValue={prelimSearch?.derivation_grantor_entity_type ?? undefined}
-                onValueChange={(value) => {
-                  setGrantorType(value ?? '')
-                  handleSave({ name: 'derivation_grantor_entity_type', value: (value as string) ?? '' })
+                onBlur={() => {
+                  const detected = detectEntityType(grantorName)
+                  setGrantorType(detected)
+                  handleSave({ name: 'derivation_grantor_entity_type', value: detected })
                 }}
-              >
-                <SelectTrigger id="derivation_grantor_entity_type">
-                  <SelectValue placeholder="— Select —" />
-                </SelectTrigger>
-                <SelectContent>
-                  {PRELIM_ENTITY_TYPES.map((t) => (
-                    <SelectItem key={t} value={t}>
-                      {t}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              />
+              <input type="hidden" name="derivation_grantor_entity_type" value={grantorType} />
             </div>
             <div>
               <Label htmlFor="derivation_grantee_name">Grantee Name</Label>
@@ -212,30 +196,13 @@ export function DerivationSection({
                 name="derivation_grantee_name"
                 value={granteeName}
                 onChange={(e) => setGranteeName(e.target.value)}
-                onBlur={() => handleSave()}
-              />
-            </div>
-            <div>
-              <Label htmlFor="derivation_grantee_entity_type">Grantee Entity Type</Label>
-              <Select
-                name="derivation_grantee_entity_type"
-                defaultValue={prelimSearch?.derivation_grantee_entity_type ?? undefined}
-                onValueChange={(value) => {
-                  setGranteeType(value ?? '')
-                  handleSave({ name: 'derivation_grantee_entity_type', value: (value as string) ?? '' })
+                onBlur={() => {
+                  const detected = detectEntityType(granteeName)
+                  setGranteeType(detected)
+                  handleSave({ name: 'derivation_grantee_entity_type', value: detected })
                 }}
-              >
-                <SelectTrigger id="derivation_grantee_entity_type">
-                  <SelectValue placeholder="— Select —" />
-                </SelectTrigger>
-                <SelectContent>
-                  {PRELIM_ENTITY_TYPES.map((t) => (
-                    <SelectItem key={t} value={t}>
-                      {t}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              />
+              <input type="hidden" name="derivation_grantee_entity_type" value={granteeType} />
             </div>
           </div>
 
