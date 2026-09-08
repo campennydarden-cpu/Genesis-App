@@ -41,18 +41,19 @@ export function AttachmentsPanel({ orderId }: { orderId: string }) {
   }, [orderId])
 
   useEffect(() => {
-    if (!searchQuery.trim()) {
-      setSearchResults(null)
-      return
-    }
+    if (!searchQuery.trim()) return
     const timeout = setTimeout(() => {
       searchAttachments(orderId, searchQuery.trim()).then(setSearchResults)
     }, 300)
     return () => clearTimeout(timeout)
   }, [orderId, searchQuery])
 
-  const visibleAttachments: Array<Attachment | SearchResult> =
-    searchResults ?? attachments.filter((a) => a.folder_id === selectedFolderId)
+  // Branching on searchQuery directly (rather than resetting searchResults to
+  // null in the effect above) means clearing the search box falls back to the
+  // folder view immediately, with no synchronous setState-in-effect needed.
+  const visibleAttachments: Array<Attachment | SearchResult> = searchQuery.trim()
+    ? (searchResults ?? [])
+    : attachments.filter((a) => a.folder_id === selectedFolderId)
 
   function handleMove(attachmentId: string, folderId: string) {
     startTransition(async () => {
