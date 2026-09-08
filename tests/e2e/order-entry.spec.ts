@@ -548,20 +548,18 @@ test.describe('Genesis foundation phase', () => {
     await page.getByTestId('file-section-nav').getByRole('link', { name: 'Prelim Title Search' }).click()
     await page.waitForURL('**/prelim-search')
 
-    await page.getByLabel('Effective Date').fill('2026-06-01')
-    await page.getByLabel('Instrument Type').click()
+    await page.getByLabel('Effective Date').fill('2026-06-01T09:00')
+    await page.getByLabel('Deed Type').click()
     await page.getByRole('option', { name: 'Warranty Deed', exact: true }).click()
     await page.getByLabel('Recorded Date').fill('2026-05-15')
+    await page.getByLabel('Recorded Date').blur()
     await page.getByLabel('Grantee Name').fill('Test Trust Co')
     await page.getByLabel('Grantee Entity Type').click()
     await page.getByRole('option', { name: 'Trust' }).click()
     await page.getByLabel('Grantor Name').fill('Original Owner LLC')
     await page.getByLabel('Grantor Entity Type').click()
     await page.getByRole('option', { name: 'LLC' }).click()
-
-    await page.getByRole('button', { name: 'Save Changes' }).click()
-    await page.waitForURL('**/prelim-search')
-    await page.waitForLoadState('networkidle')
+    await expect(page.getByTestId('save-indicator')).toContainText('Saved')
 
     // No trustees yet - Vesting Clause shows the "not yet added" fallback.
     await expect(page.getByTestId('vesting-clause')).toContainText('[Trustee(s) not yet added] of the Test Trust Co')
@@ -576,7 +574,7 @@ test.describe('Genesis foundation phase', () => {
     await expect(page.getByTestId('grantee-principal-row')).toContainText('Jane Trustee')
     await expect(page.getByTestId('vesting-clause')).toContainText('Jane Trustee, as Trustee of the Test Trust Co')
     await expect(page.getByTestId('derivation-clause')).toContainText(
-      'Being the same parcel conveyed unto Jane Trustee, as Trustee of the Test Trust Co by Warranty Deed of Original Owner LLC recorded May 15, 2026 of the Lorain County records.'
+      'Being the same parcel conveyed unto Jane Trustee, as Trustee of the Test Trust Co by Warranty Deed of Original Owner LLC recorded May 15th, 2026 of the Lorain County records.'
     )
 
     // Edit the principal via the pencil/Edit control.
@@ -602,9 +600,9 @@ test.describe('Genesis foundation phase', () => {
 
     // Security Instruments need a saved prelim_search row first (foreign key) -
     // save Derivation with the minimum required fields.
-    await page.getByRole('button', { name: 'Save Changes' }).click()
-    await page.waitForURL('**/prelim-search')
-    await page.waitForLoadState('networkidle')
+    await page.getByLabel('Search Type').click()
+    await page.getByLabel('Search Type').blur()
+    await expect(page.getByTestId('save-indicator')).toContainText('Saved')
 
     await page.getByText('Add a Security Instrument').click()
     await page.locator('#si-new-type').click()
@@ -636,9 +634,9 @@ test.describe('Genesis foundation phase', () => {
 
     await page.getByTestId('file-section-nav').getByRole('link', { name: 'Prelim Title Search' }).click()
     await page.waitForURL('**/prelim-search')
-    await page.getByRole('button', { name: 'Save Changes' }).click()
-    await page.waitForURL('**/prelim-search')
-    await page.waitForLoadState('networkidle')
+    await page.getByLabel('Search Type').click()
+    await page.getByLabel('Search Type').blur()
+    await expect(page.getByTestId('save-indicator')).toContainText('Saved')
 
     await page.getByText('Add a Security Instrument').click()
     await page.locator('#si-new-type').click()
@@ -671,9 +669,9 @@ test.describe('Genesis foundation phase', () => {
 
     await page.getByTestId('file-section-nav').getByRole('link', { name: 'Prelim Title Search' }).click()
     await page.waitForURL('**/prelim-search')
-    await page.getByRole('button', { name: 'Save Changes' }).click()
-    await page.waitForURL('**/prelim-search')
-    await page.waitForLoadState('networkidle')
+    await page.getByLabel('Search Type').click()
+    await page.getByLabel('Search Type').blur()
+    await expect(page.getByTestId('save-indicator')).toContainText('Saved')
 
     await page.getByText('Add a Lien').click()
     const lienForm = page.locator('#liens').locator('details')
@@ -705,9 +703,9 @@ test.describe('Genesis foundation phase', () => {
 
     await page.getByTestId('file-section-nav').getByRole('link', { name: 'Prelim Title Search' }).click()
     await page.waitForURL('**/prelim-search')
-    await page.getByRole('button', { name: 'Save Changes' }).click()
-    await page.waitForURL('**/prelim-search')
-    await page.waitForLoadState('networkidle')
+    await page.getByLabel('Search Type').click()
+    await page.getByLabel('Search Type').blur()
+    await expect(page.getByTestId('save-indicator')).toContainText('Saved')
 
     await page.getByText('Add an Exception Matter').click()
     await page.locator('#em-new-description').fill('Easement of record affecting the rear 10 feet')
@@ -779,13 +777,12 @@ test.describe('Genesis foundation phase', () => {
     // Derivation on Prelim Search, so the Chain of Title "Copy from Derivation" seed has data.
     await page.getByTestId('file-section-nav').getByRole('link', { name: 'Prelim Title Search' }).click()
     await page.waitForURL('**/prelim-search')
-    await page.getByLabel('Instrument Type').click()
+    await page.getByLabel('Deed Type').click()
     await page.getByRole('option', { name: 'Warranty Deed', exact: true }).click()
     await page.getByLabel('Grantee Name').fill('Test Trust Co')
     await page.getByLabel('Grantor Name').fill('Original Owner LLC')
-    await page.getByRole('button', { name: 'Save Changes' }).click()
-    await page.waitForURL('**/prelim-search')
-    await page.waitForLoadState('networkidle')
+    await page.getByLabel('Grantor Name').blur()
+    await expect(page.getByTestId('save-indicator')).toContainText('Saved')
 
     // Add a Buyer/Borrower contact and a Lender contact (with a mortgagee clause) for the seed chips.
     await page.getByTestId('file-section-nav').getByRole('link', { name: 'Contacts' }).click()
@@ -866,9 +863,9 @@ test.describe('Genesis foundation phase', () => {
 
     // Security Instruments/Liens/Exception Matters only render once a prelim_search row
     // exists (foreign key) - save Derivation with the minimum required fields first.
-    await page.getByRole('button', { name: 'Save Changes' }).click()
-    await page.waitForURL('**/prelim-search')
-    await page.waitForLoadState('networkidle')
+    await page.getByLabel('Search Type').click()
+    await page.getByLabel('Search Type').blur()
+    await expect(page.getByTestId('save-indicator')).toContainText('Saved')
 
     await page.getByText('Add a Security Instrument').click()
     const siForm = page.locator('details:has-text("Add a Security Instrument")')
@@ -985,9 +982,9 @@ test.describe('Genesis foundation phase', () => {
 
     await page.getByTestId('file-section-nav').getByRole('link', { name: 'Prelim Title Search' }).click()
     await page.waitForURL('**/prelim-search')
-    await page.getByRole('button', { name: 'Save Changes' }).click()
-    await page.waitForURL('**/prelim-search')
-    await page.waitForLoadState('networkidle')
+    await page.getByLabel('Search Type').click()
+    await page.getByLabel('Search Type').blur()
+    await expect(page.getByTestId('save-indicator')).toContainText('Saved')
 
     await page.getByText('Add a Security Instrument').click()
     const siForm = page.locator('details:has-text("Add a Security Instrument")')

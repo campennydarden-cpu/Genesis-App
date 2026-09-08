@@ -1,7 +1,6 @@
 'use client'
 
-import { useState } from 'react'
-import { Button } from '@/components/ui/button'
+import { useRef, useState } from 'react'
 import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
 import { Label } from '@/components/ui/label'
@@ -9,11 +8,16 @@ import { Checkbox } from '@/components/ui/checkbox'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { DateTimeField } from '@/components/ui/datetime-field'
 import { CurrencyInput } from '@/components/ui/currency-input'
+import { SaveIndicator } from '@/components/SaveIndicator'
+import { useAutosave } from '@/lib/use-autosave'
 import { DERIVATION_INSTRUMENT_TYPES, PRELIM_ENTITY_TYPES } from '@/lib/constants'
 import { upsertPrelimSearch } from '@/app/actions/prelim-search'
 import { fullDerivationClause, derivationVestingClause } from '@/lib/derivation-clause'
-import type { PrelimSearch, DerivationPrincipal } from '@/lib/types'
+import type { PrelimSearch, DerivationPrincipal, SecurityInstrument, Lien, ExceptionMatter } from '@/lib/types'
 import { DerivationPrincipalRoster } from './DerivationPrincipalRoster'
+import { SecurityInstrumentsSection } from './SecurityInstrumentsSection'
+import { LiensSection } from './LiensSection'
+import { ExceptionMattersSection } from './ExceptionMattersSection'
 
 const ROSTER_ENTITY_TYPES = ['LLC', 'Corporation', 'Partnership', 'Trust']
 
@@ -23,38 +27,71 @@ export function DerivationSection({
   granteePrincipals,
   grantorPrincipals,
   county,
+  securityInstruments,
+  relatedDocsSlots,
+  liens,
+  exceptionMatters,
 }: {
   orderId: string
   prelimSearch: PrelimSearch | null
   granteePrincipals: DerivationPrincipal[]
   grantorPrincipals: DerivationPrincipal[]
   county: string | null
+  securityInstruments: SecurityInstrument[]
+  relatedDocsSlots?: Record<string, React.ReactNode>
+  liens: Lien[]
+  exceptionMatters: ExceptionMatter[]
 }) {
+  // Controlled (not just defaultValue) because the clause preview below is computed
+  // live from these — under the old submit-and-redirect form, a save was always a
+  // full page reload, which is what kept the preview in sync; autosave has no
+  // equivalent reload, so the preview now tracks form state directly instead.
   const [granteeType, setGranteeType] = useState(prelimSearch?.derivation_grantee_entity_type ?? '')
   const [grantorType, setGrantorType] = useState(prelimSearch?.derivation_grantor_entity_type ?? '')
-  const action = upsertPrelimSearch.bind(null, orderId)
+  const [granteeName, setGranteeName] = useState(prelimSearch?.derivation_grantee_name ?? '')
+  const [grantorName, setGrantorName] = useState(prelimSearch?.derivation_grantor_name ?? '')
+  const [instrumentType, setInstrumentType] = useState(prelimSearch?.derivation_instrument_type ?? '')
+  const [recordedDate, setRecordedDate] = useState(prelimSearch?.derivation_recorded_date ?? '')
+  const [book, setBook] = useState(prelimSearch?.derivation_book ?? '')
+  const [pageNum, setPageNum] = useState(prelimSearch?.derivation_page ?? '')
+  const [instrumentNumber, setInstrumentNumber] = useState(prelimSearch?.derivation_instrument_number ?? '')
+  const [isPortion, setIsPortion] = useState(prelimSearch?.derivation_is_portion ?? false)
 
-  const vestingClause = prelimSearch
-    ? derivationVestingClause(
-        prelimSearch.derivation_grantee_name,
-        (prelimSearch.derivation_grantee_entity_type as never) ?? null,
-        granteePrincipals
-      )
+  const formRef = useRef<HTMLFormElement>(null)
+  // The first successful save creates the prelim_search row. Track its id in client
+  // state from the action's own return value (same approach as PropertyForm) — it
+  // gates the sibling sections below, which need a real prelimSearchId to add against.
+  const [prelimSearchId, setPrelimSearchId] = useState<string | null>(prelimSearch?.id ?? null)
+  const { state, errorMessage, save } = useAutosave((formData: FormData) => upsertPrelimSearch(orderId, formData))
+
+  function handleSave(override?: { name: string; value: string }) {
+    if (!formRef.current) return
+    const formData = new FormData(formRef.current)
+    if (override) {
+      formData.set(override.name, override.value)
+    }
+    save(formData).then((result) => {
+      if (result.id) setPrelimSearchId(result.id)
+    })
+  }
+
+  const vestingClause = prelimSearchId
+    ? derivationVestingClause(granteeName, (granteeType as never) || null, granteePrincipals)
     : ''
 
-  const derivationClause = prelimSearch
+  const derivationClause = prelimSearchId
     ? fullDerivationClause(
         {
-          granteeName: prelimSearch.derivation_grantee_name,
-          granteeEntityType: (prelimSearch.derivation_grantee_entity_type as never) ?? null,
-          grantorName: prelimSearch.derivation_grantor_name,
-          grantorEntityType: (prelimSearch.derivation_grantor_entity_type as never) ?? null,
-          instrumentType: prelimSearch.derivation_instrument_type,
-          recordedDate: prelimSearch.derivation_recorded_date,
-          book: prelimSearch.derivation_book,
-          page: prelimSearch.derivation_page,
-          instrumentNumber: prelimSearch.derivation_instrument_number,
-          isPortion: prelimSearch.derivation_is_portion,
+          granteeName,
+          granteeEntityType: (granteeType as never) || null,
+          grantorName,
+          grantorEntityType: (grantorType as never) || null,
+          instrumentType,
+          recordedDate,
+          book,
+          page: pageNum,
+          instrumentNumber,
+          isPortion,
           county,
         },
         granteePrincipals,
@@ -66,7 +103,9 @@ export function DerivationSection({
     <section id="derivation" className="scroll-mt-24">
       <h2 className="mb-4 text-lg font-semibold">Title History</h2>
 
-      <form action={action} className="space-y-6">
+      <SaveIndicator state={state} errorMessage={errorMessage} />
+
+      <form ref={formRef} className="space-y-6">
         <div className="grid grid-cols-3 gap-4">
           <DateTimeField
             id="effective_datetime"
@@ -75,14 +114,26 @@ export function DerivationSection({
             timeName="effective_time"
             defaultDate={prelimSearch?.effective_date}
             defaultTime={prelimSearch?.effective_time}
+            onBlur={() => handleSave()}
           />
           <div>
             <Label htmlFor="search_type">Search Type</Label>
-            <Input id="search_type" name="search_type" defaultValue={prelimSearch?.search_type ?? undefined} />
+            <Input
+              id="search_type"
+              name="search_type"
+              defaultValue={prelimSearch?.search_type ?? undefined}
+              onBlur={() => handleSave()}
+            />
           </div>
           <div>
             <Label htmlFor="search_from_date">Search From Date</Label>
-            <Input id="search_from_date" name="search_from_date" type="date" defaultValue={prelimSearch?.search_from_date ?? undefined} />
+            <Input
+              id="search_from_date"
+              name="search_from_date"
+              type="date"
+              defaultValue={prelimSearch?.search_from_date ?? undefined}
+              onBlur={() => handleSave()}
+            />
           </div>
           <DateTimeField
             id="search_to_datetime"
@@ -91,6 +142,7 @@ export function DerivationSection({
             timeName="search_to_time"
             defaultDate={prelimSearch?.search_to_date}
             defaultTime={prelimSearch?.search_to_time}
+            onBlur={() => handleSave()}
           />
         </div>
 
@@ -99,7 +151,14 @@ export function DerivationSection({
 
           <div className="mb-4">
             <Label htmlFor="derivation_instrument_type">Deed Type</Label>
-            <Select name="derivation_instrument_type" defaultValue={prelimSearch?.derivation_instrument_type ?? undefined}>
+            <Select
+              name="derivation_instrument_type"
+              value={instrumentType}
+              onValueChange={(v) => {
+                setInstrumentType((v as string) ?? '')
+                handleSave({ name: 'derivation_instrument_type', value: v as string })
+              }}
+            >
               <SelectTrigger id="derivation_instrument_type" className="w-full">
                 <SelectValue placeholder="— Select —" />
               </SelectTrigger>
@@ -116,14 +175,23 @@ export function DerivationSection({
           <div className="mb-4 grid grid-cols-2 gap-4">
             <div>
               <Label htmlFor="derivation_grantor_name">Grantor Name</Label>
-              <Input id="derivation_grantor_name" name="derivation_grantor_name" defaultValue={prelimSearch?.derivation_grantor_name ?? undefined} />
+              <Input
+                id="derivation_grantor_name"
+                name="derivation_grantor_name"
+                value={grantorName}
+                onChange={(e) => setGrantorName(e.target.value)}
+                onBlur={() => handleSave()}
+              />
             </div>
             <div>
               <Label htmlFor="derivation_grantor_entity_type">Grantor Entity Type</Label>
               <Select
                 name="derivation_grantor_entity_type"
                 defaultValue={prelimSearch?.derivation_grantor_entity_type ?? undefined}
-                onValueChange={(value) => setGrantorType(value ?? '')}
+                onValueChange={(value) => {
+                  setGrantorType(value ?? '')
+                  handleSave({ name: 'derivation_grantor_entity_type', value: (value as string) ?? '' })
+                }}
               >
                 <SelectTrigger id="derivation_grantor_entity_type">
                   <SelectValue placeholder="— Select —" />
@@ -139,14 +207,23 @@ export function DerivationSection({
             </div>
             <div>
               <Label htmlFor="derivation_grantee_name">Grantee Name</Label>
-              <Input id="derivation_grantee_name" name="derivation_grantee_name" defaultValue={prelimSearch?.derivation_grantee_name ?? undefined} />
+              <Input
+                id="derivation_grantee_name"
+                name="derivation_grantee_name"
+                value={granteeName}
+                onChange={(e) => setGranteeName(e.target.value)}
+                onBlur={() => handleSave()}
+              />
             </div>
             <div>
               <Label htmlFor="derivation_grantee_entity_type">Grantee Entity Type</Label>
               <Select
                 name="derivation_grantee_entity_type"
                 defaultValue={prelimSearch?.derivation_grantee_entity_type ?? undefined}
-                onValueChange={(value) => setGranteeType(value ?? '')}
+                onValueChange={(value) => {
+                  setGranteeType(value ?? '')
+                  handleSave({ name: 'derivation_grantee_entity_type', value: (value as string) ?? '' })
+                }}
               >
                 <SelectTrigger id="derivation_grantee_entity_type">
                   <SelectValue placeholder="— Select —" />
@@ -165,38 +242,88 @@ export function DerivationSection({
           <div className="grid grid-cols-3 gap-4">
             <div>
               <Label htmlFor="derivation_dated_date">Dated Date</Label>
-              <Input id="derivation_dated_date" name="derivation_dated_date" type="date" defaultValue={prelimSearch?.derivation_dated_date ?? undefined} />
+              <Input
+                id="derivation_dated_date"
+                name="derivation_dated_date"
+                type="date"
+                defaultValue={prelimSearch?.derivation_dated_date ?? undefined}
+                onBlur={() => handleSave()}
+              />
             </div>
             <div>
               <Label htmlFor="derivation_recorded_date">Recorded Date</Label>
-              <Input id="derivation_recorded_date" name="derivation_recorded_date" type="date" defaultValue={prelimSearch?.derivation_recorded_date ?? undefined} />
+              <Input
+                id="derivation_recorded_date"
+                name="derivation_recorded_date"
+                type="date"
+                value={recordedDate ?? ''}
+                onChange={(e) => setRecordedDate(e.target.value)}
+                onBlur={() => handleSave()}
+              />
             </div>
             <div>
               <Label htmlFor="derivation_book">Book</Label>
-              <Input id="derivation_book" name="derivation_book" defaultValue={prelimSearch?.derivation_book ?? undefined} />
+              <Input
+                id="derivation_book"
+                name="derivation_book"
+                value={book ?? ''}
+                onChange={(e) => setBook(e.target.value)}
+                onBlur={() => handleSave()}
+              />
             </div>
             <div>
               <Label htmlFor="derivation_page">Page</Label>
-              <Input id="derivation_page" name="derivation_page" defaultValue={prelimSearch?.derivation_page ?? undefined} />
+              <Input
+                id="derivation_page"
+                name="derivation_page"
+                value={pageNum ?? ''}
+                onChange={(e) => setPageNum(e.target.value)}
+                onBlur={() => handleSave()}
+              />
             </div>
             <div>
               <Label htmlFor="derivation_instrument_number">Instrument Number</Label>
-              <Input id="derivation_instrument_number" name="derivation_instrument_number" defaultValue={prelimSearch?.derivation_instrument_number ?? undefined} />
+              <Input
+                id="derivation_instrument_number"
+                name="derivation_instrument_number"
+                value={instrumentNumber ?? ''}
+                onChange={(e) => setInstrumentNumber(e.target.value)}
+                onBlur={() => handleSave()}
+              />
             </div>
             <div>
               <Label htmlFor="derivation_consideration">Consideration</Label>
-              <CurrencyInput id="derivation_consideration" name="derivation_consideration" defaultValue={prelimSearch?.derivation_consideration ?? undefined} />
+              <CurrencyInput
+                id="derivation_consideration"
+                name="derivation_consideration"
+                defaultValue={prelimSearch?.derivation_consideration ?? undefined}
+                onBlur={() => handleSave()}
+              />
             </div>
           </div>
 
           <div className="mt-4 flex items-center gap-2">
-            <Checkbox id="derivation_is_portion" name="derivation_is_portion" defaultChecked={prelimSearch?.derivation_is_portion ?? false} />
+            <Checkbox
+              id="derivation_is_portion"
+              name="derivation_is_portion"
+              checked={isPortion}
+              onCheckedChange={(checked) => {
+                setIsPortion(!!checked)
+                handleSave({ name: 'derivation_is_portion', value: checked ? 'on' : '' })
+              }}
+            />
             <Label htmlFor="derivation_is_portion">Conveys a Portion (unchecked = conveys entire property)</Label>
           </div>
 
           <div className="mt-4">
             <Label htmlFor="derivation_note">Derivation Note</Label>
-            <Textarea id="derivation_note" name="derivation_note" rows={3} defaultValue={prelimSearch?.derivation_note ?? undefined} />
+            <Textarea
+              id="derivation_note"
+              name="derivation_note"
+              rows={3}
+              defaultValue={prelimSearch?.derivation_note ?? undefined}
+              onBlur={() => handleSave()}
+            />
           </div>
         </div>
 
@@ -205,27 +332,45 @@ export function DerivationSection({
           <div className="grid grid-cols-2 gap-4">
             <div>
               <Label htmlFor="taxes_paid_through_year">Taxes Paid Through Year</Label>
-              <Input id="taxes_paid_through_year" name="taxes_paid_through_year" defaultValue={prelimSearch?.taxes_paid_through_year ?? undefined} />
+              <Input
+                id="taxes_paid_through_year"
+                name="taxes_paid_through_year"
+                defaultValue={prelimSearch?.taxes_paid_through_year ?? undefined}
+                onBlur={() => handleSave()}
+              />
             </div>
             <div>
               <Label htmlFor="taxes_now_due">Taxes Now Due</Label>
-              <Input id="taxes_now_due" name="taxes_now_due" defaultValue={prelimSearch?.taxes_now_due ?? undefined} />
+              <Input
+                id="taxes_now_due"
+                name="taxes_now_due"
+                defaultValue={prelimSearch?.taxes_now_due ?? undefined}
+                onBlur={() => handleSave()}
+              />
             </div>
             <div>
               <Label htmlFor="taxes_not_yet_due">Taxes Not Yet Due</Label>
-              <Input id="taxes_not_yet_due" name="taxes_not_yet_due" defaultValue={prelimSearch?.taxes_not_yet_due ?? undefined} />
+              <Input
+                id="taxes_not_yet_due"
+                name="taxes_not_yet_due"
+                defaultValue={prelimSearch?.taxes_not_yet_due ?? undefined}
+                onBlur={() => handleSave()}
+              />
             </div>
             <div>
               <Label htmlFor="special_levies_assessments">Special Levies/Assessments</Label>
-              <Input id="special_levies_assessments" name="special_levies_assessments" defaultValue={prelimSearch?.special_levies_assessments ?? undefined} />
+              <Input
+                id="special_levies_assessments"
+                name="special_levies_assessments"
+                defaultValue={prelimSearch?.special_levies_assessments ?? undefined}
+                onBlur={() => handleSave()}
+              />
             </div>
           </div>
         </div>
-
-        <Button type="submit">Save Changes</Button>
       </form>
 
-      {prelimSearch && (
+      {prelimSearchId && (
         <div className="mt-6 rounded border bg-slate-50 p-4" data-testid="derivation-clause-preview">
           <p className="text-sm font-medium">Vesting Clause</p>
           <p className="mb-3 text-sm text-slate-700" data-testid="vesting-clause">
@@ -238,12 +383,12 @@ export function DerivationSection({
         </div>
       )}
 
-      {prelimSearch ? (
+      {prelimSearchId ? (
         <>
           {ROSTER_ENTITY_TYPES.includes(granteeType) && (
             <DerivationPrincipalRoster
               orderId={orderId}
-              prelimSearchId={prelimSearch.id}
+              prelimSearchId={prelimSearchId}
               side="grantee"
               entityType={granteeType}
               principals={granteePrincipals}
@@ -253,7 +398,7 @@ export function DerivationSection({
           {ROSTER_ENTITY_TYPES.includes(grantorType) && (
             <DerivationPrincipalRoster
               orderId={orderId}
-              prelimSearchId={prelimSearch.id}
+              prelimSearchId={prelimSearchId}
               side="grantor"
               entityType={grantorType}
               principals={grantorPrincipals}
@@ -263,6 +408,19 @@ export function DerivationSection({
         </>
       ) : (
         <p className="mt-4 text-sm text-slate-500">Save Derivation first before adding Principals.</p>
+      )}
+
+      {prelimSearchId && (
+        <div className="mt-10 space-y-10">
+          <SecurityInstrumentsSection
+            orderId={orderId}
+            prelimSearchId={prelimSearchId}
+            instruments={securityInstruments}
+            relatedDocsSlots={relatedDocsSlots}
+          />
+          <LiensSection orderId={orderId} prelimSearchId={prelimSearchId} liens={liens} />
+          <ExceptionMattersSection orderId={orderId} prelimSearchId={prelimSearchId} matters={exceptionMatters} />
+        </div>
       )}
     </section>
   )

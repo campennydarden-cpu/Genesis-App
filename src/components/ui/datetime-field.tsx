@@ -15,6 +15,7 @@ export function DateTimeField({
   timeName,
   defaultDate,
   defaultTime,
+  onBlur,
 }: {
   id: string
   label: string
@@ -22,6 +23,7 @@ export function DateTimeField({
   timeName: string
   defaultDate?: string | null
   defaultTime?: string | null
+  onBlur?: () => void
 }) {
   const [value, setValue] = useState(defaultDate ? `${defaultDate}T${defaultTime || '00:00'}` : '')
   const [date, time] = value ? value.split('T') : ['', '']
@@ -29,7 +31,7 @@ export function DateTimeField({
   return (
     <div>
       <Label htmlFor={id}>{label}</Label>
-      <Input id={id} type="datetime-local" value={value} onChange={(e) => setValue(e.target.value)} />
+      <Input id={id} type="datetime-local" value={value} onChange={(e) => setValue(e.target.value)} onBlur={onBlur} />
       <input type="hidden" name={dateName} value={date} />
       <input type="hidden" name={timeName} value={time} />
     </div>

@@ -1,10 +1,7 @@
 import { notFound } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
 import { DerivationSection } from '@/components/prelim-search/DerivationSection'
-import { SecurityInstrumentsSection } from '@/components/prelim-search/SecurityInstrumentsSection'
 import { RelatedDocumentsSection } from '@/components/prelim-search/RelatedDocumentsSection'
-import { LiensSection } from '@/components/prelim-search/LiensSection'
-import { ExceptionMattersSection } from '@/components/prelim-search/ExceptionMattersSection'
 
 export default async function PrelimSearchPage({
   params,
@@ -122,21 +119,11 @@ export default async function PrelimSearchPage({
           granteePrincipals={granteePrincipals ?? []}
           grantorPrincipals={grantorPrincipals ?? []}
           county={property?.county ?? order.property_county ?? null}
+          securityInstruments={securityInstruments ?? []}
+          relatedDocsSlots={relatedDocsSlots}
+          liens={liens ?? []}
+          exceptionMatters={exceptionMatters ?? []}
         />
-        {prelimSearch && (
-          <SecurityInstrumentsSection
-            orderId={id}
-            prelimSearchId={prelimSearch.id}
-            instruments={securityInstruments ?? []}
-            relatedDocsSlots={relatedDocsSlots}
-          />
-        )}
-        {prelimSearch && (
-          <LiensSection orderId={id} prelimSearchId={prelimSearch.id} liens={liens ?? []} />
-        )}
-        {prelimSearch && (
-          <ExceptionMattersSection orderId={id} prelimSearchId={prelimSearch.id} matters={exceptionMatters ?? []} />
-        )}
       </div>
     </div>
   )
