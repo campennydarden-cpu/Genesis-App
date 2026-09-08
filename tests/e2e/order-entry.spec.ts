@@ -144,6 +144,41 @@ test.describe('Genesis foundation phase', () => {
     await expect(page.getByTestId('contact-row')).not.toBeVisible()
   })
 
+  test('contacts: editing an existing contact autosaves and persists', async ({ page }) => {
+    await loginAsSeededUser(page)
+
+    await page.getByRole('link', { name: '+ New Order' }).click()
+    await page.waitForURL('**/orders/new')
+    await page.getByRole('button', { name: 'Create Order' }).click()
+    await page.waitForURL('**/orders/**/order-entry')
+    const orderId = page.url().match(/\/orders\/([^/]+)\/order-entry/)?.[1]
+
+    await page.goto(`/orders/${orderId}/contacts`)
+    await page.getByText('Add a contact').click()
+    await page.getByLabel('Role').click()
+    await page.getByRole('option', { name: 'Buyer/Borrower', exact: true }).click()
+    await page.getByLabel('Name').fill('Jane Test Buyer')
+    await page.getByRole('button', { name: 'Add Contact' }).click()
+    await expect(page.getByTestId('contact-row')).toContainText('Jane Test Buyer')
+
+    await page.getByRole('link', { name: 'Edit' }).click()
+    await page.waitForURL('**/edit')
+
+    await page.getByLabel('Name').fill('Jane Test Buyer Updated')
+    await page.getByLabel('Phone').fill('555-0199')
+    await page.getByLabel('Phone').blur()
+    await expect(page.getByTestId('save-indicator')).toContainText('Saved')
+
+    await page.getByRole('link', { name: 'Back to Contacts' }).click()
+    await page.waitForURL('**/contacts')
+    await expect(page.getByTestId('contact-row')).toContainText('Jane Test Buyer Updated')
+
+    // Real reload, not just leftover client state, proves it persisted server-side.
+    await page.reload()
+    await page.waitForLoadState('networkidle')
+    await expect(page.getByTestId('contact-row')).toContainText('Jane Test Buyer Updated')
+  })
+
   test('orders list shows created orders and status edits persist', async ({ page }) => {
     await loginAsSeededUser(page)
 

@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useRef, useState } from 'react'
 import {
   CONTACT_ROLES,
   CONTACT_ROLES_SINGLE_ADDRESS,
@@ -10,19 +10,26 @@ import {
   ENTITY_TYPES,
   MARITAL_STATUSES,
 } from '@/lib/constants'
+import { saveContact } from '@/app/actions/contacts'
 import type { Contact } from '@/lib/types'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Checkbox } from '@/components/ui/checkbox'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { OrderFormSubmitButton } from '@/components/OrderFormSubmitButton'
+import { SaveIndicator } from '@/components/SaveIndicator'
+import { useAutosave } from '@/lib/use-autosave'
 
 export function AddContactForm({
   action,
+  orderId,
   contact,
   propertyAddress,
 }: {
-  action: (formData: FormData) => void | Promise<void>
+  /** Used only when adding a new contact (no `contact` prop) — editing an existing
+   *  contact autosaves via `saveContact` instead of a submit action. */
+  action?: (formData: FormData) => void | Promise<void>
+  orderId?: string
   contact?: Contact
   propertyAddress?: string | null
 }) {
@@ -39,12 +46,36 @@ export function AddContactForm({
   const showMortgagee = CONTACT_ROLES_WITH_MORTGAGEE_CLAUSE.includes(role)
   const showFillFromProperty = !showSingleAddress && !!propertyAddress
 
+  const formRef = useRef<HTMLFormElement>(null)
+  const { state, errorMessage, save } = useAutosave((formData: FormData) => {
+    if (!contact || !orderId) throw new Error('AddContactForm.save called without a contact to save against')
+    return saveContact(orderId, contact.id, formData)
+  })
+
+  function handleSave(override?: { name: string; value: string }) {
+    if (!formRef.current || !contact) return
+    const formData = new FormData(formRef.current)
+    if (override) {
+      formData.set(override.name, override.value)
+    }
+    save(formData)
+  }
+
   return (
-    <form action={action} className="mt-4 space-y-4">
+    <form ref={formRef} action={contact ? undefined : action} className="mt-4 space-y-4">
+      {contact && <SaveIndicator state={state} errorMessage={errorMessage} />}
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
         <div>
           <Label htmlFor="role">Role</Label>
-          <Select name="role" required value={role} onValueChange={(v) => setRole(v as string)}>
+          <Select
+            name="role"
+            required
+            value={role}
+            onValueChange={(v) => {
+              setRole(v as string)
+              handleSave({ name: 'role', value: v as string })
+            }}
+          >
             <SelectTrigger id="role" className="mt-1 w-full">
               <SelectValue placeholder="— Select —" />
             </SelectTrigger>
@@ -63,7 +94,10 @@ export function AddContactForm({
             <Select
               name="entity_type"
               value={entityType}
-              onValueChange={(v) => setEntityType(v as string)}
+              onValueChange={(v) => {
+                setEntityType(v as string)
+                handleSave({ name: 'entity_type', value: v as string })
+              }}
             >
               <SelectTrigger id="entity_type" className="mt-1 w-full">
                 <SelectValue placeholder="— Select —" />
@@ -84,11 +118,23 @@ export function AddContactForm({
 
       <div>
         <Label htmlFor="name">Name</Label>
-        <Input id="name" name="name" required className="mt-1" defaultValue={contact?.name} />
+        <Input
+          id="name"
+          name="name"
+          required
+          className="mt-1"
+          defaultValue={contact?.name}
+          onBlur={() => handleSave()}
+        />
       </div>
 
       <label className="flex items-center gap-2 text-sm">
-        <Checkbox id="poa" name="poa" defaultChecked={contact?.poa ?? false} />
+        <Checkbox
+          id="poa"
+          name="poa"
+          defaultChecked={contact?.poa ?? false}
+          onCheckedChange={(checked) => handleSave({ name: 'poa', value: checked ? 'on' : '' })}
+        />
         Power of Attorney (POA)
       </label>
 
@@ -100,6 +146,7 @@ export function AddContactForm({
             name="current_address"
             className="mt-1"
             defaultValue={contact?.current_address ?? undefined}
+            onBlur={() => handleSave()}
           />
         </div>
       ) : (
@@ -112,11 +159,16 @@ export function AddContactForm({
               className="mt-1"
               value={currentAddress}
               onChange={(e) => setCurrentAddress(e.target.value)}
+              onBlur={() => handleSave()}
             />
             {showFillFromProperty && (
               <label className="mt-1 flex items-center gap-1.5 text-xs text-muted-foreground">
                 <Checkbox
-                  onCheckedChange={(checked) => checked && setCurrentAddress(propertyAddress ?? '')}
+                  onCheckedChange={(checked) => {
+                    if (!checked) return
+                    setCurrentAddress(propertyAddress ?? '')
+                    handleSave({ name: 'current_address', value: propertyAddress ?? '' })
+                  }}
                 />
                 Same as Property Address
               </label>
@@ -130,11 +182,16 @@ export function AddContactForm({
               className="mt-1"
               value={mailingAddress}
               onChange={(e) => setMailingAddress(e.target.value)}
+              onBlur={() => handleSave()}
             />
             {showFillFromProperty && (
               <label className="mt-1 flex items-center gap-1.5 text-xs text-muted-foreground">
                 <Checkbox
-                  onCheckedChange={(checked) => checked && setMailingAddress(propertyAddress ?? '')}
+                  onCheckedChange={(checked) => {
+                    if (!checked) return
+                    setMailingAddress(propertyAddress ?? '')
+                    handleSave({ name: 'mailing_address', value: propertyAddress ?? '' })
+                  }}
                 />
                 Same as Property Address
               </label>
@@ -148,11 +205,16 @@ export function AddContactForm({
               className="mt-1"
               value={forwardingAddress}
               onChange={(e) => setForwardingAddress(e.target.value)}
+              onBlur={() => handleSave()}
             />
             {showFillFromProperty && (
               <label className="mt-1 flex items-center gap-1.5 text-xs text-muted-foreground">
                 <Checkbox
-                  onCheckedChange={(checked) => checked && setForwardingAddress(propertyAddress ?? '')}
+                  onCheckedChange={(checked) => {
+                    if (!checked) return
+                    setForwardingAddress(propertyAddress ?? '')
+                    handleSave({ name: 'forwarding_address', value: propertyAddress ?? '' })
+                  }}
                 />
                 Same as Property Address
               </label>
@@ -164,7 +226,13 @@ export function AddContactForm({
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
         <div>
           <Label htmlFor="phone">Phone</Label>
-          <Input id="phone" name="phone" className="mt-1" defaultValue={contact?.phone ?? undefined} />
+          <Input
+            id="phone"
+            name="phone"
+            className="mt-1"
+            defaultValue={contact?.phone ?? undefined}
+            onBlur={() => handleSave()}
+          />
         </div>
         <div>
           <Label htmlFor="email">Email</Label>
@@ -174,6 +242,7 @@ export function AddContactForm({
             type="email"
             className="mt-1"
             defaultValue={contact?.email ?? undefined}
+            onBlur={() => handleSave()}
           />
         </div>
       </div>
@@ -188,11 +257,16 @@ export function AddContactForm({
               autoComplete="off"
               className="mt-1"
               defaultValue={contact?.ssn ?? undefined}
+              onBlur={() => handleSave()}
             />
           </div>
           <div>
             <Label htmlFor="marital_status">Marital Status</Label>
-            <Select name="marital_status" defaultValue={contact?.marital_status ?? undefined}>
+            <Select
+              name="marital_status"
+              defaultValue={contact?.marital_status ?? undefined}
+              onValueChange={(v) => handleSave({ name: 'marital_status', value: v as string })}
+            >
               <SelectTrigger id="marital_status" className="mt-1 w-full">
                 <SelectValue placeholder="— Select —" />
               </SelectTrigger>
@@ -213,6 +287,7 @@ export function AddContactForm({
               type="date"
               className="mt-1"
               defaultValue={contact?.dob ?? undefined}
+              onBlur={() => handleSave()}
             />
           </div>
         </div>
@@ -229,6 +304,7 @@ export function AddContactForm({
                   name="license_number"
                   className="mt-1"
                   defaultValue={contact?.license_number ?? undefined}
+                  onBlur={() => handleSave()}
                 />
               </div>
               <div>
@@ -238,6 +314,7 @@ export function AddContactForm({
                   name="alta_id"
                   className="mt-1"
                   defaultValue={contact?.alta_id ?? undefined}
+                  onBlur={() => handleSave()}
                 />
               </div>
             </>
@@ -250,13 +327,14 @@ export function AddContactForm({
                 name="mortgagee_clause"
                 className="mt-1"
                 defaultValue={contact?.mortgagee_clause ?? undefined}
+                onBlur={() => handleSave()}
               />
             </div>
           )}
         </div>
       )}
 
-      <OrderFormSubmitButton label={contact ? 'Save Changes' : 'Add Contact'} />
+      {!contact && <OrderFormSubmitButton label="Add Contact" />}
     </form>
   )
 }

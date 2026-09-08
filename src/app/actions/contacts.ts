@@ -55,7 +55,11 @@ export async function addContact(orderId: string, formData: FormData) {
   revalidatePath('/orders')
 }
 
-export async function editContact(orderId: string, contactId: string, formData: FormData) {
+export async function saveContact(
+  orderId: string,
+  contactId: string,
+  formData: FormData
+): Promise<{ error?: string }> {
   const supabase = await createClient()
 
   const role = formData.get('role') as string
@@ -73,6 +77,10 @@ export async function editContact(orderId: string, contactId: string, formData: 
   const mortgageeClause = formData.get('mortgagee_clause') as string
   const poa = formData.get('poa') === 'on'
   const maritalStatus = formData.get('marital_status') as string
+
+  if (!role || !name) {
+    return { error: 'Role and Name are required.' }
+  }
 
   const { error } = await supabase
     .from('contacts')
@@ -96,15 +104,13 @@ export async function editContact(orderId: string, contactId: string, formData: 
     .eq('id', contactId)
 
   if (error) {
-    console.error('editContact failed:', error)
-    redirect(
-      `/orders/${orderId}/contacts/${contactId}/edit?error=${encodeURIComponent('Could not save. Please check your entries and try again.')}`
-    )
+    console.error('saveContact failed:', error)
+    return { error: 'Could not save. Please check your entries and try again.' }
   }
 
   revalidatePath(`/orders/${orderId}`)
   revalidatePath('/orders')
-  redirect(`/orders/${orderId}/contacts`)
+  return {}
 }
 
 export async function deleteContact(orderId: string, contactId: string) {
