@@ -2,8 +2,9 @@
 
 import { useState } from 'react'
 import Link from 'next/link'
-import { usePathname } from 'next/navigation'
+import { usePathname, useRouter } from 'next/navigation'
 import { ChevronDown } from 'lucide-react'
+import { usePendingSave } from '@/lib/pending-saves'
 
 type NavItem = { label: string; segment?: string }
 type NavGroup = { heading: string; items: NavItem[] }
@@ -60,9 +61,17 @@ function slugify(heading: string) {
 
 export function FileSectionsNav({ orderId }: { orderId: string }) {
   const pathname = usePathname()
+  const router = useRouter()
+  const { hasPending, waitForPendingSaves } = usePendingSave()
   const [openGroups, setOpenGroups] = useState<Record<string, boolean>>(() =>
     Object.fromEntries(NAV_GROUPS.map((group) => [group.heading, true]))
   )
+
+  function guardedNavigate(e: React.MouseEvent, href: string) {
+    if (!hasPending()) return
+    e.preventDefault()
+    waitForPendingSaves().then(() => router.push(href))
+  }
 
   return (
     <div className="space-y-6">
@@ -117,6 +126,7 @@ export function FileSectionsNav({ orderId }: { orderId: string }) {
                     href={href}
                     data-testid="nav-link"
                     aria-current={active ? 'page' : undefined}
+                    onClick={(e) => guardedNavigate(e, href)}
                     className={`block rounded p-2.5 text-sm transition-colors duration-200 ${
                       active ? 'bg-primary text-primary-foreground' : 'text-foreground hover:bg-muted'
                     }`}
