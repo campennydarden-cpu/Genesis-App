@@ -12,11 +12,15 @@ import type { Attachment, AttachmentFolder } from '@/lib/types'
 export async function copyFolderTemplateForOrder(orderId: string): Promise<void> {
   const supabase = await createClient()
 
-  const { data: templates } = await supabase
+  const { data: templates, error: templatesError } = await supabase
     .from('folder_templates')
     .select('id, name, sort_order, parent_folder_template_id')
     .order('sort_order')
 
+  if (templatesError) {
+    console.error('copyFolderTemplateForOrder failed to read folder_templates:', templatesError)
+    return
+  }
   if (!templates || templates.length === 0) return
 
   const topLevel = templates.filter((t) => !t.parent_folder_template_id)
@@ -25,24 +29,31 @@ export async function copyFolderTemplateForOrder(orderId: string): Promise<void>
   const templateIdToNewId = new Map<string, string>()
 
   for (const t of topLevel) {
-    const { data } = await supabase
+    const { data, error } = await supabase
       .from('attachment_folders')
       .insert({ order_id: orderId, name: t.name, sort_order: t.sort_order, source_template_id: t.id })
       .select('id')
       .single()
+    if (error) {
+      console.error(`copyFolderTemplateForOrder failed to insert top-level folder "${t.name}":`, error)
+      continue
+    }
     if (data) templateIdToNewId.set(t.id, data.id)
   }
 
   for (const t of children) {
     const parentId = templateIdToNewId.get(t.parent_folder_template_id as string)
     if (!parentId) continue
-    await supabase.from('attachment_folders').insert({
+    const { error } = await supabase.from('attachment_folders').insert({
       order_id: orderId,
       name: t.name,
       sort_order: t.sort_order,
       parent_folder_id: parentId,
       source_template_id: t.id,
     })
+    if (error) {
+      console.error(`copyFolderTemplateForOrder failed to insert child folder "${t.name}":`, error)
+    }
   }
 }
 
@@ -71,11 +82,19 @@ function buildFolderPathMap(folders: AttachmentFolder[]): Map<string, string> {
   return map
 }
 
+// PostgREST's .or() filter grammar uses `,` to separate conditions and `()` to group them,
+// so a search term containing either (e.g. "Smith, John - Deed.pdf") must have them
+// backslash-escaped or it breaks the filter parse and silently returns zero rows.
+function escapePostgrestFilterValue(value: string): string {
+  return value.replace(/[,()]/g, '\\$&')
+}
+
 export async function searchAttachments(
   orderId: string,
   query: string
 ): Promise<Array<Attachment & { folderPath: string }>> {
   const supabase = await createClient()
+  const escapedQuery = escapePostgrestFilterValue(query)
 
   const [{ data: folders }, { data: attachments }] = await Promise.all([
     supabase.from('attachment_folders').select('*').eq('order_id', orderId),
@@ -83,7 +102,7 @@ export async function searchAttachments(
       .from('attachments')
       .select('*')
       .eq('order_id', orderId)
-      .or(`name.ilike.%${query}%,description.ilike.%${query}%`),
+      .or(`name.ilike.%${escapedQuery}%,description.ilike.%${escapedQuery}%`),
   ])
 
   const pathMap = buildFolderPathMap(folders ?? [])
