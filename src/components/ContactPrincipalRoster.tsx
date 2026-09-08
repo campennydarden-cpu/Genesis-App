@@ -5,7 +5,6 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
-import { PRINCIPAL_ROLES } from '@/lib/constants'
 import {
   addContactPrincipal,
   updateContactPrincipal,
@@ -16,18 +15,17 @@ import type { ContactPrincipal } from '@/lib/types'
 export function ContactPrincipalRoster({
   orderId,
   contactId,
-  entityType,
+  roles,
   principals,
   label,
 }: {
   orderId: string
   contactId: string
-  entityType: string
+  roles: readonly string[]
   principals: ContactPrincipal[]
   label: string
 }) {
   const [editingId, setEditingId] = useState<string | null>(null)
-  const roles = PRINCIPAL_ROLES[entityType] ?? []
 
   return (
     <div className="mt-3 border-t pt-3" data-testid="contact-principal-roster">

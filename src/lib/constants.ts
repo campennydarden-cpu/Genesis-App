@@ -176,6 +176,22 @@ export const PRINCIPAL_ROLES: Record<string, readonly string[]> = {
   Trust: ['Trustee', 'Successor Trustee', 'Co-Trustee'],
 }
 
+// Roles that get a "People Box" of their own staff (Loan Officer, Processor, etc.)
+// per Cam's note — unlike the Trust/LLC roster above, this isn't entity-type-gated.
+export const CONTACT_ROLES_WITH_TEAM_ROSTER: readonly string[] = [
+  'Lender',
+  'Mortgage Broker',
+  "Listing Agent (Seller's Agent)",
+  "Selling Agent (Buyer's Agent)",
+]
+
+export const TEAM_ROSTER_ROLES: readonly string[] = [
+  'Loan Officer',
+  'Loan Officer Assistant',
+  'Processor',
+  'Other',
+]
+
 export const SECURITY_INSTRUMENT_TYPES = [
   'Mortgage', 'Deed of Trust', 'Security Deed', 'UCC Financing Statement',
 ] as const

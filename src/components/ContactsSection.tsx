@@ -3,6 +3,7 @@ import { addContact, deleteContact } from '@/app/actions/contacts'
 import { Button } from '@/components/ui/button'
 import { AddContactForm } from '@/components/AddContactForm'
 import { ContactPrincipalRoster } from '@/components/ContactPrincipalRoster'
+import { PRINCIPAL_ROLES, CONTACT_ROLES_WITH_TEAM_ROSTER, TEAM_ROSTER_ROLES } from '@/lib/constants'
 import type { Contact, ContactPrincipal } from '@/lib/types'
 
 // "People Box" — only entity types with an actual roster concept get one.
@@ -31,6 +32,7 @@ export function ContactsSection({
       <ul className="mb-6 space-y-2" data-testid="contact-list">
         {contacts.map((c) => {
           const rosterLabel = PRINCIPAL_ROSTER_LABELS[c.entity_type]
+          const hasTeamRoster = CONTACT_ROLES_WITH_TEAM_ROSTER.includes(c.role)
           return (
             <li key={c.id} className="rounded border p-3" data-testid="contact-row">
               <div className="flex items-center justify-between">
@@ -62,9 +64,18 @@ export function ContactsSection({
                 <ContactPrincipalRoster
                   orderId={orderId}
                   contactId={c.id}
-                  entityType={c.entity_type}
+                  roles={PRINCIPAL_ROLES[c.entity_type] ?? []}
                   principals={principalsByContact.get(c.id) ?? []}
                   label={rosterLabel}
+                />
+              )}
+              {hasTeamRoster && (
+                <ContactPrincipalRoster
+                  orderId={orderId}
+                  contactId={c.id}
+                  roles={TEAM_ROSTER_ROLES}
+                  principals={principalsByContact.get(c.id) ?? []}
+                  label="Team Contacts"
                 />
               )}
             </li>
