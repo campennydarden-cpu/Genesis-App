@@ -58,6 +58,7 @@ export type Contact = {
   mortgagee_clause: string | null
   poa: boolean
   marital_status: string | null
+  linked_contact_id: string | null
 }
 
 export type ContactPrincipal = {
@@ -65,6 +66,12 @@ export type ContactPrincipal = {
   contact_id: string
   name: string
   role: string | null
+}
+
+export type ContactSignatureLine = {
+  id: string
+  contact_id: string
+  text: string
 }
 
 export type PropertyDetails = {
@@ -131,9 +138,15 @@ export type PrelimSearch = {
   derivation_grantor_entity_type: string | null
   derivation_is_portion: boolean
   derivation_note: string | null
-  taxes_paid_through_year: string | null
-  taxes_now_due: string | null
-  taxes_not_yet_due: string | null
+  tax_last_paid_year: string | null
+  tax_last_paid_installment_count: number | null
+  tax_last_paid_installment_amount: number | null
+  tax_last_paid_due_date: string | null
+  tax_next_due_year: string | null
+  tax_next_due_installment_number: number | null
+  tax_next_due_installment_count: number | null
+  tax_next_due_amount: number | null
+  tax_next_due_due_date: string | null
   special_levies_assessments: string | null
 }
 
@@ -262,6 +275,7 @@ export type CommitmentRequirement = {
   disposition: string | null
   disposition_notes: string | null
   dont_show: boolean
+  sort_order: number
 }
 
 export type CommitmentException = {
@@ -274,6 +288,7 @@ export type CommitmentException = {
   disposition: string | null
   disposition_notes: string | null
   dont_show: boolean
+  sort_order: number
 }
 
 // Not dead code: backs the "Begin Requirements/Exceptions At" numbering-offset override UI,

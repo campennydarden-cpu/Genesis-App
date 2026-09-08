@@ -12,6 +12,10 @@ export async function upsertPrelimSearch(
   const supabase = await createClient()
 
   const field = (name: string) => (formData.get(name) as string) || null
+  const numField = (name: string) => {
+    const v = formData.get(name) as string
+    return v ? Number(v) : null
+  }
   const consideration = formData.get('derivation_consideration') as string
 
   const { data, error } = await supabase
@@ -38,9 +42,15 @@ export async function upsertPrelimSearch(
         derivation_grantor_entity_type: field('derivation_grantor_entity_type'),
         derivation_is_portion: formData.get('derivation_is_portion') === 'on',
         derivation_note: field('derivation_note'),
-        taxes_paid_through_year: field('taxes_paid_through_year'),
-        taxes_now_due: field('taxes_now_due'),
-        taxes_not_yet_due: field('taxes_not_yet_due'),
+        tax_last_paid_year: field('tax_last_paid_year'),
+        tax_last_paid_installment_count: numField('tax_last_paid_installment_count'),
+        tax_last_paid_installment_amount: numField('tax_last_paid_installment_amount'),
+        tax_last_paid_due_date: field('tax_last_paid_due_date'),
+        tax_next_due_year: field('tax_next_due_year'),
+        tax_next_due_installment_number: numField('tax_next_due_installment_number'),
+        tax_next_due_installment_count: numField('tax_next_due_installment_count'),
+        tax_next_due_amount: numField('tax_next_due_amount'),
+        tax_next_due_due_date: field('tax_next_due_due_date'),
         special_levies_assessments: field('special_levies_assessments'),
         updated_at: new Date().toISOString(),
       },

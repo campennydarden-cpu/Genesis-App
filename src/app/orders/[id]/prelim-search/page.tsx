@@ -94,37 +94,17 @@ export default async function PrelimSearchPage({
     <div>
       {error && <p className="mb-4 rounded bg-red-50 p-3 text-sm text-red-700">{error}</p>}
 
-      <nav
-        className="sticky top-0 z-10 mb-6 flex gap-4 border-b bg-white/95 py-2 text-sm backdrop-blur"
-        data-testid="prelim-search-anchor-nav"
-      >
-        <a href="#derivation" className="text-slate-600 hover:text-slate-900 hover:underline">
-          Title History
-        </a>
-        <a href="#security-instruments" className="text-slate-600 hover:text-slate-900 hover:underline">
-          Security Instruments
-        </a>
-        <a href="#liens" className="text-slate-600 hover:text-slate-900 hover:underline">
-          Liens
-        </a>
-        <a href="#exception-matters" className="text-slate-600 hover:text-slate-900 hover:underline">
-          Exception Matters
-        </a>
-      </nav>
-
-      <div className="space-y-10">
-        <DerivationSection
-          orderId={id}
-          prelimSearch={prelimSearch ?? null}
-          granteePrincipals={granteePrincipals ?? []}
-          grantorPrincipals={grantorPrincipals ?? []}
-          county={property?.county ?? order.property_county ?? null}
-          securityInstruments={securityInstruments ?? []}
-          relatedDocsSlots={relatedDocsSlots}
-          liens={liens ?? []}
-          exceptionMatters={exceptionMatters ?? []}
-        />
-      </div>
+      <DerivationSection
+        orderId={id}
+        prelimSearch={prelimSearch ?? null}
+        granteePrincipals={granteePrincipals ?? []}
+        grantorPrincipals={grantorPrincipals ?? []}
+        county={property?.county ?? order.property_county ?? null}
+        securityInstruments={securityInstruments ?? []}
+        relatedDocsSlots={relatedDocsSlots}
+        liens={liens ?? []}
+        exceptionMatters={exceptionMatters ?? []}
+      />
     </div>
   )
 }

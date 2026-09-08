@@ -554,11 +554,9 @@ test.describe('Genesis foundation phase', () => {
     await page.getByLabel('Recorded Date').fill('2026-05-15')
     await page.getByLabel('Recorded Date').blur()
     await page.getByLabel('Grantee Name').fill('Test Trust Co')
-    await page.getByLabel('Grantee Entity Type').click()
-    await page.getByRole('option', { name: 'Trust' }).click()
+    await page.getByLabel('Grantee Name').blur()
     await page.getByLabel('Grantor Name').fill('Original Owner LLC')
-    await page.getByLabel('Grantor Entity Type').click()
-    await page.getByRole('option', { name: 'LLC' }).click()
+    await page.getByLabel('Grantor Name').blur()
     await expect(page.getByTestId('save-indicator')).toContainText('Saved')
 
     // No trustees yet - Vesting Clause shows the "not yet added" fallback.
@@ -604,6 +602,7 @@ test.describe('Genesis foundation phase', () => {
     await page.getByLabel('Search Type').blur()
     await expect(page.getByTestId('save-indicator')).toContainText('Saved')
 
+    await page.getByTestId('prelim-search-tab-security-instruments').click()
     await page.getByText('Add a Security Instrument').click()
     await page.locator('#si-new-type').click()
     await page.getByRole('option', { name: 'Deed of Trust' }).click()
@@ -638,6 +637,7 @@ test.describe('Genesis foundation phase', () => {
     await page.getByLabel('Search Type').blur()
     await expect(page.getByTestId('save-indicator')).toContainText('Saved')
 
+    await page.getByTestId('prelim-search-tab-security-instruments').click()
     await page.getByText('Add a Security Instrument').click()
     await page.locator('#si-new-type').click()
     await page.getByRole('option', { name: 'Mortgage' }).click()
@@ -673,6 +673,7 @@ test.describe('Genesis foundation phase', () => {
     await page.getByLabel('Search Type').blur()
     await expect(page.getByTestId('save-indicator')).toContainText('Saved')
 
+    await page.getByTestId('prelim-search-tab-liens').click()
     await page.getByText('Add a Lien').click()
     const lienForm = page.locator('#liens').locator('details')
     await lienForm.locator('#lien-new-type').click()
@@ -707,6 +708,7 @@ test.describe('Genesis foundation phase', () => {
     await page.getByLabel('Search Type').blur()
     await expect(page.getByTestId('save-indicator')).toContainText('Saved')
 
+    await page.getByTestId('prelim-search-tab-exception-matters').click()
     await page.getByText('Add an Exception Matter').click()
     await page.locator('#em-new-description').fill('Easement of record affecting the rear 10 feet')
     await page.getByRole('button', { name: 'Add Exception Matter' }).click()
@@ -810,8 +812,8 @@ test.describe('Genesis foundation phase', () => {
     await page.getByTestId('loan-policy-card').getByRole('button', { name: '+ First National Bank' }).click()
     await expect(page.getByTestId('loan-policy-card').getByLabel('Proposed Insured')).toHaveValue('First National Bank')
 
-    await expect(page.getByTestId('mortgagee-clause-seed-chips')).toContainText('+ Use First National Bank')
-    await page.getByTestId('mortgagee-clause-seed-chips').getByRole('button', { name: '+ Use First National Bank' }).click()
+    await expect(page.getByTestId('mortgagee-clause-seed-chips')).toContainText('+ Conventional')
+    await page.getByTestId('mortgagee-clause-seed-chips').getByRole('button', { name: '+ Conventional' }).click()
     await expect(page.getByTestId('loan-policy-card').getByLabel('Proposed Insured')).toHaveValue(
       'First National Bank, First National Bank, its successors and/or assigns, ISAOA/ATIMA:'
     )
@@ -860,6 +862,7 @@ test.describe('Genesis foundation phase', () => {
     await page.getByLabel('Search Type').blur()
     await expect(page.getByTestId('save-indicator')).toContainText('Saved')
 
+    await page.getByTestId('prelim-search-tab-security-instruments').click()
     await page.getByText('Add a Security Instrument').click()
     const siForm = page.locator('details:has-text("Add a Security Instrument")')
     await page.locator('#si-new-type').click()
@@ -879,6 +882,7 @@ test.describe('Genesis foundation phase', () => {
     await relatedForm.getByRole('button', { name: 'Add' }).click()
     await expect(siRow.getByTestId('related-doc-row')).toContainText('Assignment')
 
+    await page.getByTestId('prelim-search-tab-liens').click()
     await page.getByText('Add a Lien').click()
     const lienForm = page.locator('details:has-text("Add a Lien")')
     await lienForm.locator('#lien-new-type').click()
@@ -888,6 +892,7 @@ test.describe('Genesis foundation phase', () => {
     await lienForm.getByRole('button', { name: 'Add Lien' }).click()
     await expect(page.getByTestId('lien-row')).toContainText('Test Debtor')
 
+    await page.getByTestId('prelim-search-tab-exception-matters').click()
     await page.getByText('Add an Exception Matter').click()
     const emForm = page.locator('details:has-text("Add an Exception Matter")')
     await emForm.getByLabel('Description').fill('Utility easement of record')
@@ -979,6 +984,7 @@ test.describe('Genesis foundation phase', () => {
     await page.getByLabel('Search Type').blur()
     await expect(page.getByTestId('save-indicator')).toContainText('Saved')
 
+    await page.getByTestId('prelim-search-tab-security-instruments').click()
     await page.getByText('Add a Security Instrument').click()
     const siForm = page.locator('details:has-text("Add a Security Instrument")')
     await page.locator('#si-new-type').click()
@@ -988,6 +994,7 @@ test.describe('Genesis foundation phase', () => {
     await siForm.getByRole('button', { name: 'Add Security Instrument' }).click()
     await expect(page.getByTestId('security-instrument-row')).toContainText('Deed of Trust')
 
+    await page.getByTestId('prelim-search-tab-exception-matters').click()
     await page.getByText('Add an Exception Matter').click()
     const emForm = page.locator('details:has-text("Add an Exception Matter")')
     await emForm.getByLabel('Description').fill('Utility easement of record')

@@ -2,7 +2,13 @@
 
 import { useState } from 'react'
 import { EXCEPTION_SEEDS } from '@/lib/constants'
-import { addExceptionFromChip, addExceptionManual, updateException, deleteException } from '@/app/actions/commitment-sch-b'
+import {
+  addExceptionFromChip,
+  addExceptionManual,
+  updateException,
+  deleteException,
+  moveException,
+} from '@/app/actions/commitment-sch-b'
 import type { CommitmentException, ExceptionMatter } from '@/lib/types'
 
 export function ExceptionsSection({
@@ -71,7 +77,29 @@ export function ExceptionsSection({
                 {e.notes && <p className="text-sm text-slate-500">{e.notes}</p>}
               </div>
               {!readOnly && (
-                <div className="flex gap-3">
+                <div className="flex items-center gap-3">
+                  <div className="flex flex-col">
+                    <form action={moveException.bind(null, orderId, e.id, 'up')}>
+                      <button
+                        type="submit"
+                        aria-label={`Move exception ${idx + 1} up`}
+                        disabled={idx === 0}
+                        className="block text-slate-500 hover:text-slate-900 disabled:opacity-30"
+                      >
+                        ▲
+                      </button>
+                    </form>
+                    <form action={moveException.bind(null, orderId, e.id, 'down')}>
+                      <button
+                        type="submit"
+                        aria-label={`Move exception ${idx + 1} down`}
+                        disabled={idx === exceptions.length - 1}
+                        className="block text-slate-500 hover:text-slate-900 disabled:opacity-30"
+                      >
+                        ▼
+                      </button>
+                    </form>
+                  </div>
                   <button type="button" onClick={() => setEditingId(e.id)} className="text-sm text-slate-600 hover:underline">
                     Edit
                   </button>

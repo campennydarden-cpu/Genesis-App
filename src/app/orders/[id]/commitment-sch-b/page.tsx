@@ -41,8 +41,8 @@ export default async function CommitmentScheduleBPage({
     ? await supabase.from('exception_matters').select('*').eq('prelim_search_id', prelimId).order('created_at')
     : { data: [] }
 
-  const { data: requirements } = await supabase.from('commitment_requirements').select('*').eq('order_id', id).order('created_at')
-  const { data: exceptions } = await supabase.from('commitment_exceptions').select('*').eq('order_id', id).order('created_at')
+  const { data: requirements } = await supabase.from('commitment_requirements').select('*').eq('order_id', id).order('sort_order')
+  const { data: exceptions } = await supabase.from('commitment_exceptions').select('*').eq('order_id', id).order('sort_order')
   const { data: settings } = await supabase.from('commitment_sch_b_settings').select('*').eq('order_id', id).maybeSingle()
 
   const { data: curativeSettings, error: curativeSettingsError } = await supabase

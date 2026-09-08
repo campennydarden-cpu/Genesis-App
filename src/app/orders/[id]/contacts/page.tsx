@@ -2,7 +2,7 @@ import { notFound } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
 import { ContactsSection } from '@/components/ContactsSection'
 import { Alert, AlertDescription } from '@/components/ui/alert'
-import type { ContactPrincipal } from '@/lib/types'
+import type { ContactPrincipal, ContactSignatureLine } from '@/lib/types'
 
 export default async function OrderContactsPage({
   params,
@@ -50,6 +50,21 @@ export default async function OrderContactsPage({
     }
   }
 
+  const { data: signatureLines } =
+    contactIds.length > 0
+      ? await supabase.from('contact_signature_lines').select('*').in('contact_id', contactIds)
+      : { data: [] as ContactSignatureLine[] }
+
+  const signatureLinesByContact = new Map<string, ContactSignatureLine[]>()
+  for (const s of signatureLines ?? []) {
+    const existing = signatureLinesByContact.get(s.contact_id)
+    if (existing) {
+      existing.push(s)
+    } else {
+      signatureLinesByContact.set(s.contact_id, [s])
+    }
+  }
+
   return (
     <div>
       {error && (
@@ -61,6 +76,7 @@ export default async function OrderContactsPage({
         orderId={id}
         contacts={contacts ?? []}
         principalsByContact={principalsByContact}
+        signatureLinesByContact={signatureLinesByContact}
         propertyAddress={propertyAddress}
       />
     </div>

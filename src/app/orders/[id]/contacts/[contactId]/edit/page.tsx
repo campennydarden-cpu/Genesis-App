@@ -31,10 +31,24 @@ export default async function EditContactPage({
     .maybeSingle()
   const propertyAddress = property?.property_address ?? order?.property_address ?? null
 
+  // Same-role siblings on this file are the only valid link candidates (Buyer/Borrower
+  // links to another Buyer/Borrower, Seller to another Seller).
+  const { data: linkCandidates } = await supabase
+    .from('contacts')
+    .select('id, name, current_address, mailing_address, forwarding_address')
+    .eq('order_id', id)
+    .eq('role', contact.role)
+    .neq('id', contactId)
+
   return (
     <div>
       <h2 className="mb-4 text-xl font-semibold">Edit Contact</h2>
-      <AddContactForm orderId={id} contact={contact} propertyAddress={propertyAddress} />
+      <AddContactForm
+        orderId={id}
+        contact={contact}
+        propertyAddress={propertyAddress}
+        linkCandidates={linkCandidates ?? []}
+      />
       <Button
         variant="ghost"
         size="sm"

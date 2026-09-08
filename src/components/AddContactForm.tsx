@@ -20,11 +20,22 @@ import { OrderFormSubmitButton } from '@/components/OrderFormSubmitButton'
 import { SaveIndicator } from '@/components/SaveIndicator'
 import { useAutosave } from '@/lib/use-autosave'
 
+type LinkCandidate = {
+  id: string
+  name: string
+  current_address: string | null
+  mailing_address: string | null
+  forwarding_address: string | null
+}
+
+const UNLINKED = '__unlinked__'
+
 export function AddContactForm({
   action,
   orderId,
   contact,
   propertyAddress,
+  linkCandidates,
 }: {
   /** Used only when adding a new contact (no `contact` prop) — editing an existing
    *  contact autosaves via `saveContact` instead of a submit action. */
@@ -32,12 +43,17 @@ export function AddContactForm({
   orderId?: string
   contact?: Contact
   propertyAddress?: string | null
+  /** Other contacts of the same role on this file — the only valid spouse-link targets.
+   *  Only present in edit mode (the edit page is the one that queries for them). */
+  linkCandidates?: LinkCandidate[]
 }) {
   const [role, setRole] = useState(contact?.role ?? '')
   const [entityType, setEntityType] = useState(contact?.entity_type ?? 'Individual')
   const [currentAddress, setCurrentAddress] = useState(contact?.current_address ?? '')
   const [mailingAddress, setMailingAddress] = useState(contact?.mailing_address ?? '')
   const [forwardingAddress, setForwardingAddress] = useState(contact?.forwarding_address ?? '')
+  const [linkedContactId, setLinkedContactId] = useState(contact?.linked_contact_id ?? '')
+  const linkedContact = (linkCandidates ?? []).find((c) => c.id === linkedContactId)
 
   const showEntityType = CONTACT_ROLES_WITH_ENTITY_TYPE.includes(role)
   const showSsnDob = showEntityType && entityType === 'Individual'
@@ -173,6 +189,18 @@ export function AddContactForm({
                 Same as Property Address
               </label>
             )}
+            {linkedContact && (
+              <label className="mt-1 flex items-center gap-1.5 text-xs text-muted-foreground">
+                <Checkbox
+                  onCheckedChange={(checked) => {
+                    if (!checked) return
+                    setCurrentAddress(linkedContact.current_address ?? '')
+                    handleSave({ name: 'current_address', value: linkedContact.current_address ?? '' })
+                  }}
+                />
+                Same as {linkedContact.name}
+              </label>
+            )}
           </div>
           <div>
             <Label htmlFor="mailing_address">Mailing Address</Label>
@@ -196,6 +224,18 @@ export function AddContactForm({
                 Same as Property Address
               </label>
             )}
+            {linkedContact && (
+              <label className="mt-1 flex items-center gap-1.5 text-xs text-muted-foreground">
+                <Checkbox
+                  onCheckedChange={(checked) => {
+                    if (!checked) return
+                    setMailingAddress(linkedContact.mailing_address ?? '')
+                    handleSave({ name: 'mailing_address', value: linkedContact.mailing_address ?? '' })
+                  }}
+                />
+                Same as {linkedContact.name}
+              </label>
+            )}
           </div>
           <div>
             <Label htmlFor="forwarding_address">Forwarding Address</Label>
@@ -217,6 +257,18 @@ export function AddContactForm({
                   }}
                 />
                 Same as Property Address
+              </label>
+            )}
+            {linkedContact && (
+              <label className="mt-1 flex items-center gap-1.5 text-xs text-muted-foreground">
+                <Checkbox
+                  onCheckedChange={(checked) => {
+                    if (!checked) return
+                    setForwardingAddress(linkedContact.forwarding_address ?? '')
+                    handleSave({ name: 'forwarding_address', value: linkedContact.forwarding_address ?? '' })
+                  }}
+                />
+                Same as {linkedContact.name}
               </label>
             )}
           </div>
@@ -290,6 +342,35 @@ export function AddContactForm({
               onBlur={() => handleSave()}
             />
           </div>
+        </div>
+      )}
+
+      {showSsnDob && linkCandidates && linkCandidates.length > 0 && (
+        <div>
+          <Label htmlFor="linked_contact_id">Linked Spouse</Label>
+          <Select
+            name="linked_contact_id"
+            value={linkedContactId}
+            onValueChange={(v) => {
+              const id = v === UNLINKED ? '' : (v as string)
+              setLinkedContactId(id)
+              handleSave({ name: 'linked_contact_id', value: id })
+            }}
+          >
+            <SelectTrigger id="linked_contact_id" className="mt-1 w-full">
+              <SelectValue placeholder="— Not linked —">
+                {linkedContact?.name ?? '— Not linked —'}
+              </SelectValue>
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value={UNLINKED}>— Not linked —</SelectItem>
+              {linkCandidates.map((c) => (
+                <SelectItem key={c.id} value={c.id}>
+                  {c.name}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
         </div>
       )}
 

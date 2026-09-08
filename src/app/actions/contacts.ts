@@ -77,9 +77,26 @@ export async function saveContact(
   const mortgageeClause = formData.get('mortgagee_clause') as string
   const poa = formData.get('poa') === 'on'
   const maritalStatus = formData.get('marital_status') as string
+  // Absent when the field isn't rendered for this role — leave the existing link alone
+  // rather than reading it as "clear the link".
+  const linkedContactIdRaw = formData.get('linked_contact_id')
+  const linkedContactId = linkedContactIdRaw === null ? undefined : (linkedContactIdRaw as string) || null
 
   if (!role || !name) {
     return { error: 'Role and Name are required.' }
+  }
+
+  // Linking is symmetric — if the link is changing, clear the old counterpart's side
+  // and set the new one's, so either contact's linked_contact_id always points back.
+  if (linkedContactId !== undefined) {
+    const { data: current } = await supabase.from('contacts').select('linked_contact_id').eq('id', contactId).single()
+    const oldLinkedId = current?.linked_contact_id ?? null
+    if (oldLinkedId && oldLinkedId !== linkedContactId) {
+      await supabase.from('contacts').update({ linked_contact_id: null }).eq('id', oldLinkedId)
+    }
+    if (linkedContactId) {
+      await supabase.from('contacts').update({ linked_contact_id: contactId }).eq('id', linkedContactId)
+    }
   }
 
   const { error } = await supabase
@@ -100,6 +117,7 @@ export async function saveContact(
       mortgagee_clause: mortgageeClause || null,
       poa,
       marital_status: maritalStatus || null,
+      ...(linkedContactId !== undefined ? { linked_contact_id: linkedContactId } : {}),
     })
     .eq('id', contactId)
 
@@ -174,6 +192,52 @@ export async function deleteContactPrincipal(orderId: string, id: string) {
 
   if (error) {
     console.error('deleteContactPrincipal failed:', error)
+    redirect(
+      `/orders/${orderId}/contacts?error=${encodeURIComponent('Could not save. Please check your entries and try again.')}`
+    )
+  }
+
+  revalidatePath(`/orders/${orderId}/contacts`)
+}
+
+export async function addSignatureLine(contactId: string, orderId: string, formData: FormData) {
+  const supabase = await createClient()
+  const text = formData.get('text') as string
+
+  const { error } = await supabase.from('contact_signature_lines').insert({ contact_id: contactId, text })
+
+  if (error) {
+    console.error('addSignatureLine failed:', error)
+    redirect(
+      `/orders/${orderId}/contacts?error=${encodeURIComponent('Could not save. Please check your entries and try again.')}`
+    )
+  }
+
+  revalidatePath(`/orders/${orderId}/contacts`)
+}
+
+export async function updateSignatureLine(id: string, orderId: string, formData: FormData) {
+  const supabase = await createClient()
+  const text = formData.get('text') as string
+
+  const { error } = await supabase.from('contact_signature_lines').update({ text }).eq('id', id)
+
+  if (error) {
+    console.error('updateSignatureLine failed:', error)
+    redirect(
+      `/orders/${orderId}/contacts?error=${encodeURIComponent('Could not save. Please check your entries and try again.')}`
+    )
+  }
+
+  revalidatePath(`/orders/${orderId}/contacts`)
+}
+
+export async function deleteSignatureLine(orderId: string, id: string) {
+  const supabase = await createClient()
+  const { error } = await supabase.from('contact_signature_lines').delete().eq('id', id)
+
+  if (error) {
+    console.error('deleteSignatureLine failed:', error)
     redirect(
       `/orders/${orderId}/contacts?error=${encodeURIComponent('Could not save. Please check your entries and try again.')}`
     )

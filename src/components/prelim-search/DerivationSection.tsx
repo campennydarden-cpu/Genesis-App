@@ -22,6 +22,16 @@ import { ExceptionMattersSection } from './ExceptionMattersSection'
 
 const ROSTER_ENTITY_TYPES = ['LLC', 'Corporation', 'Partnership', 'Trust']
 
+type Tab = 'derivation' | 'security-instruments' | 'liens' | 'taxes' | 'exception-matters'
+
+const TABS: { key: Tab; label: string }[] = [
+  { key: 'derivation', label: 'Title History' },
+  { key: 'security-instruments', label: 'Security Instruments' },
+  { key: 'liens', label: 'Other Liens & Encumbrances' },
+  { key: 'taxes', label: 'Real Estate Taxes' },
+  { key: 'exception-matters', label: 'Exception Matters' },
+]
+
 export function DerivationSection({
   orderId,
   prelimSearch,
@@ -43,6 +53,8 @@ export function DerivationSection({
   liens: Lien[]
   exceptionMatters: ExceptionMatter[]
 }) {
+  const [tab, setTab] = useState<Tab>('derivation')
+
   // Controlled (not just defaultValue) because the clause preview below is computed
   // live from these — under the old submit-and-redirect form, a save was always a
   // full page reload, which is what kept the preview in sync; autosave has no
@@ -102,11 +114,32 @@ export function DerivationSection({
 
   return (
     <section id="derivation" className="scroll-mt-24">
-      <h2 className="mb-4 text-lg font-semibold">Title History</h2>
+      <div className="mb-6 flex gap-2 border-b" data-testid="prelim-search-tabs" role="tablist">
+        {TABS.map((t) => (
+          <button
+            key={t.key}
+            type="button"
+            role="tab"
+            aria-selected={tab === t.key}
+            data-testid={`prelim-search-tab-${t.key}`}
+            onClick={() => setTab(t.key)}
+            className={`flex min-h-11 cursor-pointer items-center px-3 py-2 text-sm transition-colors duration-200 ${
+              tab === t.key
+                ? 'border-b-2 border-foreground font-medium text-foreground'
+                : 'text-muted-foreground hover:text-foreground'
+            }`}
+          >
+            {t.label}
+          </button>
+        ))}
+      </div>
 
-      <SaveIndicator state={state} errorMessage={errorMessage} />
+      <div className={tab === 'derivation' || tab === 'taxes' ? '' : 'hidden'}>
+        <SaveIndicator state={state} errorMessage={errorMessage} />
+      </div>
 
       <form ref={formRef} className="space-y-6">
+        <div className={tab === 'derivation' ? 'space-y-6' : 'hidden'}>
         <div className="grid grid-cols-3 gap-4">
           <DateTimeField
             id="effective_datetime"
@@ -293,50 +326,123 @@ export function DerivationSection({
             />
           </div>
         </div>
+        </div>
 
-        <div className="border-t pt-4">
-          <p className="mb-3 text-sm font-medium">Real Property Taxes</p>
-          <div className="grid grid-cols-2 gap-4">
+        <div className={tab === 'taxes' ? 'space-y-4' : 'hidden'}>
+        <div className="pt-4">
+          <p className="mb-3 text-sm font-medium">Last Paid Bill</p>
+          <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
             <div>
-              <Label htmlFor="taxes_paid_through_year">Taxes Paid Through Year</Label>
+              <Label htmlFor="tax_last_paid_year">Year</Label>
               <Input
-                id="taxes_paid_through_year"
-                name="taxes_paid_through_year"
-                defaultValue={prelimSearch?.taxes_paid_through_year ?? undefined}
+                id="tax_last_paid_year"
+                name="tax_last_paid_year"
+                defaultValue={prelimSearch?.tax_last_paid_year ?? undefined}
                 onBlur={() => handleSave()}
               />
             </div>
             <div>
-              <Label htmlFor="taxes_now_due">Taxes Now Due</Label>
+              <Label htmlFor="tax_last_paid_installment_count">Installment Count</Label>
               <Input
-                id="taxes_now_due"
-                name="taxes_now_due"
-                defaultValue={prelimSearch?.taxes_now_due ?? undefined}
+                id="tax_last_paid_installment_count"
+                name="tax_last_paid_installment_count"
+                type="number"
+                min="0"
+                defaultValue={prelimSearch?.tax_last_paid_installment_count ?? undefined}
                 onBlur={() => handleSave()}
               />
             </div>
             <div>
-              <Label htmlFor="taxes_not_yet_due">Taxes Not Yet Due</Label>
-              <Input
-                id="taxes_not_yet_due"
-                name="taxes_not_yet_due"
-                defaultValue={prelimSearch?.taxes_not_yet_due ?? undefined}
+              <Label htmlFor="tax_last_paid_installment_amount">Per-Installment Amount</Label>
+              <CurrencyInput
+                id="tax_last_paid_installment_amount"
+                name="tax_last_paid_installment_amount"
+                defaultValue={prelimSearch?.tax_last_paid_installment_amount ?? undefined}
                 onBlur={() => handleSave()}
               />
             </div>
             <div>
-              <Label htmlFor="special_levies_assessments">Special Levies/Assessments</Label>
+              <Label htmlFor="tax_last_paid_due_date">Due Date</Label>
               <Input
-                id="special_levies_assessments"
-                name="special_levies_assessments"
-                defaultValue={prelimSearch?.special_levies_assessments ?? undefined}
+                id="tax_last_paid_due_date"
+                name="tax_last_paid_due_date"
+                type="date"
+                defaultValue={prelimSearch?.tax_last_paid_due_date ?? undefined}
                 onBlur={() => handleSave()}
               />
             </div>
           </div>
         </div>
+
+        <div className="pt-4">
+          <p className="mb-3 text-sm font-medium">Next Due Bill</p>
+          <div className="grid grid-cols-2 gap-4 sm:grid-cols-5">
+            <div>
+              <Label htmlFor="tax_next_due_year">Year</Label>
+              <Input
+                id="tax_next_due_year"
+                name="tax_next_due_year"
+                defaultValue={prelimSearch?.tax_next_due_year ?? undefined}
+                onBlur={() => handleSave()}
+              />
+            </div>
+            <div>
+              <Label htmlFor="tax_next_due_installment_number">Installment No.</Label>
+              <Input
+                id="tax_next_due_installment_number"
+                name="tax_next_due_installment_number"
+                type="number"
+                min="0"
+                defaultValue={prelimSearch?.tax_next_due_installment_number ?? undefined}
+                onBlur={() => handleSave()}
+              />
+            </div>
+            <div>
+              <Label htmlFor="tax_next_due_installment_count">of Total</Label>
+              <Input
+                id="tax_next_due_installment_count"
+                name="tax_next_due_installment_count"
+                type="number"
+                min="0"
+                defaultValue={prelimSearch?.tax_next_due_installment_count ?? undefined}
+                onBlur={() => handleSave()}
+              />
+            </div>
+            <div>
+              <Label htmlFor="tax_next_due_amount">Amount</Label>
+              <CurrencyInput
+                id="tax_next_due_amount"
+                name="tax_next_due_amount"
+                defaultValue={prelimSearch?.tax_next_due_amount ?? undefined}
+                onBlur={() => handleSave()}
+              />
+            </div>
+            <div>
+              <Label htmlFor="tax_next_due_due_date">Due Date</Label>
+              <Input
+                id="tax_next_due_due_date"
+                name="tax_next_due_due_date"
+                type="date"
+                defaultValue={prelimSearch?.tax_next_due_due_date ?? undefined}
+                onBlur={() => handleSave()}
+              />
+            </div>
+          </div>
+        </div>
+
+        <div className="pt-4">
+          <Label htmlFor="special_levies_assessments">Special Levies/Assessments</Label>
+          <Input
+            id="special_levies_assessments"
+            name="special_levies_assessments"
+            defaultValue={prelimSearch?.special_levies_assessments ?? undefined}
+            onBlur={() => handleSave()}
+          />
+        </div>
+        </div>
       </form>
 
+      <div className={tab === 'derivation' ? '' : 'hidden'}>
       {prelimSearchId && (
         <div className="mt-6 rounded border bg-slate-50 p-4" data-testid="derivation-clause-preview">
           <p className="text-sm font-medium">Vesting Clause</p>
@@ -376,19 +482,36 @@ export function DerivationSection({
       ) : (
         <p className="mt-4 text-sm text-slate-500">Save Derivation first before adding Principals.</p>
       )}
+      </div>
 
-      {prelimSearchId && (
-        <div className="mt-10 space-y-10">
+      <div className={tab === 'security-instruments' ? '' : 'hidden'}>
+        {prelimSearchId ? (
           <SecurityInstrumentsSection
             orderId={orderId}
             prelimSearchId={prelimSearchId}
             instruments={securityInstruments}
             relatedDocsSlots={relatedDocsSlots}
           />
+        ) : (
+          <p className="text-sm text-slate-500">Save Title History first before adding Security Instruments.</p>
+        )}
+      </div>
+
+      <div className={tab === 'liens' ? '' : 'hidden'}>
+        {prelimSearchId ? (
           <LiensSection orderId={orderId} prelimSearchId={prelimSearchId} liens={liens} />
+        ) : (
+          <p className="text-sm text-slate-500">Save Title History first before adding Liens.</p>
+        )}
+      </div>
+
+      <div className={tab === 'exception-matters' ? '' : 'hidden'}>
+        {prelimSearchId ? (
           <ExceptionMattersSection orderId={orderId} prelimSearchId={prelimSearchId} matters={exceptionMatters} />
-        </div>
-      )}
+        ) : (
+          <p className="text-sm text-slate-500">Save Title History first before adding Exception Matters.</p>
+        )}
+      </div>
     </section>
   )
 }

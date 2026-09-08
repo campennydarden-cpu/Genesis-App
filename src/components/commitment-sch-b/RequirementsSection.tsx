@@ -3,7 +3,13 @@
 import { useState } from 'react'
 import { REQUIREMENT_SEEDS } from '@/lib/constants'
 import { computeReqLabels, reorderForNumbering } from '@/lib/commitment-text'
-import { addRequirementFromChip, addRequirementManual, updateRequirement, deleteRequirement } from '@/app/actions/commitment-sch-b'
+import {
+  addRequirementFromChip,
+  addRequirementManual,
+  updateRequirement,
+  deleteRequirement,
+  moveRequirement,
+} from '@/app/actions/commitment-sch-b'
 import type { CommitmentRequirement, SecurityInstrument, SecurityInstrumentRelatedDoc, Lien } from '@/lib/types'
 
 export function RequirementsSection({
@@ -46,6 +52,9 @@ export function RequirementsSection({
   // order so a sub-item is displayed under the parent whose number it carries.
   const orderedRequirements = reorderForNumbering(requirements)
   const labels = computeReqLabels(orderedRequirements, beginAt)
+  // Sub-items move with their parent, not independently — reorder controls only apply
+  // to top-level rows, so track each one's position among just its top-level siblings.
+  const topLevelIds = orderedRequirements.filter((r) => !r.parent_requirement_id).map((r) => r.id)
 
   return (
     <div className="rounded border p-4">
@@ -113,7 +122,31 @@ export function RequirementsSection({
                 {r.notes && <p className="text-sm text-slate-500">{r.notes}</p>}
               </div>
               {!readOnly && (
-                <div className="flex gap-3">
+                <div className="flex items-center gap-3">
+                  {!r.parent_requirement_id && (
+                    <div className="flex flex-col">
+                      <form action={moveRequirement.bind(null, orderId, r.id, 'up')}>
+                        <button
+                          type="submit"
+                          aria-label={`Move ${labels[idx]} up`}
+                          disabled={topLevelIds.indexOf(r.id) === 0}
+                          className="block text-slate-500 hover:text-slate-900 disabled:opacity-30"
+                        >
+                          ▲
+                        </button>
+                      </form>
+                      <form action={moveRequirement.bind(null, orderId, r.id, 'down')}>
+                        <button
+                          type="submit"
+                          aria-label={`Move ${labels[idx]} down`}
+                          disabled={topLevelIds.indexOf(r.id) === topLevelIds.length - 1}
+                          className="block text-slate-500 hover:text-slate-900 disabled:opacity-30"
+                        >
+                          ▼
+                        </button>
+                      </form>
+                    </div>
+                  )}
                   <button type="button" onClick={() => setEditingId(r.id)} className="text-sm text-slate-600 hover:underline">
                     Edit
                   </button>
