@@ -1,14 +1,16 @@
 'use client'
 
-import { useState } from 'react'
+import { useRef, useState } from 'react'
 import { USE_TYPES, PARCEL_NUMBER_TYPES, EASEMENT_TYPES } from '@/lib/constants'
-import { addEasement, deleteEasement } from '@/app/actions/property'
+import { upsertPropertyDetails, addEasement, deleteEasement } from '@/app/actions/property'
 import type { PropertyDetails, PropertyEasement } from '@/lib/types'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+import { SaveIndicator } from '@/components/SaveIndicator'
+import { useAutosave } from '@/lib/use-autosave'
 
 type Tab = 'identification' | 'legal' | 'survey'
 
@@ -28,13 +30,11 @@ const TABS: { key: Tab; label: string }[] = [
 ]
 
 export function PropertyForm({
-  action,
   orderId,
   property,
   orderDefaults,
   easements,
 }: {
-  action: (formData: FormData) => void
   orderId: string
   property: PropertyDetails | null
   orderDefaults: OrderDefaults
@@ -44,6 +44,25 @@ export function PropertyForm({
   const [useType, setUseType] = useState(property?.use_type ?? '')
   const [parcelNumberType, setParcelNumberType] = useState(property?.parcel_number_type ?? '')
   const [easementType, setEasementType] = useState<string>(EASEMENT_TYPES[0])
+
+  const formRef = useRef<HTMLFormElement>(null)
+  // The first successful save creates the property_details row. Track its id in client
+  // state from the action's own return value — a router.refresh() here was tried first
+  // and reverted: it remounted this component mid-save, resetting saveState to 'idle'
+  // and orphaning whichever save was still in flight.
+  const [propertyId, setPropertyId] = useState<string | null>(property?.id ?? null)
+  const { state, errorMessage, save } = useAutosave((formData: FormData) => upsertPropertyDetails(orderId, formData))
+
+  function handleSave(override?: { name: string; value: string }) {
+    if (!formRef.current) return
+    const formData = new FormData(formRef.current)
+    if (override) {
+      formData.set(override.name, override.value)
+    }
+    save(formData).then((result) => {
+      if (result.id) setPropertyId(result.id)
+    })
+  }
 
   return (
     <div>
@@ -67,7 +86,9 @@ export function PropertyForm({
         ))}
       </div>
 
-      <form action={action} className="space-y-4">
+      <SaveIndicator state={state} errorMessage={errorMessage} />
+
+      <form ref={formRef} className="space-y-4">
         <div className={tab === 'identification' ? 'space-y-4' : 'hidden'}>
           <div>
             <Label htmlFor="property_address">Property Address</Label>
@@ -80,6 +101,7 @@ export function PropertyForm({
                   : (orderDefaults.property_address ?? undefined)
               }
               className="mt-1"
+              onBlur={() => handleSave()}
             />
           </div>
           <div className="grid grid-cols-4 gap-4">
@@ -90,6 +112,7 @@ export function PropertyForm({
                 name="city"
                 defaultValue={property ? (property.city ?? undefined) : (orderDefaults.city ?? undefined)}
                 className="mt-1"
+                onBlur={() => handleSave()}
               />
             </div>
             <div>
@@ -99,6 +122,7 @@ export function PropertyForm({
                 name="county"
                 defaultValue={property ? (property.county ?? undefined) : (orderDefaults.county ?? undefined)}
                 className="mt-1"
+                onBlur={() => handleSave()}
               />
             </div>
             <div>
@@ -108,6 +132,7 @@ export function PropertyForm({
                 name="state"
                 defaultValue={property ? (property.state ?? undefined) : (orderDefaults.state ?? undefined)}
                 className="mt-1"
+                onBlur={() => handleSave()}
               />
             </div>
             <div>
@@ -117,13 +142,20 @@ export function PropertyForm({
                 name="zip"
                 defaultValue={property ? (property.zip ?? undefined) : (orderDefaults.zip ?? undefined)}
                 className="mt-1"
+                onBlur={() => handleSave()}
               />
             </div>
           </div>
           <div className="grid grid-cols-3 gap-4">
             <div>
               <Label htmlFor="section">Section</Label>
-              <Input id="section" name="section" defaultValue={property?.section ?? undefined} className="mt-1" />
+              <Input
+                id="section"
+                name="section"
+                defaultValue={property?.section ?? undefined}
+                className="mt-1"
+                onBlur={() => handleSave()}
+              />
             </div>
             <div>
               <Label htmlFor="township">Township</Label>
@@ -132,11 +164,18 @@ export function PropertyForm({
                 name="township"
                 defaultValue={property?.township ?? undefined}
                 className="mt-1"
+                onBlur={() => handleSave()}
               />
             </div>
             <div>
               <Label htmlFor="range">Range</Label>
-              <Input id="range" name="range" defaultValue={property?.range ?? undefined} className="mt-1" />
+              <Input
+                id="range"
+                name="range"
+                defaultValue={property?.range ?? undefined}
+                className="mt-1"
+                onBlur={() => handleSave()}
+              />
             </div>
           </div>
           <div>
@@ -146,16 +185,29 @@ export function PropertyForm({
               name="brief_legal"
               defaultValue={property?.brief_legal ?? undefined}
               className="mt-1"
+              onBlur={() => handleSave()}
             />
           </div>
           <div className="grid grid-cols-3 gap-4">
             <div>
               <Label htmlFor="lot">Lot</Label>
-              <Input id="lot" name="lot" defaultValue={property?.lot ?? undefined} className="mt-1" />
+              <Input
+                id="lot"
+                name="lot"
+                defaultValue={property?.lot ?? undefined}
+                className="mt-1"
+                onBlur={() => handleSave()}
+              />
             </div>
             <div>
               <Label htmlFor="block">Block</Label>
-              <Input id="block" name="block" defaultValue={property?.block ?? undefined} className="mt-1" />
+              <Input
+                id="block"
+                name="block"
+                defaultValue={property?.block ?? undefined}
+                className="mt-1"
+                onBlur={() => handleSave()}
+              />
             </div>
             <div>
               <Label htmlFor="subdivision_tract">Subdivision/Tract</Label>
@@ -164,12 +216,20 @@ export function PropertyForm({
                 name="subdivision_tract"
                 defaultValue={property?.subdivision_tract ?? undefined}
                 className="mt-1"
+                onBlur={() => handleSave()}
               />
             </div>
           </div>
           <div>
             <Label htmlFor="use_type">Use Type</Label>
-            <Select name="use_type" value={useType} onValueChange={(v) => setUseType(v as string)}>
+            <Select
+              name="use_type"
+              value={useType}
+              onValueChange={(v) => {
+                setUseType(v as string)
+                handleSave({ name: 'use_type', value: v as string })
+              }}
+            >
               <SelectTrigger id="use_type" className="mt-1 w-full">
                 <SelectValue placeholder="— Select —" />
               </SelectTrigger>
@@ -193,6 +253,7 @@ export function PropertyForm({
               defaultValue={property?.full_legal_description ?? undefined}
               rows={4}
               className="mt-1"
+              onBlur={() => handleSave()}
             />
           </div>
           <div className="grid grid-cols-2 gap-4">
@@ -201,7 +262,10 @@ export function PropertyForm({
               <Select
                 name="parcel_number_type"
                 value={parcelNumberType}
-                onValueChange={(v) => setParcelNumberType(v as string)}
+                onValueChange={(v) => {
+                  setParcelNumberType(v as string)
+                  handleSave({ name: 'parcel_number_type', value: v as string })
+                }}
               >
                 <SelectTrigger id="parcel_number_type" className="mt-1 w-full">
                   <SelectValue placeholder="— Select —" />
@@ -224,6 +288,7 @@ export function PropertyForm({
                   property ? (property.parcel_number ?? undefined) : (orderDefaults.parcel_number ?? undefined)
                 }
                 className="mt-1"
+                onBlur={() => handleSave()}
               />
             </div>
           </div>
@@ -239,6 +304,7 @@ export function PropertyForm({
                   type="date"
                   defaultValue={property?.ccrs_dated ?? undefined}
                   className="mt-1"
+                  onBlur={() => handleSave()}
                 />
               </div>
               <div>
@@ -248,6 +314,7 @@ export function PropertyForm({
                   name="ccrs_book"
                   defaultValue={property?.ccrs_book ?? undefined}
                   className="mt-1"
+                  onBlur={() => handleSave()}
                 />
               </div>
               <div>
@@ -257,6 +324,7 @@ export function PropertyForm({
                   name="ccrs_page"
                   defaultValue={property?.ccrs_page ?? undefined}
                   className="mt-1"
+                  onBlur={() => handleSave()}
                 />
               </div>
               <div>
@@ -266,6 +334,7 @@ export function PropertyForm({
                   name="ccrs_instrument_number"
                   defaultValue={property?.ccrs_instrument_number ?? undefined}
                   className="mt-1"
+                  onBlur={() => handleSave()}
                 />
               </div>
             </div>
@@ -276,6 +345,7 @@ export function PropertyForm({
                 name="ccrs_notes"
                 defaultValue={property?.ccrs_notes ?? undefined}
                 className="mt-1"
+                onBlur={() => handleSave()}
               />
             </div>
           </fieldset>
@@ -289,6 +359,7 @@ export function PropertyForm({
               name="plat_survey_reference"
               defaultValue={property?.plat_survey_reference ?? undefined}
               className="mt-1"
+              onBlur={() => handleSave()}
             />
           </div>
           <fieldset className="m-0 border-0 p-0">
@@ -301,6 +372,7 @@ export function PropertyForm({
                   name="setback_front"
                   defaultValue={property?.setback_front ?? undefined}
                   className="mt-1"
+                  onBlur={() => handleSave()}
                 />
               </div>
               <div>
@@ -310,6 +382,7 @@ export function PropertyForm({
                   name="setback_side"
                   defaultValue={property?.setback_side ?? undefined}
                   className="mt-1"
+                  onBlur={() => handleSave()}
                 />
               </div>
               <div>
@@ -319,6 +392,7 @@ export function PropertyForm({
                   name="setback_side_street"
                   defaultValue={property?.setback_side_street ?? undefined}
                   className="mt-1"
+                  onBlur={() => handleSave()}
                 />
               </div>
               <div>
@@ -328,6 +402,7 @@ export function PropertyForm({
                   name="setback_rear"
                   defaultValue={property?.setback_rear ?? undefined}
                   className="mt-1"
+                  onBlur={() => handleSave()}
                 />
               </div>
             </div>
@@ -342,6 +417,7 @@ export function PropertyForm({
                   name="lot_dimension_frontage"
                   defaultValue={property?.lot_dimension_frontage ?? undefined}
                   className="mt-1"
+                  onBlur={() => handleSave()}
                 />
               </div>
               <div>
@@ -351,19 +427,18 @@ export function PropertyForm({
                   name="lot_dimension_depth"
                   defaultValue={property?.lot_dimension_depth ?? undefined}
                   className="mt-1"
+                  onBlur={() => handleSave()}
                 />
               </div>
             </div>
           </fieldset>
         </div>
-
-        <Button type="submit">Save Changes</Button>
       </form>
 
       {tab === 'legal' && (
         <div className="mt-8 border-t pt-6">
           <h2 className="mb-4 text-lg font-semibold">Access / Easements / ROW</h2>
-          {!property ? (
+          {!propertyId ? (
             <p className="text-sm text-muted-foreground">Save Property Details first before adding easements.</p>
           ) : (
             <>
@@ -402,7 +477,7 @@ export function PropertyForm({
 
               <details className="rounded border p-4">
                 <summary className="cursor-pointer font-medium">Add an easement</summary>
-                <form action={addEasement.bind(null, property.id, orderId)} className="mt-4 space-y-4">
+                <form action={addEasement.bind(null, propertyId, orderId)} className="mt-4 space-y-4">
                   <div>
                     <Label htmlFor="easement_type">Type</Label>
                     <Select

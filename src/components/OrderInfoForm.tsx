@@ -1,13 +1,13 @@
 'use client'
 
-import { useRef, useState, useTransition } from 'react'
+import { useRef } from 'react'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { StatusBadge } from '@/components/ui/status-badge'
-import { SaveIndicator, type SaveState } from '@/components/SaveIndicator'
+import { SaveIndicator } from '@/components/SaveIndicator'
 import { saveOrderInfo } from '@/app/actions/orders'
-import { usePendingSave, startTransitionAsPromise } from '@/lib/pending-saves'
+import { useAutosave } from '@/lib/use-autosave'
 import { ORDER_STATUSES, TITLE_STATUSES, ESCROW_STATUSES, FUNCTIONAL_ROLES } from '@/lib/constants'
 import type { Order } from '@/lib/types'
 
@@ -35,13 +35,7 @@ type OrderInfoFields = Pick<
 
 export function OrderInfoForm({ orderId, order }: { orderId: string; order: OrderInfoFields }) {
   const formRef = useRef<HTMLFormElement>(null)
-  const [saveState, setSaveState] = useState<SaveState>('idle')
-  const [errorMessage, setErrorMessage] = useState<string | undefined>()
-  const [isPending, startTransition] = useTransition()
-  const { register } = usePendingSave()
-  // ponytail: serializes saves with a promise chain (global, not per-field) — fine at
-  // this form's scale; swap for per-field chains if saves ever need to run concurrently.
-  const saveChain = useRef<Promise<unknown>>(Promise.resolve())
+  const { state, errorMessage, save } = useAutosave((formData: FormData) => saveOrderInfo(orderId, formData))
 
   const titleOpenedDate = formatOpenedDate(order.title_opened_date)
   const escrowOpenedDate = formatOpenedDate(order.escrow_opened_date)
@@ -52,32 +46,12 @@ export function OrderInfoForm({ orderId, order }: { orderId: string; order: Orde
     if (override) {
       formData.set(override.name, override.value)
     }
-    setSaveState('saving')
-    const promise = startTransitionAsPromise(startTransition, () =>
-      saveChain.current.then(() => saveOrderInfo(orderId, formData))
-    )
-    saveChain.current = promise.catch(() => {})
-    register(promise)
-    promise
-      .then((result) => {
-        if (result.error) {
-          setErrorMessage(result.error)
-          setSaveState('error')
-        } else {
-          setSaveState('saved')
-          setErrorMessage(undefined)
-          setTimeout(() => setSaveState((s) => (s === 'saved' ? 'idle' : s)), 2000)
-        }
-      })
-      .catch(() => {
-        setErrorMessage(undefined)
-        setSaveState('error')
-      })
+    save(formData)
   }
 
   return (
     <form ref={formRef} className="max-w-2xl space-y-4">
-      <SaveIndicator state={isPending ? 'saving' : saveState} errorMessage={errorMessage} />
+      <SaveIndicator state={state} errorMessage={errorMessage} />
       <div>
         <div className="flex items-center justify-between">
           <Label htmlFor="order_status">Order Status</Label>

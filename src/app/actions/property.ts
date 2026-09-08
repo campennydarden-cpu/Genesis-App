@@ -4,56 +4,61 @@ import { revalidatePath } from 'next/cache'
 import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
 
-export async function upsertPropertyDetails(orderId: string, formData: FormData) {
+export async function upsertPropertyDetails(
+  orderId: string,
+  formData: FormData
+): Promise<{ error?: string; id?: string }> {
   const supabase = await createClient()
 
   const field = (name: string) => (formData.get(name) as string) || null
 
-  const { error } = await supabase.from('property_details').upsert(
-    {
-      order_id: orderId,
-      property_address: field('property_address'),
-      city: field('city'),
-      county: field('county'),
-      state: field('state'),
-      zip: field('zip'),
-      section: field('section'),
-      township: field('township'),
-      range: field('range'),
-      brief_legal: field('brief_legal'),
-      lot: field('lot'),
-      block: field('block'),
-      subdivision_tract: field('subdivision_tract'),
-      use_type: field('use_type'),
-      full_legal_description: field('full_legal_description'),
-      parcel_number: field('parcel_number'),
-      parcel_number_type: field('parcel_number_type'),
-      ccrs_dated: field('ccrs_dated'),
-      ccrs_book: field('ccrs_book'),
-      ccrs_page: field('ccrs_page'),
-      ccrs_instrument_number: field('ccrs_instrument_number'),
-      ccrs_notes: field('ccrs_notes'),
-      plat_survey_reference: field('plat_survey_reference'),
-      setback_front: field('setback_front'),
-      setback_side: field('setback_side'),
-      setback_side_street: field('setback_side_street'),
-      setback_rear: field('setback_rear'),
-      lot_dimension_frontage: field('lot_dimension_frontage'),
-      lot_dimension_depth: field('lot_dimension_depth'),
-      updated_at: new Date().toISOString(),
-    },
-    { onConflict: 'order_id' }
-  )
+  const { data, error } = await supabase
+    .from('property_details')
+    .upsert(
+      {
+        order_id: orderId,
+        property_address: field('property_address'),
+        city: field('city'),
+        county: field('county'),
+        state: field('state'),
+        zip: field('zip'),
+        section: field('section'),
+        township: field('township'),
+        range: field('range'),
+        brief_legal: field('brief_legal'),
+        lot: field('lot'),
+        block: field('block'),
+        subdivision_tract: field('subdivision_tract'),
+        use_type: field('use_type'),
+        full_legal_description: field('full_legal_description'),
+        parcel_number: field('parcel_number'),
+        parcel_number_type: field('parcel_number_type'),
+        ccrs_dated: field('ccrs_dated'),
+        ccrs_book: field('ccrs_book'),
+        ccrs_page: field('ccrs_page'),
+        ccrs_instrument_number: field('ccrs_instrument_number'),
+        ccrs_notes: field('ccrs_notes'),
+        plat_survey_reference: field('plat_survey_reference'),
+        setback_front: field('setback_front'),
+        setback_side: field('setback_side'),
+        setback_side_street: field('setback_side_street'),
+        setback_rear: field('setback_rear'),
+        lot_dimension_frontage: field('lot_dimension_frontage'),
+        lot_dimension_depth: field('lot_dimension_depth'),
+        updated_at: new Date().toISOString(),
+      },
+      { onConflict: 'order_id' }
+    )
+    .select('id')
+    .single()
 
   if (error) {
     console.error('upsertPropertyDetails failed:', error)
-    redirect(
-      `/orders/${orderId}/property?error=${encodeURIComponent('Could not save. Please check your entries and try again.')}`
-    )
+    return { error: 'Could not save. Please check your entries and try again.' }
   }
 
   revalidatePath(`/orders/${orderId}/property`)
-  redirect(`/orders/${orderId}/property`)
+  return { id: data.id }
 }
 
 export async function addEasement(propertyId: string, orderId: string, formData: FormData) {

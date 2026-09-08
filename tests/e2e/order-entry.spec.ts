@@ -318,16 +318,15 @@ test.describe('Genesis foundation phase', () => {
     await page.getByLabel('Property Address').fill('640 Bayberry Rd')
     await page.getByLabel('Use Type').click()
     await page.getByRole('option', { name: 'Single Family' }).click()
+    await expect(page.getByTestId('save-indicator')).toContainText('Saved')
 
     await page.getByTestId('property-tab-legal').click()
     await expect(page.getByLabel('Parcel Number', { exact: true })).toHaveValue('12-34-567')
     await page.getByLabel('Parcel Number Type').click()
     await page.getByRole('option', { name: 'APN' }).click()
     await page.getByLabel('Full Legal Description').fill('Lot 5, Block 2, Test Subdivision')
-
-    await page.getByRole('button', { name: 'Save Changes' }).click()
-    await page.waitForURL('**/property')
-    await page.waitForLoadState('networkidle')
+    await page.getByLabel('Full Legal Description').blur()
+    await expect(page.getByTestId('save-indicator')).toContainText('Saved')
 
     await page.getByTestId('property-tab-identification').click()
     await expect(page.getByLabel('Property Address')).toHaveValue('640 Bayberry Rd')
@@ -372,10 +371,10 @@ test.describe('Genesis foundation phase', () => {
     await expect(page.getByLabel('State')).toHaveValue('OH')
     await expect(page.getByLabel('Zip')).toHaveValue('44053')
 
-    // Save with the pre-filled values untouched — this creates the property_details row.
-    await page.getByRole('button', { name: 'Save Changes' }).click()
-    await page.waitForURL('**/property')
-    await page.waitForLoadState('networkidle')
+    // Blur City with the pre-filled value untouched — this creates the property_details row.
+    await page.getByLabel('City').click()
+    await page.getByLabel('City').blur()
+    await expect(page.getByTestId('save-indicator')).toContainText('Saved')
 
     await expect(page.getByLabel('City')).toHaveValue('Lorain')
     await expect(page.getByLabel('County')).toHaveValue('Lorain')
@@ -388,9 +387,8 @@ test.describe('Genesis foundation phase', () => {
 
     // Now the row exists — deliberately clear just City and save again.
     await page.getByLabel('City').fill('')
-    await page.getByRole('button', { name: 'Save Changes' }).click()
-    await page.waitForURL('**/property')
-    await page.waitForLoadState('networkidle')
+    await page.getByLabel('City').blur()
+    await expect(page.getByTestId('save-indicator')).toContainText('Saved')
 
     // Reload from scratch to prove this isn't just uncommitted client state.
     await page.reload()

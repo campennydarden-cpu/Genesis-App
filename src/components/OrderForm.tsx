@@ -13,9 +13,9 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group'
 import { ZipCountyField } from '@/components/ZipCountyField'
 import { OrderFormSubmitButton } from '@/components/OrderFormSubmitButton'
-import { SaveIndicator, type SaveState } from '@/components/SaveIndicator'
+import { SaveIndicator } from '@/components/SaveIndicator'
 import { saveOrderEntry } from '@/app/actions/orders'
-import { usePendingSave, startTransitionAsPromise } from '@/lib/pending-saves'
+import { useAutosave } from '@/lib/use-autosave'
 
 export function OrderForm({
   action,
@@ -33,13 +33,10 @@ export function OrderForm({
   const [transactionTypeTouched, setTransactionTypeTouched] = useState(false)
 
   const formRef = useRef<HTMLFormElement>(null)
-  const [saveState, setSaveState] = useState<SaveState>('idle')
-  const [errorMessage, setErrorMessage] = useState<string | undefined>()
-  const [isPending, startTransition] = useTransition()
-  const { register } = usePendingSave()
-  // ponytail: serializes saves with a promise chain (global, not per-field) — fine at
-  // this form's scale; swap for per-field chains if saves ever need to run concurrently.
-  const saveChain = useRef<Promise<unknown>>(Promise.resolve())
+  const { state, errorMessage, save } = useAutosave((formData: FormData) => {
+    if (!order) throw new Error('OrderForm.save called without an order to save against')
+    return saveOrderEntry(order.id, formData)
+  })
 
   function handleSave(override?: { name: string; value: string }) {
     if (!formRef.current || !order) return
@@ -47,32 +44,12 @@ export function OrderForm({
     if (override) {
       formData.set(override.name, override.value)
     }
-    setSaveState('saving')
-    const promise = startTransitionAsPromise(startTransition, () =>
-      saveChain.current.then(() => saveOrderEntry(order.id, formData))
-    )
-    saveChain.current = promise.catch(() => {})
-    register(promise)
-    promise
-      .then((result) => {
-        if (result.error) {
-          setErrorMessage(result.error)
-          setSaveState('error')
-        } else {
-          setSaveState('saved')
-          setErrorMessage(undefined)
-          setTimeout(() => setSaveState((s) => (s === 'saved' ? 'idle' : s)), 2000)
-        }
-      })
-      .catch(() => {
-        setErrorMessage(undefined)
-        setSaveState('error')
-      })
+    save(formData)
   }
 
   return (
     <form ref={formRef} action={order ? undefined : action} className="space-y-4">
-      {order && <SaveIndicator state={isPending ? 'saving' : saveState} errorMessage={errorMessage} />}
+      {order && <SaveIndicator state={state} errorMessage={errorMessage} />}
       {order && (
         <div>
           <Label htmlFor="file_number">File Number</Label>
