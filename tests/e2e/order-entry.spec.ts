@@ -203,7 +203,7 @@ test.describe('Genesis foundation phase', () => {
 
     await expect(page.getByLabel('File Number', { exact: true })).toBeVisible()
 
-    await page.getByTestId('toolbar-tab-attachments').click()
+    await page.getByTestId('toolbar-tab-checklist').click()
     await expect(page.getByTestId('toolbar-placeholder')).toContainText('Not built yet')
     await expect(page.getByLabel('File Number', { exact: true })).not.toBeVisible()
 
