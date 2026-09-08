@@ -293,7 +293,7 @@ test.describe('Genesis foundation phase', () => {
     await page.waitForURL('**/orders/**/order-entry')
     const fileNumber = await page.getByLabel('File Number', { exact: true }).inputValue()
 
-    await expect(page.getByTestId('order-sidebar')).toContainText(fileNumber)
+    await expect(page.getByRole('heading', { name: `Order ${fileNumber}` })).toBeVisible()
 
     await page.getByTestId('file-section-nav').getByRole('link', { name: 'Contacts' }).click()
     await page.waitForURL('**/contacts')
@@ -746,10 +746,7 @@ test.describe('Genesis foundation phase', () => {
     await expect(page.getByTestId('loan-policy-card')).toBeVisible()
     await expect(page.getByTestId('estate-fact')).toContainText('Fee Simple')
     await expect(page.getByLabel(/Environmental Protection Lien Statutes/)).toBeVisible()
-
-    await page.getByRole('button', { name: 'Save Changes' }).click()
-    await page.waitForURL('**/commitment-sch-a')
-    await page.waitForLoadState('networkidle')
+    await expect(page.getByTestId('save-indicator')).toContainText('Saved')
 
     await expect(page.getByTestId('estate-fact')).toContainText('Fee Simple')
     await expect(page.getByLabel(/Environmental Protection Lien Statutes/)).toBeVisible()
@@ -813,18 +810,14 @@ test.describe('Genesis foundation phase', () => {
     await page.getByTestId('loan-policy-card').getByRole('button', { name: '+ First National Bank' }).click()
     await expect(page.getByTestId('loan-policy-card').getByLabel('Proposed Insured')).toHaveValue('First National Bank')
 
-    await expect(page.getByTestId('mortgagee-clause-seed-chips')).toContainText('Copy from First National Bank')
-    await page.getByTestId('mortgagee-clause-seed-chips').getByRole('button', { name: '+ Copy from First National Bank' }).click()
-    await expect(page.getByTestId('loan-policy-card').getByLabel('Mortgagee Clause')).toHaveValue(
-      'First National Bank, its successors and/or assigns, ISAOA/ATIMA'
+    await expect(page.getByTestId('mortgagee-clause-seed-chips')).toContainText('+ Use First National Bank')
+    await page.getByTestId('mortgagee-clause-seed-chips').getByRole('button', { name: '+ Use First National Bank' }).click()
+    await expect(page.getByTestId('loan-policy-card').getByLabel('Proposed Insured')).toHaveValue(
+      'First National Bank, First National Bank, its successors and/or assigns, ISAOA/ATIMA:'
     )
+    await expect(page.getByTestId('save-indicator')).toContainText('Saved')
 
-    // Save the main form first - chain_of_title needs the commitment_sch_a row's FK.
-    await page.getByRole('button', { name: 'Save Changes' }).click()
-    await page.waitForURL('**/commitment-sch-a')
-    await page.waitForLoadState('networkidle')
-
-    // Real reload, not just leftover client state after the redirect - proves it persisted server-side.
+    // Real reload, not just leftover client state, proves it persisted server-side.
     await page.reload()
     await expect(page.getByTestId('owner-policy-card').getByLabel('Proposed Insured')).toHaveValue('Jane Buyer')
 
@@ -1043,7 +1036,7 @@ test.describe('Genesis foundation phase', () => {
     // Disposition the Requirement, but leave the Exception undispositioned - CTC stays gated
     await page.getByTestId('file-section-nav').getByRole('link', { name: 'Curative' }).click()
     await page.waitForURL('**/curative')
-    await page.getByTestId('curative-requirement-row').locator('select[name="disposition"]').selectOption('Released')
+    await page.getByTestId('curative-requirement-row').locator('select[name="disposition"]').selectOption('Released/Satisfied')
     await page.getByTestId('curative-requirement-row').getByRole('button', { name: 'Save' }).click()
     await expect(page.getByTestId('issue-ctc-button')).toBeDisabled()
 

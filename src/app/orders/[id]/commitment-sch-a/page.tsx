@@ -1,9 +1,7 @@
 import { notFound } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
-import { upsertCommitmentScheduleA } from '@/app/actions/commitment-sch-a'
 import { fmtDate } from '@/lib/format'
 import { CommitmentScheduleAForm } from '@/components/commitment-sch-a/CommitmentScheduleAForm'
-import { ChainOfTitleSection } from '@/components/commitment-sch-a/ChainOfTitleSection'
 
 export default async function CommitmentScheduleAPage({
   params,
@@ -96,13 +94,11 @@ export default async function CommitmentScheduleAPage({
         }
       : null
 
-  const upsertCommitmentScheduleAWithId = upsertCommitmentScheduleA.bind(null, id)
-
   return (
     <div>
       {error && <p className="mb-4 rounded bg-red-50 p-3 text-sm text-red-700">{error}</p>}
       <CommitmentScheduleAForm
-        action={upsertCommitmentScheduleAWithId}
+        orderId={id}
         commitmentSchA={commitmentSchA ?? null}
         policyType={order.policy_type}
         effectiveDateDisplay={effectiveDateDisplay}
@@ -112,17 +108,9 @@ export default async function CommitmentScheduleAPage({
         purchasePrice={order.purchase_price}
         loanAmount={order.loan_amount}
         readOnly={readOnly}
+        chainOfTitleEntries={chainOfTitle ?? []}
+        derivationSeed={derivationSeed}
       />
-      {commitmentSchA && (
-        <div className="mt-10">
-          <ChainOfTitleSection
-            orderId={id}
-            commitmentSchAId={commitmentSchA.id}
-            entries={chainOfTitle ?? []}
-            derivationSeed={derivationSeed}
-          />
-        </div>
-      )}
     </div>
   )
 }
