@@ -179,6 +179,13 @@ test.describe('Genesis foundation phase', () => {
     await page.getByLabel('Title Status').click()
     await page.getByRole('option', { name: 'Curative' }).click()
     await page.getByTestId('file-section-nav').getByRole('link', { name: 'Contacts' }).click()
+    // Immediately after the click — before waiting for anything — navigation must NOT
+    // have happened yet if the guard is actually holding it back for the in-flight save.
+    // A guard-absent <Link> click navigates synchronously, so this assertion is the one
+    // thing that actually distinguishes "guard works" from "guard doesn't exist." A short
+    // timeout keeps this a snapshot of the state right after the click rather than letting
+    // toHaveURL's normal auto-retry wait past the real save-vs-navigate race.
+    await expect(page).toHaveURL(/\/order-info$/, { timeout: 100 })
     await page.waitForURL('**/contacts')
     await expect(page.getByRole('heading', { name: 'Contacts' })).toBeVisible()
 
