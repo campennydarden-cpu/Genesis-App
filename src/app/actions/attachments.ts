@@ -148,6 +148,25 @@ export async function createFolder(
   return {}
 }
 
+export async function renameFolder(folderId: string, name: string): Promise<{ error?: string }> {
+  const supabase = await createClient()
+
+  const { data: folder, error } = await supabase
+    .from('attachment_folders')
+    .update({ name })
+    .eq('id', folderId)
+    .select('order_id')
+    .single()
+
+  if (error || !folder) {
+    console.error('renameFolder failed:', error)
+    return { error: 'Could not rename folder. Please try again.' }
+  }
+
+  revalidatePath(`/orders/${folder.order_id}`)
+  return {}
+}
+
 export async function moveAttachment(attachmentId: string, folderId: string): Promise<{ error?: string }> {
   const supabase = await createClient()
 
