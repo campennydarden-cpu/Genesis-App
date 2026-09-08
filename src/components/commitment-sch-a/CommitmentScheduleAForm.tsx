@@ -10,6 +10,7 @@ import { CurrencyInput } from '@/components/ui/currency-input'
 import { SaveIndicator } from '@/components/SaveIndicator'
 import { useAutosave } from '@/lib/use-autosave'
 import { COMMITMENT_FORM_TYPES, ALTA_POLICY_FORM_TYPES } from '@/lib/constants'
+import { MORTGAGEE_CLAUSE_LOAN_TYPES, buildMortgageeClause } from '@/lib/mortgagee-clause'
 import { upsertCommitmentScheduleA } from '@/app/actions/commitment-sch-a'
 import type { CommitmentScheduleA, ChainOfTitleEntry } from '@/lib/types'
 import { ChainOfTitleSection } from './ChainOfTitleSection'
@@ -398,25 +399,37 @@ export function CommitmentScheduleAForm({
               </div>
             )}
             {contactsWithMortgageeClause.length > 0 && (
-              <div className="mt-2 flex flex-wrap gap-2" data-testid="mortgagee-clause-seed-chips">
-                <span className="text-xs text-slate-500">Full clause (Name, Mortgagee Clause: Address):</span>
+              <div className="mt-2 space-y-1" data-testid="mortgagee-clause-seed-chips">
+                <span className="text-xs text-slate-500">Full clause, by Loan Type:</span>
                 {contactsWithMortgageeClause.map((c) => (
-                  <button
-                    key={c.id}
-                    type="button"
-                    className="rounded border px-2 py-1 text-xs hover:bg-slate-50"
-                    title={`${c.name}, ${c.mortgagee_clause}: ${c.current_address ?? ''}`}
-                    onClick={() =>
-                      handleProposedInsuredSeed(
-                        'loan_proposed_insured',
-                        setLoanProposedInsured,
-                        `${c.name}, ${c.mortgagee_clause}: ${c.current_address ?? ''}`.trim()
+                  <div key={c.id} className="flex flex-wrap items-center gap-2">
+                    <span className="text-xs text-slate-500">{c.name}:</span>
+                    {MORTGAGEE_CLAUSE_LOAN_TYPES.map((loanType) => {
+                      const clause = buildMortgageeClause(
+                        loanType,
+                        c.name,
+                        c.current_address ?? '',
+                        c.mortgagee_clause
                       )
-                    }
-                  >
-                    + Use {c.name}
-                  </button>
+                      return (
+                        <button
+                          key={loanType}
+                          type="button"
+                          className="rounded border px-2 py-1 text-xs hover:bg-slate-50"
+                          title={clause}
+                          onClick={() =>
+                            handleProposedInsuredSeed('loan_proposed_insured', setLoanProposedInsured, clause)
+                          }
+                        >
+                          + {loanType}
+                        </button>
+                      )
+                    })}
+                  </div>
                 ))}
+                <p className="text-xs text-slate-400">
+                  Texas has its own Mortgagee Clause set per Cam&apos;s note — not built yet, needs reference text.
+                </p>
               </div>
             )}
           </div>
