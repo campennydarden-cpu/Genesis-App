@@ -140,7 +140,7 @@ export async function updateOrderEntry(orderId: string, formData: FormData) {
   redirect(`/orders/${orderId}/order-entry?saved=1`)
 }
 
-export async function updateOrderInfo(orderId: string, formData: FormData) {
+export async function saveOrderInfo(orderId: string, formData: FormData): Promise<{ error?: string }> {
   const supabase = await createClient()
 
   const orderStatus = formData.get('order_status') as string
@@ -152,9 +152,7 @@ export async function updateOrderInfo(orderId: string, formData: FormData) {
     !TITLE_STATUSES.includes(titleStatus as (typeof TITLE_STATUSES)[number]) ||
     !ESCROW_STATUSES.includes(escrowStatus as (typeof ESCROW_STATUSES)[number])
   ) {
-    redirect(
-      `/orders/${orderId}/order-info?error=${encodeURIComponent('Invalid status value. Please choose from the provided options.')}`
-    )
+    return { error: 'Invalid status value. Please choose from the provided options.' }
   }
 
   const { data: existingOrder, error: fetchError } = await supabase
@@ -164,10 +162,8 @@ export async function updateOrderInfo(orderId: string, formData: FormData) {
     .single()
 
   if (fetchError || !existingOrder) {
-    console.error('updateOrderInfo failed to load current order:', fetchError)
-    redirect(
-      `/orders/${orderId}/order-info?error=${encodeURIComponent('Could not save. Please check your entries and try again.')}`
-    )
+    console.error('saveOrderInfo failed to load current order:', fetchError)
+    return { error: 'Could not save. Please check your entries and try again.' }
   }
 
   const now = new Date().toISOString()
@@ -182,8 +178,6 @@ export async function updateOrderInfo(orderId: string, formData: FormData) {
     update[key] = (formData.get(key) as string) || null
   }
 
-  // Auto-timestamp the first time a status leaves its default "In Progress" state.
-  // Never set directly by the user - no form fields for these.
   if (titleStatus !== 'In Progress' && !existingOrder.title_opened_date) {
     update.title_opened_date = now
   }
@@ -194,13 +188,11 @@ export async function updateOrderInfo(orderId: string, formData: FormData) {
   const { error } = await supabase.from('orders').update(update).eq('id', orderId)
 
   if (error) {
-    console.error('updateOrderInfo failed:', error)
-    redirect(
-      `/orders/${orderId}/order-info?error=${encodeURIComponent('Could not save. Please check your entries and try again.')}`
-    )
+    console.error('saveOrderInfo failed:', error)
+    return { error: 'Could not save. Please check your entries and try again.' }
   }
 
   revalidatePath(`/orders/${orderId}`)
   revalidatePath('/orders')
-  redirect(`/orders/${orderId}/order-info`)
+  return {}
 }
