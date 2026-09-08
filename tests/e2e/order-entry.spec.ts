@@ -156,8 +156,7 @@ test.describe('Genesis foundation phase', () => {
     await page.goto(`/orders/${orderId}/order-info`)
     await page.getByLabel('Title Status').click()
     await page.getByRole('option', { name: 'Searching' }).click()
-    await page.getByRole('button', { name: 'Save Changes' }).click()
-    await page.waitForURL('**/order-info')
+    await expect(page.getByTestId('save-indicator')).toContainText('Saved')
     await expect(page.getByLabel('Title Status')).toContainText('Searching')
 
     await page.goto('/orders')
@@ -166,6 +165,55 @@ test.describe('Genesis foundation phase', () => {
 
     await page.getByRole('button', { name: 'Sign Out' }).click()
     await page.waitForURL('**/login**')
+  })
+
+  test('order info: nav guard waits for an in-flight autosave before navigating', async ({ page }) => {
+    await loginAsSeededUser(page)
+
+    await page.getByRole('link', { name: '+ New Order' }).click()
+    await page.getByRole('button', { name: 'Create Order' }).click()
+    await page.waitForURL('**/orders/**/order-entry')
+    const orderId = page.url().match(/\/orders\/([^/]+)\/order-entry/)?.[1]
+
+    await page.goto(`/orders/${orderId}/order-info`)
+    await page.getByLabel('Title Status').click()
+    await page.getByRole('option', { name: 'Curative' }).click()
+    await page.getByTestId('file-section-nav').getByRole('link', { name: 'Contacts' }).click()
+    await page.waitForURL('**/contacts')
+    await expect(page.getByRole('heading', { name: 'Contacts' })).toBeVisible()
+
+    await page.goto(`/orders/${orderId}/order-info`)
+    await expect(page.getByLabel('Title Status')).toContainText('Curative')
+  })
+
+  test('order info: a failed save shows an inline error and does not block navigation', async ({ page }) => {
+    await loginAsSeededUser(page)
+
+    await page.getByRole('link', { name: '+ New Order' }).click()
+    await page.getByRole('button', { name: 'Create Order' }).click()
+    await page.waitForURL('**/orders/**/order-entry')
+    const orderId = page.url().match(/\/orders\/([^/]+)\/order-entry/)?.[1]
+
+    await page.goto(`/orders/${orderId}/order-info`)
+
+    // saveOrderInfo runs server-side (a Next.js Server Action), so its outbound
+    // Supabase REST call happens on the server process, never touching this
+    // browser context — page.route('**rest/v1/orders*', ...) can't see it and
+    // doesn't reliably trigger the error path. Instead, provoke the action's own
+    // allow-list validation error: base-ui's Select keeps a real (visually
+    // hidden) text input in the form for native submission, so tampering with
+    // its value and then blurring a plain text field — which calls handleSave()
+    // with no override, reading the tampered value straight off the DOM — sends
+    // an invalid title_status the server action rejects.
+    await page.locator('input[name="title_status"]').evaluate((el: HTMLInputElement) => {
+      el.value = 'Not A Real Status'
+    })
+    await page.getByLabel('Title Officer', { exact: true }).fill('Someone New')
+    await page.getByLabel('Title Officer', { exact: true }).blur()
+    await expect(page.getByTestId('save-indicator')).toContainText("Couldn't save")
+
+    await page.getByTestId('file-section-nav').getByRole('link', { name: 'Contacts' }).click()
+    await page.waitForURL('**/contacts')
   })
 
   test('navigation shell: sidebar and vertical nav render and link correctly', async ({ page }) => {
