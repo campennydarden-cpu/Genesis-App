@@ -128,7 +128,11 @@ export function AttachmentsPanel({ orderId }: { orderId: string }) {
                 </select>
                 <button
                   type="button"
-                  onClick={() => handleDelete(attachment.id)}
+                  onClick={() => {
+                    if (window.confirm('Delete this attachment permanently? This cannot be undone.')) {
+                      handleDelete(attachment.id)
+                    }
+                  }}
                   className="text-xs text-destructive hover:underline"
                 >
                   Delete Permanently

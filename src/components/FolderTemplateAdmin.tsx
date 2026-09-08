@@ -62,7 +62,21 @@ export function FolderTemplateAdmin({ templates }: { templates: FolderTemplate[]
           }}
         />
         <span className="text-xs text-muted-foreground">order {template.sort_order}</span>
-        <Button type="button" variant="ghost" size="sm" onClick={() => handleDelete(template.id)} disabled={isPending}>
+        <Button
+          type="button"
+          variant="ghost"
+          size="sm"
+          onClick={() => {
+            if (
+              window.confirm(
+                'Delete this folder template? Any sub-folder under it will be deleted too, for every future order.'
+              )
+            ) {
+              handleDelete(template.id)
+            }
+          }}
+          disabled={isPending}
+        >
           Delete
         </Button>
       </li>
