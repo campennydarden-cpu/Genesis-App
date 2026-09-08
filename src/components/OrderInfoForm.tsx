@@ -54,9 +54,12 @@ export function OrderInfoForm({ orderId, order }: { orderId: string; order: Orde
   const titleOpenedDate = formatOpenedDate(order.title_opened_date)
   const escrowOpenedDate = formatOpenedDate(order.escrow_opened_date)
 
-  function handleSave() {
+  function handleSave(override?: { name: string; value: string }) {
     if (!formRef.current) return
     const formData = new FormData(formRef.current)
+    if (override) {
+      formData.set(override.name, override.value)
+    }
     setSaveState('saving')
     const promise = startTransitionAsPromise(startTransition, () => saveOrderInfo(orderId, formData))
     register(promise)
@@ -79,7 +82,11 @@ export function OrderInfoForm({ orderId, order }: { orderId: string; order: Orde
           <Label htmlFor="order_status">Order Status</Label>
           <StatusBadge status={order.order_status} />
         </div>
-        <Select name="order_status" defaultValue={order.order_status} onValueChange={handleSave}>
+        <Select
+          name="order_status"
+          defaultValue={order.order_status}
+          onValueChange={(value) => value !== null && handleSave({ name: 'order_status', value })}
+        >
           <SelectTrigger id="order_status" className="mt-1 w-full">
             <SelectValue placeholder="— Select —" />
           </SelectTrigger>
@@ -95,7 +102,11 @@ export function OrderInfoForm({ orderId, order }: { orderId: string; order: Orde
           <Label htmlFor="title_status">Title Status</Label>
           <StatusBadge status={order.title_status} />
         </div>
-        <Select name="title_status" defaultValue={order.title_status} onValueChange={handleSave}>
+        <Select
+          name="title_status"
+          defaultValue={order.title_status}
+          onValueChange={(value) => value !== null && handleSave({ name: 'title_status', value })}
+        >
           <SelectTrigger id="title_status" className="mt-1 w-full">
             <SelectValue placeholder="— Select —" />
           </SelectTrigger>
@@ -112,7 +123,11 @@ export function OrderInfoForm({ orderId, order }: { orderId: string; order: Orde
           <Label htmlFor="escrow_status">Escrow Status</Label>
           <StatusBadge status={order.escrow_status} />
         </div>
-        <Select name="escrow_status" defaultValue={order.escrow_status} onValueChange={handleSave}>
+        <Select
+          name="escrow_status"
+          defaultValue={order.escrow_status}
+          onValueChange={(value) => value !== null && handleSave({ name: 'escrow_status', value })}
+        >
           <SelectTrigger id="escrow_status" className="mt-1 w-full">
             <SelectValue placeholder="— Select —" />
           </SelectTrigger>
@@ -128,7 +143,7 @@ export function OrderInfoForm({ orderId, order }: { orderId: string; order: Orde
         {FUNCTIONAL_ROLES.map(({ key, label }) => (
           <div key={key}>
             <Label htmlFor={key}>{label}</Label>
-            <Input id={key} name={key} className="mt-1" defaultValue={order[key] ?? undefined} onBlur={handleSave} />
+            <Input id={key} name={key} className="mt-1" defaultValue={order[key] ?? undefined} onBlur={() => handleSave()} />
           </div>
         ))}
       </div>
