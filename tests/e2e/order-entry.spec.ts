@@ -437,8 +437,7 @@ test.describe('Genesis foundation phase', () => {
     await page.goto(`/orders/${orderId}/order-info`)
     await page.getByLabel('Title Status').click()
     await page.getByRole('option', { name: 'Exam' }).click()
-    await page.getByRole('button', { name: 'Save Changes' }).click()
-    await page.waitForURL('**/order-info')
+    await expect(page.getByTestId('save-indicator')).toContainText('Saved')
     await expect(page.getByLabel('Title Status')).toContainText('Exam')
 
     await page.goto('/orders')

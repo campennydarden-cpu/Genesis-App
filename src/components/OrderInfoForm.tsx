@@ -50,6 +50,9 @@ export function OrderInfoForm({ orderId, order }: { orderId: string; order: Orde
   const [errorMessage, setErrorMessage] = useState<string | undefined>()
   const [isPending, startTransition] = useTransition()
   const { register } = usePendingSave()
+  // ponytail: serializes saves with a promise chain (global, not per-field) — fine at
+  // this form's scale; swap for per-field chains if saves ever need to run concurrently.
+  const saveChain = useRef<Promise<unknown>>(Promise.resolve())
 
   const titleOpenedDate = formatOpenedDate(order.title_opened_date)
   const escrowOpenedDate = formatOpenedDate(order.escrow_opened_date)
@@ -61,17 +64,26 @@ export function OrderInfoForm({ orderId, order }: { orderId: string; order: Orde
       formData.set(override.name, override.value)
     }
     setSaveState('saving')
-    const promise = startTransitionAsPromise(startTransition, () => saveOrderInfo(orderId, formData))
+    const promise = startTransitionAsPromise(startTransition, () =>
+      saveChain.current.then(() => saveOrderInfo(orderId, formData))
+    )
+    saveChain.current = promise.catch(() => {})
     register(promise)
-    promise.then((result) => {
-      if (result.error) {
-        setErrorMessage(result.error)
+    promise
+      .then((result) => {
+        if (result.error) {
+          setErrorMessage(result.error)
+          setSaveState('error')
+        } else {
+          setSaveState('saved')
+          setErrorMessage(undefined)
+          setTimeout(() => setSaveState((s) => (s === 'saved' ? 'idle' : s)), 2000)
+        }
+      })
+      .catch(() => {
+        setErrorMessage(undefined)
         setSaveState('error')
-      } else {
-        setSaveState('saved')
-        setTimeout(() => setSaveState((s) => (s === 'saved' ? 'idle' : s)), 2000)
-      }
-    })
+      })
   }
 
   return (
