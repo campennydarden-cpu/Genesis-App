@@ -4,6 +4,14 @@ import { logout } from '@/app/login/actions'
 import { HomeDashboard } from '@/components/HomeDashboard'
 import { buttonVariants } from '@/components/ui/button'
 
+// A stale Next.js Link-prefetch of this route (from the persistent order
+// layout's "Home" link) can otherwise be served back on a later hard
+// navigation to this same URL, showing status values from before a save —
+// revalidatePath() alone doesn't invalidate a response the browser already
+// cached from that earlier prefetch. force-dynamic keeps every response
+// here genuinely live, which a real-time order dashboard needs anyway.
+export const dynamic = 'force-dynamic'
+
 export default async function OrdersPage() {
   const supabase = await createClient()
 
