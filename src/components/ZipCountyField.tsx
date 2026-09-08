@@ -19,11 +19,15 @@ export function ZipCountyField({
   defaultCounty,
   defaultState,
   defaultZip,
+  onFieldsChanged,
 }: {
   defaultCity?: string | null
   defaultCounty?: string | null
   defaultState?: string | null
   defaultZip?: string | null
+  /** Called after an autofill (or dialog county pick) writes directly to the DOM,
+   *  since those writes don't fire their own blur/change event for a parent to hook. */
+  onFieldsChanged?: () => void
 }) {
   const cityRef = useRef<HTMLInputElement>(null)
   const countyRef = useRef<HTMLInputElement>(null)
@@ -41,33 +45,41 @@ export function ZipCountyField({
 
   async function handleZipBlur(e: React.FocusEvent<HTMLInputElement>) {
     const zip = e.target.value.trim()
-    if (!zip) return
+    if (zip) {
+      const supabase = createClient()
+      const { data } = await supabase.from('zip_lookup').select('*').eq('zip', zip).maybeSingle()
+      if (data) {
+        fillIfBlank(stateRef, data.state)
+        fillIfBlank(cityRef, data.city)
 
-    const supabase = createClient()
-    const { data } = await supabase.from('zip_lookup').select('*').eq('zip', zip).maybeSingle()
-    if (!data) return // soft-fail: unrecognized zip, no change
-
-    fillIfBlank(stateRef, data.state)
-    fillIfBlank(cityRef, data.city)
-
-    if (data.counties.length <= 1) {
-      fillIfBlank(countyRef, data.primary_county)
-    } else {
-      setCounties(data.counties)
-      setDialogOpen(true)
+        if (data.counties.length <= 1) {
+          fillIfBlank(countyRef, data.primary_county)
+        } else {
+          setCounties(data.counties)
+          setDialogOpen(true)
+        }
+      } // soft-fail: unrecognized zip, no autofill
     }
+    onFieldsChanged?.()
   }
 
   function selectCounty(county: ZipLookupCounty) {
     if (countyRef.current) countyRef.current.value = county.name
     setDialogOpen(false)
+    onFieldsChanged?.()
   }
 
   return (
     <>
       <div>
         <Label htmlFor="property_city">City</Label>
-        <Input id="property_city" name="property_city" defaultValue={defaultCity ?? undefined} ref={cityRef} />
+        <Input
+          id="property_city"
+          name="property_city"
+          defaultValue={defaultCity ?? undefined}
+          ref={cityRef}
+          onBlur={() => onFieldsChanged?.()}
+        />
       </div>
       <div>
         <Label htmlFor="property_county">County</Label>
@@ -76,6 +88,7 @@ export function ZipCountyField({
           name="property_county"
           defaultValue={defaultCounty ?? undefined}
           ref={countyRef}
+          onBlur={() => onFieldsChanged?.()}
         />
       </div>
       <div>
@@ -85,6 +98,7 @@ export function ZipCountyField({
           name="property_state"
           defaultValue={defaultState ?? undefined}
           ref={stateRef}
+          onBlur={() => onFieldsChanged?.()}
         />
       </div>
       <div>

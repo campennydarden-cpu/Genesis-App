@@ -167,6 +167,33 @@ test.describe('Genesis foundation phase', () => {
     await page.waitForURL('**/login**')
   })
 
+  test('order entry: field, select, and checkbox edits autosave and persist across reload', async ({ page }) => {
+    await loginAsSeededUser(page)
+
+    await page.getByRole('link', { name: '+ New Order' }).click()
+    await page.getByRole('button', { name: 'Create Order' }).click()
+    await page.waitForURL('**/orders/**/order-entry')
+
+    await page.getByLabel('Purchase Price').fill('375000')
+    await page.getByLabel('Purchase Price').blur()
+    await expect(page.getByTestId('save-indicator')).toContainText('Saved')
+
+    await page.getByLabel('Policy Type').click()
+    await page.getByRole('option', { name: "Owner's" }).click()
+    await expect(page.getByTestId('save-indicator')).toContainText('Saved')
+
+    await page.getByRole('checkbox', { name: 'Rush Order' }).click()
+    await expect(page.getByRole('checkbox', { name: 'Rush Order' })).toBeChecked()
+    await expect(page.getByTestId('save-indicator')).toContainText('Saved')
+
+    await page.reload()
+    await page.waitForLoadState('networkidle')
+
+    await expect(page.getByLabel('Purchase Price')).toHaveValue('$375,000.00')
+    await expect(page.getByLabel('Policy Type')).toContainText("Owner's")
+    await expect(page.getByRole('checkbox', { name: 'Rush Order' })).toBeChecked()
+  })
+
   test('order info: nav guard waits for an in-flight autosave before navigating', async ({ page }) => {
     await loginAsSeededUser(page)
 
@@ -673,8 +700,7 @@ test.describe('Genesis foundation phase', () => {
 
     await page.getByLabel('Policy Type').click()
     await page.getByRole('option', { name: 'Simultaneous' }).click()
-    await page.getByRole('button', { name: 'Save Changes' }).click()
-    await page.waitForURL('**/order-entry')
+    await expect(page.getByTestId('save-indicator')).toContainText('Saved')
 
     await page.getByTestId('file-section-nav').getByRole('link', { name: 'Commitment Sch A' }).click()
     await page.waitForURL('**/commitment-sch-a')
@@ -715,8 +741,7 @@ test.describe('Genesis foundation phase', () => {
 
     await page.getByLabel('Policy Type').click()
     await page.getByRole('option', { name: 'Simultaneous' }).click()
-    await page.getByRole('button', { name: 'Save Changes' }).click()
-    await page.waitForURL('**/order-entry')
+    await expect(page.getByTestId('save-indicator')).toContainText('Saved')
 
     // Derivation on Prelim Search, so the Chain of Title "Copy from Derivation" seed has data.
     await page.getByTestId('file-section-nav').getByRole('link', { name: 'Prelim Title Search' }).click()

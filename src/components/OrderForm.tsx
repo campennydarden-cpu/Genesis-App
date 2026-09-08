@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useRef, useState, useTransition } from 'react'
 import { Pencil } from 'lucide-react'
 import { PRODUCT_TYPES, POLICY_TYPES, TRANSACTION_TYPES, PRODUCT_TYPE_TO_TRANSACTION_TYPE } from '@/lib/constants'
 import type { Order } from '@/lib/types'
@@ -13,12 +13,17 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group'
 import { ZipCountyField } from '@/components/ZipCountyField'
 import { OrderFormSubmitButton } from '@/components/OrderFormSubmitButton'
+import { SaveIndicator, type SaveState } from '@/components/SaveIndicator'
+import { saveOrderEntry } from '@/app/actions/orders'
+import { usePendingSave, startTransitionAsPromise } from '@/lib/pending-saves'
 
 export function OrderForm({
   action,
   order,
 }: {
-  action: (formData: FormData) => void
+  /** Used only when creating a new order (no `order` prop) — editing an existing
+   *  order autosaves via `saveOrderEntry` instead of a submit action. */
+  action?: (formData: FormData) => void
   order?: Order
 }) {
   const [fileNumberUnlocked, setFileNumberUnlocked] = useState(false)
@@ -27,8 +32,47 @@ export function OrderForm({
   )
   const [transactionTypeTouched, setTransactionTypeTouched] = useState(false)
 
+  const formRef = useRef<HTMLFormElement>(null)
+  const [saveState, setSaveState] = useState<SaveState>('idle')
+  const [errorMessage, setErrorMessage] = useState<string | undefined>()
+  const [isPending, startTransition] = useTransition()
+  const { register } = usePendingSave()
+  // ponytail: serializes saves with a promise chain (global, not per-field) — fine at
+  // this form's scale; swap for per-field chains if saves ever need to run concurrently.
+  const saveChain = useRef<Promise<unknown>>(Promise.resolve())
+
+  function handleSave(override?: { name: string; value: string }) {
+    if (!formRef.current || !order) return
+    const formData = new FormData(formRef.current)
+    if (override) {
+      formData.set(override.name, override.value)
+    }
+    setSaveState('saving')
+    const promise = startTransitionAsPromise(startTransition, () =>
+      saveChain.current.then(() => saveOrderEntry(order.id, formData))
+    )
+    saveChain.current = promise.catch(() => {})
+    register(promise)
+    promise
+      .then((result) => {
+        if (result.error) {
+          setErrorMessage(result.error)
+          setSaveState('error')
+        } else {
+          setSaveState('saved')
+          setErrorMessage(undefined)
+          setTimeout(() => setSaveState((s) => (s === 'saved' ? 'idle' : s)), 2000)
+        }
+      })
+      .catch(() => {
+        setErrorMessage(undefined)
+        setSaveState('error')
+      })
+  }
+
   return (
-    <form action={action} className="space-y-4">
+    <form ref={formRef} action={order ? undefined : action} className="space-y-4">
+      {order && <SaveIndicator state={isPending ? 'saving' : saveState} errorMessage={errorMessage} />}
       {order && (
         <div>
           <Label htmlFor="file_number">File Number</Label>
@@ -39,6 +83,7 @@ export function OrderForm({
               defaultValue={order.file_number}
               readOnly={!fileNumberUnlocked}
               className={!fileNumberUnlocked ? 'bg-input/50 text-muted-foreground' : undefined}
+              onBlur={() => handleSave()}
               required
             />
             <Button
@@ -66,6 +111,7 @@ export function OrderForm({
                 const suggested = PRODUCT_TYPE_TO_TRANSACTION_TYPE[v as string]
                 if (suggested) setTransactionType(suggested)
               }
+              if (order) handleSave({ name: 'product_type', value: v as string })
             }}
           >
             <SelectTrigger id="product_type" className="w-full">
@@ -82,7 +128,11 @@ export function OrderForm({
         </div>
         <div>
           <Label htmlFor="policy_type">Policy Type</Label>
-          <Select name="policy_type" defaultValue={order?.policy_type ?? 'None'}>
+          <Select
+            name="policy_type"
+            defaultValue={order?.policy_type ?? 'None'}
+            onValueChange={(v) => order && handleSave({ name: 'policy_type', value: v as string })}
+          >
             <SelectTrigger id="policy_type" className="w-full">
               <SelectValue />
             </SelectTrigger>
@@ -106,6 +156,7 @@ export function OrderForm({
           onValueChange={(v) => {
             setTransactionType(v as string)
             setTransactionTypeTouched(true)
+            if (order) handleSave({ name: 'transaction_type', value: v as string })
           }}
           className="mt-1"
         >
@@ -120,11 +171,21 @@ export function OrderForm({
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
         <div>
           <Label htmlFor="purchase_price">Purchase Price</Label>
-          <CurrencyInput id="purchase_price" name="purchase_price" defaultValue={order?.purchase_price ?? undefined} />
+          <CurrencyInput
+            id="purchase_price"
+            name="purchase_price"
+            defaultValue={order?.purchase_price ?? undefined}
+            onBlur={order ? () => handleSave() : undefined}
+          />
         </div>
         <div>
           <Label htmlFor="loan_amount">Loan Amount</Label>
-          <CurrencyInput id="loan_amount" name="loan_amount" defaultValue={order?.loan_amount ?? undefined} />
+          <CurrencyInput
+            id="loan_amount"
+            name="loan_amount"
+            defaultValue={order?.loan_amount ?? undefined}
+            onBlur={order ? () => handleSave() : undefined}
+          />
         </div>
       </div>
 
@@ -134,6 +195,7 @@ export function OrderForm({
           id="property_address"
           name="property_address"
           defaultValue={order?.property_address ?? undefined}
+          onBlur={() => order && handleSave()}
         />
       </div>
 
@@ -143,12 +205,18 @@ export function OrderForm({
           defaultCounty={order?.property_county}
           defaultState={order?.property_state}
           defaultZip={order?.property_zip}
+          onFieldsChanged={order ? () => handleSave() : undefined}
         />
       </div>
 
       <div>
         <Label htmlFor="parcel_number">Parcel Number</Label>
-        <Input id="parcel_number" name="parcel_number" defaultValue={order?.parcel_number ?? undefined} />
+        <Input
+          id="parcel_number"
+          name="parcel_number"
+          defaultValue={order?.parcel_number ?? undefined}
+          onBlur={() => order && handleSave()}
+        />
       </div>
 
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
@@ -159,6 +227,7 @@ export function OrderForm({
             name="settlement_date"
             type="date"
             defaultValue={order?.settlement_date ?? undefined}
+            onBlur={() => order && handleSave()}
           />
         </div>
         <div>
@@ -168,16 +237,22 @@ export function OrderForm({
             name="settlement_time"
             type="time"
             defaultValue={order?.settlement_time ?? undefined}
+            onBlur={() => order && handleSave()}
           />
         </div>
       </div>
 
       <div className="flex items-center gap-2">
-        <Checkbox id="rush_order" name="rush_order" defaultChecked={order?.rush_order ?? false} />
+        <Checkbox
+          id="rush_order"
+          name="rush_order"
+          defaultChecked={order?.rush_order ?? false}
+          onCheckedChange={(checked) => order && handleSave({ name: 'rush_order', value: checked ? 'on' : '' })}
+        />
         <Label htmlFor="rush_order">Rush Order</Label>
       </div>
 
-      <OrderFormSubmitButton label={order ? 'Save Changes' : 'Create Order'} />
+      {!order && <OrderFormSubmitButton label="Create Order" />}
     </form>
   )
 }

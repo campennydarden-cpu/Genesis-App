@@ -14,11 +14,13 @@ export function CurrencyInput({
   name,
   defaultValue,
   placeholder,
+  onBlur,
 }: {
   id?: string
   name: string
   defaultValue?: number | string | null
   placeholder?: string
+  onBlur?: () => void
 }) {
   const initialRaw = defaultValue !== null && defaultValue !== undefined && defaultValue !== '' ? String(defaultValue) : ''
   const [raw, setRaw] = useState(initialRaw)
@@ -34,7 +36,10 @@ export function CurrencyInput({
         value={focused ? raw : fmtCurrency(raw) || raw}
         onFocus={() => setFocused(true)}
         onChange={(e) => setRaw(e.target.value.replace(/[^0-9.]/g, ''))}
-        onBlur={() => setFocused(false)}
+        onBlur={() => {
+          setFocused(false)
+          onBlur?.()
+        }}
       />
       <input type="hidden" name={name} value={raw} />
     </>

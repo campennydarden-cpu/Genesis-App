@@ -10,6 +10,17 @@ type PendingSaveContextValue = {
 
 const PendingSaveContext = createContext<PendingSaveContextValue | null>(null)
 
+export function startTransitionAsPromise<T>(
+  startTransition: (callback: () => void) => void,
+  fn: () => Promise<T>
+): Promise<T> {
+  return new Promise((resolve, reject) => {
+    startTransition(() => {
+      fn().then(resolve, reject)
+    })
+  })
+}
+
 export function PendingSaveProvider({ children }: { children: React.ReactNode }) {
   const pending = useRef<Set<Promise<unknown>>>(new Set())
 

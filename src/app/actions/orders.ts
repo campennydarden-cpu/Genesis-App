@@ -3,7 +3,15 @@
 import { revalidatePath } from 'next/cache'
 import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
-import { ORDER_STATUSES, TITLE_STATUSES, ESCROW_STATUSES, FUNCTIONAL_ROLES } from '@/lib/constants'
+import {
+  ORDER_STATUSES,
+  TITLE_STATUSES,
+  ESCROW_STATUSES,
+  FUNCTIONAL_ROLES,
+  PRODUCT_TYPES,
+  TRANSACTION_TYPES,
+  POLICY_TYPES,
+} from '@/lib/constants'
 import { copyFolderTemplateForOrder } from '@/app/actions/attachments'
 
 export async function createOrder(formData: FormData) {
@@ -87,10 +95,10 @@ export async function createOrder(formData: FormData) {
   redirect(`/orders/${data.id}/order-entry`)
 }
 
-export async function updateOrderEntry(orderId: string, formData: FormData) {
+export async function saveOrderEntry(orderId: string, formData: FormData): Promise<{ error?: string }> {
   const supabase = await createClient()
 
-  const fileNumber = formData.get('file_number') as string
+  const fileNumber = (formData.get('file_number') as string)?.trim()
   const productType = formData.get('product_type') as string
   const transactionType = formData.get('transaction_type') as string
   const policyType = formData.get('policy_type') as string
@@ -105,6 +113,17 @@ export async function updateOrderEntry(orderId: string, formData: FormData) {
   const settlementDate = formData.get('settlement_date') as string
   const settlementTime = formData.get('settlement_time') as string
   const rushOrder = formData.get('rush_order') === 'on'
+
+  if (!fileNumber) {
+    return { error: 'File Number is required.' }
+  }
+  if (
+    !PRODUCT_TYPES.includes(productType as (typeof PRODUCT_TYPES)[number]) ||
+    !TRANSACTION_TYPES.includes(transactionType as (typeof TRANSACTION_TYPES)[number]) ||
+    !POLICY_TYPES.includes(policyType as (typeof POLICY_TYPES)[number])
+  ) {
+    return { error: 'Invalid selection. Please choose from the provided options.' }
+  }
 
   const { error } = await supabase
     .from('orders')
@@ -129,15 +148,13 @@ export async function updateOrderEntry(orderId: string, formData: FormData) {
     .eq('id', orderId)
 
   if (error) {
-    console.error('updateOrderEntry failed:', error)
-    redirect(
-      `/orders/${orderId}/order-entry?error=${encodeURIComponent('Could not save. Please check your entries and try again.')}`
-    )
+    console.error('saveOrderEntry failed:', error)
+    return { error: 'Could not save. Please check your entries and try again.' }
   }
 
   revalidatePath(`/orders/${orderId}`)
   revalidatePath('/orders')
-  redirect(`/orders/${orderId}/order-entry?saved=1`)
+  return {}
 }
 
 export async function saveOrderInfo(orderId: string, formData: FormData): Promise<{ error?: string }> {

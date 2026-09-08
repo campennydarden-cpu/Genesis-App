@@ -7,24 +7,13 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { StatusBadge } from '@/components/ui/status-badge'
 import { SaveIndicator, type SaveState } from '@/components/SaveIndicator'
 import { saveOrderInfo } from '@/app/actions/orders'
-import { usePendingSave } from '@/lib/pending-saves'
+import { usePendingSave, startTransitionAsPromise } from '@/lib/pending-saves'
 import { ORDER_STATUSES, TITLE_STATUSES, ESCROW_STATUSES, FUNCTIONAL_ROLES } from '@/lib/constants'
 import type { Order } from '@/lib/types'
 
 function formatOpenedDate(value: string | null) {
   if (!value) return null
   return new Date(value).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' })
-}
-
-function startTransitionAsPromise<T>(
-  startTransition: (callback: () => void) => void,
-  fn: () => Promise<T>
-): Promise<T> {
-  return new Promise((resolve, reject) => {
-    startTransition(() => {
-      fn().then(resolve, reject)
-    })
-  })
 }
 
 type OrderInfoFields = Pick<
