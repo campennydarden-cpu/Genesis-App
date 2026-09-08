@@ -3,6 +3,8 @@
 import { useState } from 'react'
 import { usePathname } from 'next/navigation'
 import { AttachmentsPanel } from '@/components/AttachmentsPanel'
+import { RequestedTasksPanel } from '@/components/RequestedTasksPanel'
+import { ChecklistTasksPanel } from '@/components/ChecklistTasksPanel'
 
 type ToolbarTab = 'requested-tasks' | 'checklist' | 'attachments' | 'history'
 
@@ -45,6 +47,10 @@ export function OrderToolbar({ orderId, children }: { orderId: string; children:
 
       {activeTab === 'attachments' ? (
         <AttachmentsPanel orderId={orderId} />
+      ) : activeTab === 'requested-tasks' ? (
+        <RequestedTasksPanel orderId={orderId} />
+      ) : activeTab === 'checklist' ? (
+        <ChecklistTasksPanel orderId={orderId} />
       ) : activeTab ? (
         <p className="text-sm text-muted-foreground" data-testid="toolbar-placeholder">
           Not built yet.

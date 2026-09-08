@@ -251,6 +251,33 @@ export const EXCEPTION_DISPOSITIONS = [
   'Removed by Affidavit', 'Deleted per Underwriter',
 ] as const
 
+// Canonical ordered Milestone list (Design Notes.md's "Milestone list, in order").
+export const CHECKLIST_MILESTONES = [
+  'Order Entry',
+  'Search',
+  'Typing and Exam',
+  'Curative',
+  'Closing',
+  'Post Closing',
+  'Funding',
+  'Recording',
+  'Policy and Remittance',
+] as const
+
+export const CHECKLIST_TASK_STATUSES = ['Required', 'Completed', 'N/A'] as const
+
+export const REQUESTED_TASK_STATUSES = ['Required', 'Requested', 'Received', 'N/A'] as const
+
+// Requested Tasks seed chips (Design Notes - Curative & Tasking.md's Tasking section,
+// Cam's call 2026-09-08 over Design Notes.md's shorter prototype-era list).
+export const REQUESTED_TASK_SEEDS = [
+  'Assign Vendor and Order Search Package',
+  'Order and Publish Tax Certificate',
+  'Order and Publish Payoff',
+  'Order and Publish Date Down',
+  'Order and Publish Updated Taxes',
+] as const
+
 // Attachments upload validation (Genesis Rebuild - Attachments Core Design.md).
 export const ATTACHMENT_MAX_SIZE_BYTES = 25 * 1024 * 1024 // 25 MB
 

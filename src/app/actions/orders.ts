@@ -13,6 +13,7 @@ import {
   POLICY_TYPES,
 } from '@/lib/constants'
 import { copyFolderTemplateForOrder } from '@/app/actions/attachments'
+import { copyChecklistTemplateForOrder } from '@/app/actions/checklist-tasks'
 
 export async function createOrder(formData: FormData) {
   const supabase = await createClient()
@@ -90,6 +91,7 @@ export async function createOrder(formData: FormData) {
   }
 
   await copyFolderTemplateForOrder(data.id)
+  await copyChecklistTemplateForOrder(data.id)
 
   revalidatePath('/orders')
   redirect(`/orders/${data.id}/order-entry`)

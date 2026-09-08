@@ -325,6 +325,38 @@ export type AttachmentFolder = {
   source_template_id: string | null
 }
 
+export type ChecklistTaskTemplate = {
+  id: string
+  description: string
+  milestone: string
+  sort_order: number
+}
+
+export type ChecklistTask = {
+  id: string
+  order_id: string
+  template_id: string | null
+  description: string
+  milestone: string
+  due_date: string | null
+  status: string
+  completed_date: string | null
+  sort_order: number
+}
+
+export type RequestedTask = {
+  id: string
+  order_id: string
+  task_name: string
+  requested_date: string | null
+  requested_due_date: string | null
+  due_date: string | null
+  received_date: string | null
+  notes: string | null
+  status: string
+  sort_order: number
+}
+
 export type Attachment = {
   id: string
   order_id: string
