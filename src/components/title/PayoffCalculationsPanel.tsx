@@ -11,8 +11,13 @@ import {
   addPayoffAdditionalCharge,
   updatePayoffAdditionalCharge,
   deletePayoffAdditionalCharge,
+  addPayoff,
+  updatePayoffBase,
+  deletePayoff,
 } from '@/app/actions/payoff-calculations'
 import type { CdfPayoffPayment, CdfPayoffAdditionalCharge } from '@/lib/types'
+
+type Contact = { id: string; name: string }
 
 function refresh() {
   window.location.reload()
@@ -62,13 +67,19 @@ function PayoffCalculationCard({
   orderId,
   payoff,
   charges,
+  contacts,
 }: {
   orderId: string
   payoff: CdfPayoffPayment
   charges: CdfPayoffAdditionalCharge[]
+  contacts: Contact[]
 }) {
   const formRef = useRef<HTMLFormElement>(null)
   const { state, errorMessage, save } = useAutosave((formData: FormData) => updatePayoffCalculation(orderId, payoff.id, formData))
+  const baseFormRef = useRef<HTMLFormElement>(null)
+  const { state: baseState, errorMessage: baseErrorMessage, save: saveBase } = useAutosave((formData: FormData) =>
+    updatePayoffBase(orderId, payoff.id, formData)
+  )
   const [isPending, startTransition] = useTransition()
 
   function handleSave() {
@@ -76,9 +87,57 @@ function PayoffCalculationCard({
     save(new FormData(formRef.current))
   }
 
+  function handleSaveBase() {
+    if (!baseFormRef.current) return
+    saveBase(new FormData(baseFormRef.current))
+  }
+
   return (
     <div className="space-y-3 rounded border p-4" data-testid={`payoff-calc-${payoff.id}`}>
-      <h3 className="font-semibold">{payoff.description || 'Untitled payoff'}</h3>
+      <form ref={baseFormRef} className="grid grid-cols-3 gap-2">
+        <div>
+          <Label htmlFor={`payoff-calc-${payoff.id}-description`}>Description</Label>
+          <Input
+            id={`payoff-calc-${payoff.id}-description`}
+            name="description"
+            placeholder="e.g. Payoff of First Mortgage Loan"
+            defaultValue={payoff.description ?? ''}
+            onBlur={handleSaveBase}
+          />
+        </div>
+        <div>
+          <Label htmlFor={`payoff-calc-${payoff.id}-payee`}>To</Label>
+          <select
+            id={`payoff-calc-${payoff.id}-payee`}
+            name="payee_contact_id"
+            defaultValue={payoff.payee_contact_id ?? ''}
+            onBlur={handleSaveBase}
+            className="block w-full rounded border px-2 py-1 text-sm"
+          >
+            <option value="">—</option>
+            {contacts.map((c) => (
+              <option key={c.id} value={c.id}>
+                {c.name}
+              </option>
+            ))}
+          </select>
+        </div>
+        <div>
+          <Label htmlFor={`payoff-calc-${payoff.id}-amount`}>Amount</Label>
+          <Input
+            id={`payoff-calc-${payoff.id}-amount`}
+            name="amount"
+            type="number"
+            step="0.01"
+            defaultValue={payoff.amount ?? ''}
+            onBlur={handleSaveBase}
+          />
+        </div>
+        <div className="col-span-3">
+          <SaveIndicator state={baseState} errorMessage={baseErrorMessage} />
+        </div>
+      </form>
+
       <form ref={formRef} className="grid grid-cols-4 gap-2">
         <div>
           <Label htmlFor={`payoff-calc-${payoff.id}-principal_balance`}>Principal Balance</Label>
@@ -193,6 +252,20 @@ function PayoffCalculationCard({
           + Add Charge
         </Button>
       </div>
+
+      <button
+        type="button"
+        className="text-sm text-destructive hover:underline"
+        disabled={isPending}
+        onClick={() =>
+          startTransition(async () => {
+            await deletePayoff(orderId, payoff.id)
+            refresh()
+          })
+        }
+      >
+        Remove payoff
+      </button>
     </div>
   )
 }
@@ -201,25 +274,41 @@ export function PayoffCalculationsPanel({
   orderId,
   payoffs,
   chargesByPayoff,
+  contacts,
 }: {
   orderId: string
   payoffs: CdfPayoffPayment[]
   chargesByPayoff: Record<string, CdfPayoffAdditionalCharge[]>
+  contacts: Contact[]
 }) {
+  const [isPending, startTransition] = useTransition()
   return (
     <div className="max-w-5xl space-y-6" data-testid="payoff-calculations-panel">
       <div>
         <h2 className="text-lg font-semibold">Payoff Calculations</h2>
         <p className="text-sm text-muted-foreground">
-          Detail behind each K. Payoffs and Payments line on CDF Page 3. Add or remove payoff line items on CDF Page 3 — this page
-          only adds supporting detail to existing lines.
+          Each payoff here is the same K. Payoffs and Payments line shown on CDF Page 3 — add, describe, or remove it from
+          either screen.
         </p>
       </div>
 
       {payoffs.map((p) => (
-        <PayoffCalculationCard key={p.id} orderId={orderId} payoff={p} charges={chargesByPayoff[p.id] ?? []} />
+        <PayoffCalculationCard key={p.id} orderId={orderId} payoff={p} charges={chargesByPayoff[p.id] ?? []} contacts={contacts} />
       ))}
-      {payoffs.length === 0 && <p className="text-sm text-muted-foreground">No payoffs yet. Add one on CDF Page 3.</p>}
+      {payoffs.length === 0 && <p className="text-sm text-muted-foreground">No payoffs yet.</p>}
+      <Button
+        type="button"
+        variant="outline"
+        onClick={() =>
+          startTransition(async () => {
+            await addPayoff(orderId)
+            refresh()
+          })
+        }
+        disabled={isPending}
+      >
+        + Add Payoff
+      </Button>
     </div>
   )
 }

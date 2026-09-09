@@ -16,11 +16,12 @@ export default async function CdfPage3Page({ params }: { params: Promise<{ id: s
   } = await supabase.auth.getUser()
   if (!user) redirect('/login')
 
-  const [cashToClose, payoffs, contacts, summaryLines] = await Promise.all([
+  const [cashToClose, payoffs, contacts, summaryLines, { data: order }] = await Promise.all([
     getCdfCashToClose(orderId),
     listPayoffsPayments(orderId),
     listAllContacts(orderId),
     listTransactionSummaryLines(orderId),
+    supabase.from('orders').select('transaction_type').eq('id', orderId).single(),
   ])
 
   return (
@@ -30,6 +31,7 @@ export default async function CdfPage3Page({ params }: { params: Promise<{ id: s
       payoffs={payoffs}
       contacts={contacts}
       summaryLines={summaryLines}
+      transactionType={order?.transaction_type ?? null}
     />
   )
 }

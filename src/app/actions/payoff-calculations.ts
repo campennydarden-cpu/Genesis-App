@@ -10,6 +10,69 @@ export async function listPayoffsForCalculation(orderId: string): Promise<CdfPay
   return data ?? []
 }
 
+export async function listAllContacts(orderId: string): Promise<{ id: string; name: string }[]> {
+  const supabase = await createClient()
+  const { data } = await supabase.from('contacts').select('id, name').eq('order_id', orderId).order('name')
+  return data ?? []
+}
+
+// This screen and CDF Page 3 both own cdf_payoffs_payments rows now — a payoff can be added,
+// described, or removed from either screen, matching the real system where Payoff Calculation
+// is one tab on the same K. Payoffs And Payments row CDF Page 3 shows, not a separate table.
+export async function addPayoff(orderId: string): Promise<{ error?: string }> {
+  const supabase = await createClient()
+
+  const { count } = await supabase
+    .from('cdf_payoffs_payments')
+    .select('*', { count: 'exact', head: true })
+    .eq('order_id', orderId)
+
+  const { error } = await supabase.from('cdf_payoffs_payments').insert({ order_id: orderId, sort_order: (count ?? 0) + 1 })
+
+  if (error) {
+    console.error('addPayoff failed:', error)
+    return { error: 'Could not add. Please try again.' }
+  }
+
+  revalidatePath(`/orders/${orderId}/payoff-calculations`)
+  revalidatePath(`/orders/${orderId}/cdf-page-3`)
+  return {}
+}
+
+export async function updatePayoffBase(orderId: string, id: string, formData: FormData): Promise<{ error?: string }> {
+  const supabase = await createClient()
+
+  const { error } = await supabase
+    .from('cdf_payoffs_payments')
+    .update({
+      description: (formData.get('description') as string) || null,
+      payee_contact_id: (formData.get('payee_contact_id') as string) || null,
+      amount: formData.get('amount') ? Number(formData.get('amount')) : null,
+    })
+    .eq('id', id)
+
+  if (error) {
+    console.error('updatePayoffBase failed:', error)
+    return { error: 'Could not save. Please try again.' }
+  }
+
+  revalidatePath(`/orders/${orderId}/payoff-calculations`)
+  revalidatePath(`/orders/${orderId}/cdf-page-3`)
+  return {}
+}
+
+export async function deletePayoff(orderId: string, id: string): Promise<{ error?: string }> {
+  const supabase = await createClient()
+  const { error } = await supabase.from('cdf_payoffs_payments').delete().eq('id', id)
+  if (error) {
+    console.error('deletePayoff failed:', error)
+    return { error: 'Could not remove. Please try again.' }
+  }
+  revalidatePath(`/orders/${orderId}/payoff-calculations`)
+  revalidatePath(`/orders/${orderId}/cdf-page-3`)
+  return {}
+}
+
 export async function updatePayoffCalculation(orderId: string, id: string, formData: FormData): Promise<{ error?: string }> {
   const supabase = await createClient()
 

@@ -262,12 +262,14 @@ export function CdfPage3Panel({
   payoffs,
   contacts,
   summaryLines,
+  transactionType,
 }: {
   orderId: string
   cashToClose: CdfCashToClose | null
   payoffs: CdfPayoffPayment[]
   contacts: Contact[]
   summaryLines: CdfTransactionSummaryLine[]
+  transactionType: string | null
 }) {
   const [isPending, startTransition] = useTransition()
 
@@ -309,14 +311,16 @@ export function CdfPage3Panel({
         </Button>
       </div>
 
-      <div className="space-y-3">
-        <h3 className="font-semibold">Summaries of Transactions</h3>
-        <div className="grid grid-cols-1 gap-8 lg:grid-cols-2">
-          {CDF_TRANSACTION_SUMMARY_PARTIES.map((party) => (
-            <TransactionSummaryColumn key={party} orderId={orderId} party={party} lines={summaryLines} />
-          ))}
+      {transactionType === 'Purchase' && (
+        <div className="space-y-3">
+          <h3 className="font-semibold">Summaries of Transactions</h3>
+          <div className="grid grid-cols-1 gap-8 lg:grid-cols-2">
+            {CDF_TRANSACTION_SUMMARY_PARTIES.map((party) => (
+              <TransactionSummaryColumn key={party} orderId={orderId} party={party} lines={summaryLines} />
+            ))}
+          </div>
         </div>
-      </div>
+      )}
     </div>
   )
 }

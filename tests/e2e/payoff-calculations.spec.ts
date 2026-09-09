@@ -52,10 +52,25 @@ test('nav shows Payoff Calculations under Escrow / Closing group', async ({ page
   await expect(group.getByRole('link', { name: 'Payoff Calculations' })).toBeVisible()
 })
 
-test('empty state points at CDF Page 3 when no payoffs exist', async ({ page }) => {
+test('empty state, then add and remove a payoff directly from this screen', async ({ page }) => {
   const orderId = await createOrder(page)
   await page.goto(`/orders/${orderId}/payoff-calculations`)
-  await expect(page.getByText('No payoffs yet. Add one on CDF Page 3.')).toBeVisible()
+  await expect(page.getByText('No payoffs yet.')).toBeVisible()
+
+  await page.getByRole('button', { name: '+ Add Payoff' }).click()
+  const card = page.getByTestId('payoff-calculations-panel').locator('[data-testid^="payoff-calc-"]').first()
+  await expect(card).toBeVisible()
+
+  await card.locator('input[name="description"]').fill('Payoff of Second Mortgage Loan')
+  await card.locator('input[name="description"]').blur()
+  await expect(page.getByText('Saved')).toBeVisible()
+
+  await page.reload()
+  const reloadedCard = page.getByTestId('payoff-calculations-panel').locator('[data-testid^="payoff-calc-"]').first()
+  await expect(reloadedCard.locator('input[name="description"]')).toHaveValue('Payoff of Second Mortgage Loan')
+
+  await reloadedCard.getByRole('button', { name: 'Remove payoff' }).click()
+  await expect(page.getByText('No payoffs yet.')).toBeVisible()
 })
 
 test('fill calculation detail and additional charge for a CDF Page 3 payoff, autosave persists', async ({ page }) => {
@@ -70,7 +85,7 @@ test('fill calculation detail and additional charge for a CDF Page 3 payoff, aut
 
   await page.goto(`/orders/${orderId}/payoff-calculations`)
   const card = page.getByTestId('payoff-calculations-panel').locator('[data-testid^="payoff-calc-"]').first()
-  await expect(card.getByText('Payoff of First Mortgage Loan')).toBeVisible()
+  await expect(card.locator('input[name="description"]')).toHaveValue('Payoff of First Mortgage Loan')
 
   await card.locator('input[name="principal_balance"]').fill('182500')
   await card.locator('input[name="interest_rate"]').fill('4.25')
