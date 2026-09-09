@@ -457,6 +457,50 @@ export type NotaryAck = {
   text: string
 }
 
+export type TitleInsurancePremium = {
+  id: string
+  order_id: string
+  sort_order: number
+  policy_type: string | null
+  underwriter_contact_id: string | null
+  coverage_amount: number | null
+  base_premium: number | null
+  final_premium: number | null
+  bill_code: string | null
+}
+
+export type PremiumSplit = {
+  id: string
+  premium_id: string
+  sort_order: number
+  payee_contact_id: string | null
+  basis: string | null
+  percent: number | null
+  amount: number | null
+  bill_code: string | null
+}
+
+export type Endorsement = {
+  id: string
+  premium_id: string
+  sort_order: number
+  code: string | null
+  description: string | null
+  charge: number | null
+  bill_code: string | null
+}
+
+export type EndorsementSplit = {
+  id: string
+  endorsement_id: string
+  sort_order: number
+  payee_contact_id: string | null
+  basis: string | null
+  percent: number | null
+  amount: number | null
+  bill_code: string | null
+}
+
 export type Attachment = {
   id: string
   order_id: string

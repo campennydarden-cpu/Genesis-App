@@ -291,6 +291,16 @@ export const AFFIDAVIT_TYPES = [
   'Other',
 ] as const
 
+// Title Insurance Premiums — per-line policy type (distinct from the order-level
+// POLICY_TYPES field, which includes 'None'/'Simultaneous' as a whole-order selection).
+export const TITLE_POLICY_LINE_TYPES = ["Owner's", 'Loan'] as const
+
+export const SPLIT_BASIS_TYPES = [
+  'Percent of Final Premium',
+  'Percent of Balance',
+  'Fixed Amount',
+] as const
+
 // Attachments upload validation (Genesis Rebuild - Attachments Core Design.md).
 export const ATTACHMENT_MAX_SIZE_BYTES = 25 * 1024 * 1024 // 25 MB
 
