@@ -2,6 +2,7 @@
 
 import { revalidatePath } from 'next/cache'
 import { createClient } from '@/lib/supabase/server'
+import { CDF_TRANSACTION_SUMMARY_PARTIES, CDF_TRANSACTION_SUMMARY_SECTIONS } from '@/lib/constants'
 import type { CdfCashToClose, CdfPayoffPayment, CdfTransactionSummaryLine } from '@/lib/types'
 
 export async function getCdfCashToClose(orderId: string): Promise<CdfCashToClose | null> {
@@ -123,6 +124,17 @@ export async function listTransactionSummaryLines(orderId: string): Promise<CdfT
 }
 
 export async function addTransactionSummaryLine(orderId: string, party: string, section: string): Promise<{ error?: string }> {
+  // Server Actions are directly invocable endpoints, not gated by the React tree that
+  // only ever passes constant-derived values — validate here too, since an arbitrary
+  // party/section would insert a row TransactionSummaryColumn's exact-match filter can
+  // never render (silent, permanent data invisibility, not just a UI inconsistency).
+  if (!(CDF_TRANSACTION_SUMMARY_PARTIES as readonly string[]).includes(party)) {
+    return { error: 'Invalid party.' }
+  }
+  if (!CDF_TRANSACTION_SUMMARY_SECTIONS.some((s) => s.code === section)) {
+    return { error: 'Invalid section.' }
+  }
+
   const supabase = await createClient()
 
   const { count } = await supabase
