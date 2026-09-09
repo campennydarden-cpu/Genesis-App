@@ -164,6 +164,33 @@ test('Section A shows a fixed, non-removable Points line with a working percent 
   await expect(reloadedRow.locator('input[name="points_adjustment_for"]')).toHaveValue('rounding true-up')
 })
 
+test('Section J shows a fixed Closing Costs Subtotal line and an editable Lender Credits line that reduces the grand total', async ({ page }) => {
+  const orderId = await createOrder(page)
+  await page.goto(`/orders/${orderId}/cdf-page-2`)
+
+  await page.getByTestId('cdf-section-A').getByRole('button', { name: '+ Add Item' }).click()
+  const rowA = page.getByTestId('cdf-section-A-list').locator('[data-testid^="cdf-line-"]').first()
+  await rowA.locator('input[name="borrower_paid_at_closing"]').fill('1000')
+  await rowA.locator('input[name="borrower_paid_at_closing"]').blur()
+  await expect(page.getByText('Saved')).toBeVisible()
+
+  await expect(page.getByTestId('cdf-subtotal-j-subtotal')).toContainText('$1,000.00')
+  await expect(page.getByTestId('cdf-subtotal-j')).toContainText('$1,000.00')
+
+  const lenderCreditsRow = page.getByTestId('cdf-section-J-fixed')
+  await expect(lenderCreditsRow.locator('input[name="description"]')).toHaveValue('Lender Credits')
+  await expect(lenderCreditsRow.getByRole('button', { name: 'Remove item' })).toHaveCount(0)
+
+  await lenderCreditsRow.locator('input[name="borrower_paid_at_closing"]').fill('-150')
+  await lenderCreditsRow.locator('input[name="borrower_paid_at_closing"]').blur()
+  await expect(page.getByText('Saved')).toBeVisible()
+  await page.reload()
+
+  // Line 1 (Closing Costs Subtotal, D+I) stays at 1000; the grand total drops by the credit.
+  await expect(page.getByTestId('cdf-subtotal-j-subtotal')).toContainText('$1,000.00')
+  await expect(page.getByTestId('cdf-subtotal-j')).toContainText('$850.00')
+})
+
 test('Section G shows a fixed, non-removable Aggregate Adjustment line after any added items', async ({ page }) => {
   const orderId = await createOrder(page)
   await page.goto(`/orders/${orderId}/cdf-page-2`)

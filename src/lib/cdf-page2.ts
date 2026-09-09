@@ -48,10 +48,15 @@ export function computeCdfPage2Totals(lines: CdfPage2Line[]) {
   // I = E + F + G + H, Other Costs — carries all four columns.
   const i: CdfPage2Totals = [bySection.E, bySection.F, bySection.G, bySection.H].reduce(addTotals, { ...ZERO })
 
-  // J = D + I, grand total.
-  const j: CdfPage2Totals = addTotals(d, i)
+  // Section J itself has one real enterable line — Lender Credits — not summed from
+  // CDF_PAGE2_SECTIONS since J is a totals section, not an itemized one like A-H.
+  // "J" isn't a valid `section` for the A-H line-item grid, so sumSection is safe to
+  // call directly here without adding J to that constant.
+  const closingCostsSubtotal = addTotals(d, i)
+  const lenderCredits = sumSection(lines, 'J')
+  const j: CdfPage2Totals = addTotals(closingCostsSubtotal, lenderCredits)
 
-  return { bySection, d, i, j }
+  return { bySection, d, i, closingCostsSubtotal, j }
 }
 
 function demo() {
@@ -130,13 +135,39 @@ function demo() {
       points_adjustment: null,
       points_adjustment_for: null,
     },
+    {
+      id: '5',
+      order_id: 'o',
+      section: 'J',
+      sort_order: 0,
+      description: 'Lender Credits',
+      to_contact_id: null,
+      // A credit reduces the borrower's total, so it's entered as a negative amount.
+      borrower_paid_at_closing: -150,
+      borrower_paid_before_closing: null,
+      seller_paid_at_closing: null,
+      seller_paid_before_closing: null,
+      paid_by_others: null,
+      is_fixed: true,
+      points_percent: null,
+      points_round_whole_dollar: false,
+      points_adjustment: null,
+      points_adjustment_for: null,
+    },
   ]
 
-  const { d, i, j } = computeCdfPage2Totals(lines)
+  const { d, i, closingCostsSubtotal, j } = computeCdfPage2Totals(lines)
   console.assert(d.borrowerAtClosing === 600, `expected D borrower-at-closing 600 (500+100), got ${d.borrowerAtClosing}`)
   console.assert(i.borrowerAtClosing === 1471, `expected I borrower-at-closing 1471 (271+1200), got ${i.borrowerAtClosing}`)
   console.assert(i.sellerAtClosing === 50, `expected I seller-at-closing 50, got ${i.sellerAtClosing}`)
-  console.assert(j.borrowerAtClosing === 2071, `expected J borrower-at-closing 2071 (600+1471), got ${j.borrowerAtClosing}`)
+  console.assert(
+    closingCostsSubtotal.borrowerAtClosing === 2071,
+    `expected Closing Costs Subtotal (D+I) borrower-at-closing 2071 (600+1471), got ${closingCostsSubtotal.borrowerAtClosing}`
+  )
+  console.assert(
+    j.borrowerAtClosing === 1921,
+    `expected J borrower-at-closing 1921 (2071 subtotal - 150 lender credit), got ${j.borrowerAtClosing}`
+  )
   console.assert(
     d.sellerAtClosing === 0,
     `expected D seller-at-closing 0 (Loan Costs has no seller column, even though section A's own row has 500), got ${d.sellerAtClosing}`

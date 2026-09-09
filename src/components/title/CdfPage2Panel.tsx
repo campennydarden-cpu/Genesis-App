@@ -336,7 +336,8 @@ export function CdfPage2Panel({
   loanAmount: number | null
 }) {
   const [isPending, startTransition] = useTransition()
-  const { d, i, j } = computeCdfPage2Totals(lines)
+  const { d, i, closingCostsSubtotal, j } = computeCdfPage2Totals(lines)
+  const lenderCreditsLine = lines.find((l) => l.section === 'J' && l.is_fixed)
 
   function addSection(section: string) {
     startTransition(async () => {
@@ -382,6 +383,12 @@ export function CdfPage2Panel({
         <CdfWrap>
           <CdfBar title="Total Closing Costs (J)" />
           <CdfTable>
+            <SubtotalLine id="j-subtotal" label="1. Closing Costs Subtotal (D + I)" totals={closingCostsSubtotal} />
+            {lenderCreditsLine && (
+              <div data-testid="cdf-section-J-fixed">
+                <LineRow orderId={orderId} line={lenderCreditsLine} contacts={contacts} num={2} loanAmount={loanAmount} />
+              </div>
+            )}
             <SubtotalLine id="j" label="J. Total Closing Costs" totals={j} variant="total" />
           </CdfTable>
         </CdfWrap>

@@ -7,16 +7,19 @@ import type { CdfPage2Line } from '@/lib/types'
 export async function listCdfPage2Lines(orderId: string): Promise<CdfPage2Line[]> {
   const supabase = await createClient()
 
-  // Section A's "% of Loan Amount (Points)" line and Section G's "Aggregate
-  // Adjustment" line are fixed, non-removable rows confirmed by SoftPro reference
-  // screenshots — ensure they exist before returning, so every order gets them
-  // automatically the first time this screen loads.
+  // Section A's "% of Loan Amount (Points)" line, Section G's "Aggregate Adjustment"
+  // line, and Section J's "Lender Credits" line are fixed, non-removable rows
+  // confirmed by Cam's click-through notes and SoftPro reference screenshots —
+  // ensure they exist before returning, so every order gets them automatically the
+  // first time this screen loads.
   const { data: fixedLines } = await supabase.from('cdf_page2_lines').select('section').eq('order_id', orderId).eq('is_fixed', true)
   const hasFixedA = fixedLines?.some((l) => l.section === 'A')
   const hasFixedG = fixedLines?.some((l) => l.section === 'G')
+  const hasFixedJ = fixedLines?.some((l) => l.section === 'J')
   const toSeed = []
   if (!hasFixedA) toSeed.push({ order_id: orderId, section: 'A', sort_order: 0, description: '% of Loan Amount (Points)', is_fixed: true })
   if (!hasFixedG) toSeed.push({ order_id: orderId, section: 'G', sort_order: 999, description: 'Aggregate Adjustment', is_fixed: true })
+  if (!hasFixedJ) toSeed.push({ order_id: orderId, section: 'J', sort_order: 0, description: 'Lender Credits', is_fixed: true })
   if (toSeed.length > 0) await supabase.from('cdf_page2_lines').insert(toSeed)
 
   const { data } = await supabase
