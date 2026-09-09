@@ -278,17 +278,22 @@ export const REQUESTED_TASK_SEEDS = [
   'Order and Publish Updated Taxes',
 ] as const
 
-// Document Preparation — Affidavits type list (Design Notes - Platform.md / old prototype's
-// AFFIDAVIT_TYPES, code-verified since the vault doesn't itemize this list).
+// Document Preparation — Affidavits type list. Cam's canonical list (2026-09-09
+// click-through notes); two entries are flagged there as state-conditional
+// (Notice of Availability, Commitment Acknowledgement) but that filtering isn't
+// built yet — the dropdown itself doesn't need it to ship.
 export const AFFIDAVIT_TYPES = [
-  "Owner's Affidavit",
-  'Affidavit of Title',
-  'Name Affidavit / Affidavit of Identity',
-  'Non-Foreign Affidavit (FIRPTA)',
+  'ALTA Statement',
+  'W-9 Request for Taxpayer ID and Certification (seller)',
+  'Certification of No Information Reporting Sale or Exchange Principal Residence',
+  'Substitute 1099-S',
   'Survey Affidavit',
-  'Gap Affidavit',
-  'Debts and Liens Affidavit',
-  'Other',
+  'GAP Affidavit',
+  "Owner's Affidavit",
+  'FIRPTA',
+  'DS-1 Form (IL Only)',
+  'Notice of Availability',
+  'Commitment Acknowledgement',
 ] as const
 
 // Title Insurance Premiums — per-line policy type (distinct from the order-level
