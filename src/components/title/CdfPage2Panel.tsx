@@ -34,6 +34,13 @@ function computePointsAmount(line: CdfPage2Line, loanAmount: number | null) {
   return base + (line.points_adjustment ?? 0)
 }
 
+// Section G's Per Month / Months pair — same display-only computed-help pattern as
+// Section A's points config.
+function computePerMonthAmount(line: CdfPage2Line) {
+  if (line.per_month == null || line.months == null) return null
+  return line.per_month * line.months
+}
+
 function LineRow({
   orderId,
   line,
@@ -57,6 +64,7 @@ function LineRow({
   }
 
   const computedPoints = line.is_fixed && line.section === 'A' ? computePointsAmount(line, loanAmount) : null
+  const computedPerMonth = line.section === 'G' && !line.is_fixed ? computePerMonthAmount(line) : null
 
   return (
     <div className="border-t border-border py-1.5 first:border-t-0" data-testid={`cdf-line-${line.id}`}>
@@ -191,6 +199,33 @@ function LineRow({
             className="h-7 w-32 px-1.5"
           />
           {computedPoints != null && <span className="ml-auto font-mono font-semibold text-foreground">= ${money(computedPoints)}</span>}
+        </div>
+      )}
+      {line.section === 'G' && !line.is_fixed && (
+        <div className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 pl-[calc(24px+0.5rem)] text-[12px] text-muted-foreground">
+          <span>Per Month</span>
+          <Input
+            aria-label="Per Month"
+            name="per_month"
+            type="number"
+            step="0.01"
+            defaultValue={line.per_month ?? ''}
+            onBlur={handleSave}
+            className="h-7 w-24 px-1.5 text-right"
+          />
+          <span>× Months</span>
+          <Input
+            aria-label="Months"
+            name="months"
+            type="number"
+            step="1"
+            defaultValue={line.months ?? ''}
+            onBlur={handleSave}
+            className="h-7 w-16 px-1.5 text-right"
+          />
+          {computedPerMonth != null && (
+            <span className="ml-auto font-mono font-semibold text-foreground">= ${money(computedPerMonth)}</span>
+          )}
         </div>
       )}
       </form>

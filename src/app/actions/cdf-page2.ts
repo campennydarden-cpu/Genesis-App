@@ -121,6 +121,8 @@ export async function updateCdfPage2Line(orderId: string, id: string, formData: 
       points_round_whole_dollar: formData.get('points_round_whole_dollar') === 'on',
       points_adjustment: numOrNull('points_adjustment'),
       points_adjustment_for: (formData.get('points_adjustment_for') as string) || null,
+      per_month: numOrNull('per_month'),
+      months: numOrNull('months'),
     })
     .eq('id', id)
 

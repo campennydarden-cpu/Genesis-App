@@ -80,6 +80,8 @@ function demo() {
       points_round_whole_dollar: false,
       points_adjustment: null,
       points_adjustment_for: null,
+      per_month: null,
+      months: null,
     },
     {
       id: '2',
@@ -98,6 +100,8 @@ function demo() {
       points_round_whole_dollar: false,
       points_adjustment: null,
       points_adjustment_for: null,
+      per_month: null,
+      months: null,
     },
     {
       id: '3',
@@ -116,6 +120,8 @@ function demo() {
       points_round_whole_dollar: false,
       points_adjustment: null,
       points_adjustment_for: null,
+      per_month: null,
+      months: null,
     },
     {
       id: '4',
@@ -134,6 +140,8 @@ function demo() {
       points_round_whole_dollar: false,
       points_adjustment: null,
       points_adjustment_for: null,
+      per_month: null,
+      months: null,
     },
     {
       id: '5',
@@ -153,6 +161,8 @@ function demo() {
       points_round_whole_dollar: false,
       points_adjustment: null,
       points_adjustment_for: null,
+      per_month: null,
+      months: null,
     },
   ]
 

@@ -609,6 +609,8 @@ export type CdfPage2Line = {
   points_round_whole_dollar: boolean
   points_adjustment: number | null
   points_adjustment_for: string | null
+  per_month: number | null
+  months: number | null
 }
 
 export type CdfPage2Totals = {

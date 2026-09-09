@@ -203,3 +203,26 @@ test('Section G shows a fixed, non-removable Aggregate Adjustment line after any
   await expect(page.getByTestId('cdf-section-G-list').locator('[data-testid^="cdf-line-"]')).toHaveCount(1)
   await expect(page.getByTestId('cdf-section-G-fixed')).toBeVisible()
 })
+
+test('Section G regular items show a Per Month / Months calculation, not shown on the fixed Aggregate Adjustment line', async ({
+  page,
+}) => {
+  const orderId = await createOrder(page)
+  await page.goto(`/orders/${orderId}/cdf-page-2`)
+
+  await page.getByTestId('cdf-section-G').getByRole('button', { name: '+ Add Item' }).click()
+  const row = page.getByTestId('cdf-section-G-list').locator('[data-testid^="cdf-line-"]').first()
+  await row.locator('input[name="per_month"]').fill('100')
+  await row.locator('input[name="months"]').fill('3')
+  await row.locator('input[name="months"]').blur()
+  await expect(page.getByText('Saved')).toBeVisible()
+  await expect(row).toContainText('$300.00')
+
+  // The fixed Aggregate Adjustment row has no Per Month / Months config.
+  await expect(page.getByTestId('cdf-section-G-fixed').locator('input[name="per_month"]')).toHaveCount(0)
+
+  await page.reload()
+  const reloadedRow = page.getByTestId('cdf-section-G-list').locator('[data-testid^="cdf-line-"]').first()
+  await expect(reloadedRow.locator('input[name="per_month"]')).toHaveValue('100')
+  await expect(reloadedRow.locator('input[name="months"]')).toHaveValue('3')
+})
