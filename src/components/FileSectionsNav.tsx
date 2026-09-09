@@ -27,6 +27,7 @@ const NAV_GROUPS: NavGroup[] = [
       { label: 'Commitment Sch B-I/B-II', segment: 'commitment-sch-b' },
       { label: 'Curative', segment: 'curative' },
       { label: 'Premiums & Endorsements', segment: 'premiums' },
+      { label: 'Invoices', segment: 'invoices' },
     ],
   },
   {

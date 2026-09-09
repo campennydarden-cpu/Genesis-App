@@ -32,6 +32,7 @@ import { CdfLineAssign } from '@/components/title/CdfLineAssign'
 import type { TitleInsurancePremium, PremiumSplit, Endorsement, EndorsementSplit, CdfPage2Line } from '@/lib/types'
 
 type Contact = { id: string; name: string }
+type BillCode = { id: string; code: string }
 
 function refresh() {
   window.location.reload()
@@ -42,6 +43,7 @@ function EndorsementRow({
   endorsement,
   splits,
   contacts,
+  billCodes,
   cdfLines,
   onDelete,
 }: {
@@ -49,6 +51,7 @@ function EndorsementRow({
   endorsement: Endorsement
   splits: EndorsementSplit[]
   contacts: Contact[]
+  billCodes: BillCode[]
   cdfLines: CdfPage2Line[]
   onDelete: () => Promise<unknown>
 }) {
@@ -115,6 +118,7 @@ function EndorsementRow({
       <SplitList
         splits={splits}
         contacts={contacts}
+        billCodes={billCodes}
         onAdd={() => addEndorsementSplit(orderId, endorsement.id)}
         onUpdate={(id, formData) => updateEndorsementSplit(orderId, id, formData)}
         onDelete={(id) => deleteEndorsementSplit(orderId, id)}
@@ -143,6 +147,7 @@ function EndorsementList({
   endorsements,
   splitsByEndorsement,
   contacts,
+  billCodes,
   cdfLines,
 }: {
   orderId: string
@@ -150,6 +155,7 @@ function EndorsementList({
   endorsements: Endorsement[]
   splitsByEndorsement: Record<string, EndorsementSplit[]>
   contacts: Contact[]
+  billCodes: BillCode[]
   cdfLines: CdfPage2Line[]
 }) {
   const [isPending, startTransition] = useTransition()
@@ -164,6 +170,7 @@ function EndorsementList({
           endorsement={e}
           splits={splitsByEndorsement[e.id] ?? []}
           contacts={contacts}
+          billCodes={billCodes}
           cdfLines={cdfLines}
           onDelete={() => deleteEndorsement(orderId, e.id)}
         />
@@ -194,6 +201,7 @@ function PremiumCard({
   endorsementSplits,
   underwriterContacts,
   allContacts,
+  billCodes,
   purchasePrice,
   loanAmount,
   cdfLines,
@@ -205,6 +213,7 @@ function PremiumCard({
   endorsementSplits: Record<string, EndorsementSplit[]>
   underwriterContacts: Contact[]
   allContacts: Contact[]
+  billCodes: BillCode[]
   purchasePrice: number | null
   loanAmount: number | null
   cdfLines: CdfPage2Line[]
@@ -314,6 +323,7 @@ function PremiumCard({
       <SplitList
         splits={splits}
         contacts={allContacts}
+        billCodes={billCodes}
         onAdd={() => addPremiumSplit(orderId, premium.id)}
         onUpdate={(id, formData) => updatePremiumSplit(orderId, id, formData)}
         onDelete={(id) => deletePremiumSplit(orderId, id)}
@@ -326,6 +336,7 @@ function PremiumCard({
         endorsements={endorsements}
         splitsByEndorsement={endorsementSplits}
         contacts={allContacts}
+        billCodes={billCodes}
         cdfLines={cdfLines}
       />
 
@@ -354,6 +365,7 @@ export function PremiumsPanel({
   endorsementSplits,
   underwriterContacts,
   allContacts,
+  billCodes,
   purchasePrice,
   loanAmount,
   cdfLines,
@@ -365,6 +377,7 @@ export function PremiumsPanel({
   endorsementSplits: Record<string, EndorsementSplit[]>
   underwriterContacts: Contact[]
   allContacts: Contact[]
+  billCodes: BillCode[]
   purchasePrice: number | null
   loanAmount: number | null
   cdfLines: CdfPage2Line[]
@@ -389,6 +402,7 @@ export function PremiumsPanel({
             endorsementSplits={endorsementSplits}
             underwriterContacts={underwriterContacts}
             allContacts={allContacts}
+            billCodes={billCodes}
             purchasePrice={purchasePrice}
             loanAmount={loanAmount}
             cdfLines={cdfLines}

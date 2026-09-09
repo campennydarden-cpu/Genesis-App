@@ -9,6 +9,7 @@ import { useAutosave } from '@/lib/use-autosave'
 import { SPLIT_BASIS_TYPES } from '@/lib/constants'
 
 type Contact = { id: string; name: string }
+type BillCode = { id: string; code: string }
 
 type SplitRowData = {
   id: string
@@ -22,12 +23,14 @@ type SplitRowData = {
 function SplitRow({
   split,
   contacts,
+  billCodes,
   onUpdate,
   onDelete,
   onDeleted,
 }: {
   split: SplitRowData
   contacts: Contact[]
+  billCodes: BillCode[]
   onUpdate: (formData: FormData) => Promise<{ error?: string }>
   onDelete: () => Promise<unknown>
   onDeleted: () => void
@@ -87,7 +90,20 @@ function SplitRow({
       </div>
       <div className="col-span-2">
         <Label htmlFor={`${split.id}-bill_code`}>Bill Code</Label>
-        <Input id={`${split.id}-bill_code`} name="bill_code" defaultValue={split.bill_code ?? ''} onBlur={handleSave} />
+        <select
+          id={`${split.id}-bill_code`}
+          name="bill_code"
+          defaultValue={split.bill_code ?? ''}
+          onBlur={handleSave}
+          className="block w-full rounded border px-2 py-1 text-sm"
+        >
+          <option value="">—</option>
+          {billCodes.map((b) => (
+            <option key={b.id} value={b.code}>
+              {b.code}
+            </option>
+          ))}
+        </select>
       </div>
       <div className="col-span-6 flex items-center justify-between">
         <SaveIndicator state={state} errorMessage={errorMessage} />
@@ -112,6 +128,7 @@ function SplitRow({
 export function SplitList({
   splits,
   contacts,
+  billCodes,
   onAdd,
   onUpdate,
   onDelete,
@@ -119,6 +136,7 @@ export function SplitList({
 }: {
   splits: SplitRowData[]
   contacts: Contact[]
+  billCodes: BillCode[]
   onAdd: () => Promise<unknown>
   onUpdate: (id: string, formData: FormData) => Promise<{ error?: string }>
   onDelete: (id: string) => Promise<unknown>
@@ -134,6 +152,7 @@ export function SplitList({
           key={s.id}
           split={s}
           contacts={contacts}
+          billCodes={billCodes}
           onUpdate={(formData) => onUpdate(s.id, formData)}
           onDelete={() => onDelete(s.id)}
           onDeleted={onChanged}

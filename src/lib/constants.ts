@@ -356,6 +356,10 @@ export const RECORDING_STATUSES = ['Not Submitted', 'Submitted', 'Recorded', 'Re
 
 export const RECORDING_DOCUMENT_TYPES = ['Mortgage', 'Deed', 'Release', 'Power of Attorney', 'Affidavit', 'Other'] as const
 
+// ponytail: `Invoice.png`'s Status dropdown was collapsed in the screenshot (only "Pending"
+// visible) -- this list is a reasonable guess, not confirmed with Cam.
+export const INVOICE_STATUSES = ['Pending', 'Sent', 'Paid', 'Void'] as const
+
 export const SETTLEMENT_TYPES = ['Combined', 'Borrower-Buyer', 'Seller', 'Cash'] as const
 
 export const SELLER_CREDIT_METHODS = [

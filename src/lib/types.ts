@@ -333,6 +333,40 @@ export type ChecklistTaskTemplate = {
   sort_order: number
 }
 
+export type BillCode = {
+  id: string
+  code: string
+  description: string | null
+  sort_order: number
+}
+
+export type Invoice = {
+  id: string
+  order_id: string
+  sort_order: number
+  invoice_number: string
+  status: string
+  invoice_date: string | null
+  due_date: string | null
+  bill_to_contact_id: string | null
+  remit_to_contact_id: string | null
+  message: string | null
+}
+
+export type InvoiceLineItem = {
+  id: string
+  invoice_id: string
+  sort_order: number
+  source_table: string | null
+  source_split_id: string | null
+  print_to_invoice: boolean
+  bill_code: string | null
+  description: string | null
+  amount: number | null
+  taxable: boolean
+  tax: number | null
+}
+
 export type ChecklistTask = {
   id: string
   order_id: string

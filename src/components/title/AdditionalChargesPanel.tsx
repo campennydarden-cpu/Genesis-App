@@ -22,6 +22,7 @@ import type { AdditionalTitleCharge, AdditionalTitleChargeSplit, CdfPage2Line } 
 
 type Contact = { id: string; name: string }
 type Policy = { id: string; policy_type: string | null }
+type BillCode = { id: string; code: string }
 
 function refresh() {
   window.location.reload()
@@ -33,6 +34,7 @@ function ChargeRow({
   splits,
   policies,
   contacts,
+  billCodes,
   cdfLines,
 }: {
   orderId: string
@@ -40,6 +42,7 @@ function ChargeRow({
   splits: AdditionalTitleChargeSplit[]
   policies: Policy[]
   contacts: Contact[]
+  billCodes: BillCode[]
   cdfLines: CdfPage2Line[]
 }) {
   const formRef = useRef<HTMLFormElement>(null)
@@ -172,6 +175,7 @@ function ChargeRow({
       <SplitList
         splits={splits}
         contacts={contacts}
+        billCodes={billCodes}
         onAdd={() => addChargeSplit(orderId, charge.id)}
         onUpdate={(id, formData) => updateChargeSplit(orderId, id, formData)}
         onDelete={(id) => deleteChargeSplit(orderId, id)}
@@ -201,6 +205,7 @@ export function AdditionalChargesPanel({
   splitsByCharge,
   policies,
   contacts,
+  billCodes,
   cdfLines,
 }: {
   orderId: string
@@ -208,6 +213,7 @@ export function AdditionalChargesPanel({
   splitsByCharge: Record<string, AdditionalTitleChargeSplit[]>
   policies: Policy[]
   contacts: Contact[]
+  billCodes: BillCode[]
   cdfLines: CdfPage2Line[]
 }) {
   const [isPending, startTransition] = useTransition()
@@ -228,6 +234,7 @@ export function AdditionalChargesPanel({
             splits={splitsByCharge[c.id] ?? []}
             policies={policies}
             contacts={contacts}
+            billCodes={billCodes}
             cdfLines={cdfLines}
           />
         ))}

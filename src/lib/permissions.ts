@@ -35,3 +35,21 @@ export async function requireChecklistTemplatePermission(
 
   return profile?.can_manage_checklist_templates ?? false
 }
+
+export async function requireBillCodePermission(
+  supabase: Awaited<ReturnType<typeof createClient>>
+): Promise<boolean> {
+  const {
+    data: { user },
+  } = await supabase.auth.getUser()
+
+  if (!user) return false
+
+  const { data: profile } = await supabase
+    .from('profiles')
+    .select('can_manage_bill_codes')
+    .eq('id', user.id)
+    .maybeSingle()
+
+  return profile?.can_manage_bill_codes ?? false
+}
