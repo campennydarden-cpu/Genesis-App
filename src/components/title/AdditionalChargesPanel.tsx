@@ -108,7 +108,7 @@ function ChargeRow({
             cdfLineId={charge.cdf_page2_line_id}
             cdfLines={cdfLines}
             onAssign={async (section) => {
-              const { id } = await assignNextCdfPage2Line(orderId, section)
+              const { id } = await assignNextCdfPage2Line(orderId, section, charge.description, charge.charge)
               if (id) await setChargeCdfLine(orderId, charge.id, id)
               refresh()
             }}

@@ -11,9 +11,9 @@ const ASSIGNABLE_SECTIONS = CDF_PAGE2_SECTIONS.filter((s) => s.code === 'B' || s
  * "Assign to CDF Page 2" control shared by Premiums & Endorsements, Additional Title/Escrow
  * Charges, and Tax/Other Prorations. Links the row to a real cdf_page2_lines row (referenced
  * by id, so CDF Page 2 reordering never breaks it; the FK's `on delete set null` clears the
- * link automatically if that line is deleted). Amounts/description stay manual entry on both
- * sides — this only reserves/links a line, matching the CDF pages' existing manual-entry-shell
- * scope.
+ * link automatically if that line is deleted). The caller's `onAssign` seeds the new line's
+ * description/amount from the source row as a one-time starting point — still freely editable
+ * on both sides after, not a live sync, matching the CDF pages' manual-entry-shell scope.
  */
 export function CdfLineAssign({
   cdfLineId,

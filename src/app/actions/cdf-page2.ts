@@ -40,8 +40,17 @@ export async function listAllContacts(orderId: string): Promise<{ id: string; na
 // Shared by the "assign to CDF Page 2" Line control on Premiums & Endorsements, Additional
 // Title/Escrow Charges, and Tax/Other Prorations — creates the next line in the chosen
 // section (same insert as addCdfPage2Line) and returns its id so the caller can link a
-// charge/proration row to it via cdf_page2_line_id.
-export async function assignNextCdfPage2Line(orderId: string, section: string): Promise<{ id?: string; error?: string }> {
+// charge/proration row to it via cdf_page2_line_id. Cam's click-through notes flagged
+// that assigning "added the lines but none of the data transferred" — description and
+// amount are now seeded from the source row as a one-time starting point (still freely
+// editable after on either side, not a live sync, matching every other assign/link
+// pattern already built on this table).
+export async function assignNextCdfPage2Line(
+  orderId: string,
+  section: string,
+  description?: string | null,
+  amount?: number | null
+): Promise<{ id?: string; error?: string }> {
   const supabase = await createClient()
 
   const { count } = await supabase
@@ -52,7 +61,13 @@ export async function assignNextCdfPage2Line(orderId: string, section: string): 
 
   const { data, error } = await supabase
     .from('cdf_page2_lines')
-    .insert({ order_id: orderId, section, sort_order: (count ?? 0) + 1 })
+    .insert({
+      order_id: orderId,
+      section,
+      sort_order: (count ?? 0) + 1,
+      description: description || null,
+      borrower_paid_at_closing: amount ?? null,
+    })
     .select('id')
     .single()
 

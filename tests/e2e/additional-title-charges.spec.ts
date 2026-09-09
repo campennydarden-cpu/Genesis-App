@@ -93,6 +93,26 @@ test('add split under a charge', async ({ page }) => {
   await expect(reloadedRow.locator('input[name="amount"]')).toHaveValue('25')
 })
 
+test('assign to CDF Page 2 copies the charge description and amount onto the new line', async ({ page }) => {
+  const orderId = await createOrder(page)
+  await page.goto(`/orders/${orderId}/additional-charges`)
+  await page.getByRole('button', { name: '+ Add Charge' }).click()
+
+  const row = page.getByTestId('charge-list').locator('[data-testid^="charge-"]').first()
+  await row.locator('input[name="description"]').fill('Courier Fee')
+  await row.locator('input[name="charge"]').fill('45')
+  await row.locator('input[name="charge"]').blur()
+  await expect(page.getByText('Saved')).toBeVisible()
+
+  await row.getByRole('button', { name: '+ Assign to CDF Page 2' }).click()
+  await expect(row.getByText(/CDF Page 2 — Section/)).toBeVisible()
+
+  await page.goto(`/orders/${orderId}/cdf-page-2`)
+  const newLine = page.getByTestId('cdf-section-B-list').locator('[data-testid^="cdf-line-"]').first()
+  await expect(newLine.locator('input[name="description"]')).toHaveValue('Courier Fee')
+  await expect(newLine.locator('input[name="borrower_paid_at_closing"]')).toHaveValue('45')
+})
+
 test('delete charge removes row', async ({ page }) => {
   const orderId = await createOrder(page)
   await page.goto(`/orders/${orderId}/additional-charges`)

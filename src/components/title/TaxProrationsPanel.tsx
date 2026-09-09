@@ -270,7 +270,7 @@ function ProrationRow({
             cdfLineId={proration.cdf_page2_line_id}
             cdfLines={cdfLines}
             onAssign={async (section) => {
-              const { id } = await assignNextCdfPage2Line(orderId, section)
+              const { id } = await assignNextCdfPage2Line(orderId, section, proration.description, proration.prorated_amount)
               if (id) await setProrationCdfLine(orderId, proration.id, id)
               refresh()
             }}
