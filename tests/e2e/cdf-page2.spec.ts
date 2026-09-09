@@ -91,15 +91,34 @@ test('section subtotals and grand total compute correctly across sections and co
   await page.reload()
 
   // D = A + B + C = 500 (borrower-only subtotal)
-  await expect(page.getByTestId('cdf-subtotal-D. Total Loan Costs (Borrower-Paid)')).toContainText('$500.00')
+  await expect(page.getByTestId('cdf-subtotal-d')).toContainText('$500.00')
   // I = E + F + G + H = 271 borrower, 50 seller
-  const iRow = page.getByTestId('cdf-subtotal-I. Total Other Costs')
+  const iRow = page.getByTestId('cdf-subtotal-i')
   await expect(iRow).toContainText('$271.00')
   await expect(iRow).toContainText('$50.00')
   // J = D + I = 771 borrower, 50 seller
-  const jRow = page.getByTestId('cdf-subtotal-J. Total Closing Costs')
+  const jRow = page.getByTestId('cdf-subtotal-j')
   await expect(jRow).toContainText('$771.00')
   await expect(jRow).toContainText('$50.00')
+})
+
+test('seller-paid amount entered on a Loan Cost row (section A) does not leak into D or J', async ({ page }) => {
+  const orderId = await createOrder(page)
+  await page.goto(`/orders/${orderId}/cdf-page-2`)
+
+  await page.getByTestId('cdf-section-A').getByRole('button', { name: '+ Add Item' }).click()
+  const row = page.getByTestId('cdf-section-A-list').locator('[data-testid^="cdf-line-"]').first()
+  await row.locator('input[name="borrower_paid_at_closing"]').fill('500')
+  await row.locator('input[name="seller_paid_at_closing"]').fill('500')
+  await row.locator('input[name="seller_paid_at_closing"]').blur()
+  await expect(page.getByText('Saved')).toBeVisible()
+  await page.reload()
+
+  // D has no seller column on the real CD form — the seller amount stays on the line
+  // itself but must not be folded into D's (or J's) totals.
+  await expect(page.getByTestId('cdf-subtotal-d')).toContainText('$500.00')
+  await expect(page.getByTestId('cdf-subtotal-j')).toContainText('$500.00')
+  await expect(page.getByTestId('cdf-subtotal-j')).not.toContainText('$1,000.00')
 })
 
 test('delete item removes row and recomputes totals', async ({ page }) => {
@@ -113,12 +132,12 @@ test('delete item removes row and recomputes totals', async ({ page }) => {
   await expect(page.getByText('Saved')).toBeVisible()
   await page.reload()
 
-  await expect(page.getByTestId('cdf-subtotal-D. Total Loan Costs (Borrower-Paid)')).toContainText('$100.00')
+  await expect(page.getByTestId('cdf-subtotal-d')).toContainText('$100.00')
 
   await Promise.all([
     page.waitForNavigation(),
     page.getByTestId('cdf-section-B-list').getByRole('button', { name: 'Remove item' }).click(),
   ])
   await expect(page.getByTestId('cdf-section-B-list').getByText('No items yet.')).toBeVisible()
-  await expect(page.getByTestId('cdf-subtotal-D. Total Loan Costs (Borrower-Paid)')).toContainText('$0.00')
+  await expect(page.getByTestId('cdf-subtotal-d')).toContainText('$0.00')
 })

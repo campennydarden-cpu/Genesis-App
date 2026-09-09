@@ -136,9 +136,19 @@ function LineRow({ orderId, line, contacts }: { orderId: string; line: CdfPage2L
   )
 }
 
-function SubtotalRow({ label, totals, showSeller = true }: { label: string; totals: CdfPage2Totals; showSeller?: boolean }) {
+function SubtotalRow({
+  id,
+  label,
+  totals,
+  showSeller = true,
+}: {
+  id: string
+  label: string
+  totals: CdfPage2Totals
+  showSeller?: boolean
+}) {
   return (
-    <div className="grid grid-cols-6 gap-2 rounded bg-muted p-3 text-sm font-semibold" data-testid={`cdf-subtotal-${label}`}>
+    <div className="grid grid-cols-6 gap-2 rounded bg-muted p-3 text-sm font-semibold" data-testid={`cdf-subtotal-${id}`}>
       <div className="col-span-2">{label}</div>
       <div />
       <div>${money(totals.borrowerAtClosing)}</div>
@@ -196,11 +206,11 @@ export function CdfPage2Panel({
               <Button type="button" variant="outline" onClick={() => addSection(code)} disabled={isPending}>
                 + Add Item
               </Button>
-              {code === 'C' && <SubtotalRow label="D. Total Loan Costs (Borrower-Paid)" totals={d} showSeller={false} />}
+              {code === 'C' && <SubtotalRow id="d" label="D. Total Loan Costs (Borrower-Paid)" totals={d} showSeller={false} />}
               {code === 'H' && (
                 <>
-                  <SubtotalRow label="I. Total Other Costs" totals={i} />
-                  <SubtotalRow label="J. Total Closing Costs" totals={j} />
+                  <SubtotalRow id="i" label="I. Total Other Costs" totals={i} />
+                  <SubtotalRow id="j" label="J. Total Closing Costs" totals={j} />
                 </>
               )}
             </div>

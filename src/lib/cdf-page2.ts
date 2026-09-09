@@ -37,9 +37,13 @@ export function computeCdfPage2Totals(lines: CdfPage2Line[]) {
     CdfPage2Totals
   >
 
-  // D = A + B + C, Loan Costs — borrower-paid only on the real CD form even though the
-  // line-item grid also captures seller/paid-by-others columns for flexibility.
-  const d: CdfPage2Totals = addTotals(addTotals(bySection.A, bySection.B), bySection.C)
+  // D = A + B + C, Loan Costs — borrower-paid only on the real CD form. The line-item
+  // grid still captures seller/paid-by-others on A/B/C rows for flexibility (matching
+  // SoftPro), but those columns must NOT flow into D (or, via D, into J) — D's own
+  // definition has no seller side, so folding them in here would silently inflate J
+  // with money never shown on any subtotal line.
+  const abc = addTotals(addTotals(bySection.A, bySection.B), bySection.C)
+  const d: CdfPage2Totals = { ...ZERO, borrowerAtClosing: abc.borrowerAtClosing, borrowerBeforeClosing: abc.borrowerBeforeClosing }
 
   // I = E + F + G + H, Other Costs — carries all four columns.
   const i: CdfPage2Totals = [bySection.E, bySection.F, bySection.G, bySection.H].reduce(addTotals, { ...ZERO })
@@ -61,7 +65,9 @@ function demo() {
       to_contact_id: null,
       borrower_paid_at_closing: 500,
       borrower_paid_before_closing: null,
-      seller_paid_at_closing: null,
+      // A seller-paid amount on a Loan Cost row (unusual but the grid allows it, matching
+      // SoftPro) — must not leak into D or J, which have no seller column on the real form.
+      seller_paid_at_closing: 500,
       seller_paid_before_closing: null,
       paid_by_others: null,
     },
@@ -111,7 +117,14 @@ function demo() {
   console.assert(i.borrowerAtClosing === 1471, `expected I borrower-at-closing 1471 (271+1200), got ${i.borrowerAtClosing}`)
   console.assert(i.sellerAtClosing === 50, `expected I seller-at-closing 50, got ${i.sellerAtClosing}`)
   console.assert(j.borrowerAtClosing === 2071, `expected J borrower-at-closing 2071 (600+1471), got ${j.borrowerAtClosing}`)
-  console.assert(j.sellerAtClosing === 50, `expected J seller-at-closing 50 (0+50), got ${j.sellerAtClosing}`)
+  console.assert(
+    d.sellerAtClosing === 0,
+    `expected D seller-at-closing 0 (Loan Costs has no seller column, even though section A's own row has 500), got ${d.sellerAtClosing}`
+  )
+  console.assert(
+    j.sellerAtClosing === 50,
+    `expected J seller-at-closing 50 (from section E only — section A's 500 must not leak through D), got ${j.sellerAtClosing}`
+  )
 }
 
 if (process.env.NODE_ENV === 'test') demo()
