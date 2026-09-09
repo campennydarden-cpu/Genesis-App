@@ -1,22 +1,38 @@
 'use client'
 
-import { useRef } from 'react'
+import { useRef, useTransition } from 'react'
+import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
 import { SaveIndicator } from '@/components/SaveIndicator'
 import { useAutosave } from '@/lib/use-autosave'
-import { saveSettlementOptions } from '@/app/actions/settlement-options'
+import { saveSettlementOptions, refillPlaceOfSettlementAddress } from '@/app/actions/settlement-options'
 import { SETTLEMENT_TYPES, SELLER_CREDIT_METHODS } from '@/lib/constants'
 import type { SettlementOptions } from '@/lib/types'
 
-export function SettlementOptionsPanel({ orderId, settlementOptions }: { orderId: string; settlementOptions: SettlementOptions | null }) {
+type Contact = { id: string; name: string }
+
+export function SettlementOptionsPanel({
+  orderId,
+  settlementOptions,
+  contacts,
+}: {
+  orderId: string
+  settlementOptions: SettlementOptions | null
+  contacts: Contact[]
+}) {
   const formRef = useRef<HTMLFormElement>(null)
   const { state, errorMessage, save } = useAutosave((formData: FormData) => saveSettlementOptions(orderId, formData))
+  const [isPending, startTransition] = useTransition()
 
   function handleSave() {
     if (!formRef.current) return
     save(new FormData(formRef.current))
+  }
+
+  function refresh() {
+    window.location.reload()
   }
 
   return (
@@ -50,6 +66,39 @@ export function SettlementOptionsPanel({ orderId, settlementOptions }: { orderId
 
       <div className="space-y-2">
         <h3 className="font-semibold">Place of Settlement</h3>
+        <div>
+          <Label htmlFor="settlement_agent_contact_id">Settlement Agent</Label>
+          <div className="flex items-center gap-2">
+            <select
+              id="settlement_agent_contact_id"
+              name="settlement_agent_contact_id"
+              defaultValue={settlementOptions?.settlement_agent_contact_id ?? ''}
+              onBlur={handleSave}
+              className="block w-full rounded border px-2 py-1 text-sm"
+            >
+              <option value="">—</option>
+              {contacts.map((c) => (
+                <option key={c.id} value={c.id}>
+                  {c.name}
+                </option>
+              ))}
+            </select>
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              disabled={isPending}
+              onClick={() =>
+                startTransition(async () => {
+                  await refillPlaceOfSettlementAddress(orderId)
+                  refresh()
+                })
+              }
+            >
+              Refill address from contact
+            </Button>
+          </div>
+        </div>
         <div>
           <Label htmlFor="place_of_settlement_address">Address</Label>
           <Textarea

@@ -1,6 +1,6 @@
 import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
-import { getSettlementOptions } from '@/app/actions/settlement-options'
+import { getSettlementOptions, listAllContacts } from '@/app/actions/settlement-options'
 import { SettlementOptionsPanel } from '@/components/title/SettlementOptionsPanel'
 
 export default async function SettlementOptionsPage({ params }: { params: Promise<{ id: string }> }) {
@@ -11,7 +11,7 @@ export default async function SettlementOptionsPage({ params }: { params: Promis
   } = await supabase.auth.getUser()
   if (!user) redirect('/login')
 
-  const settlementOptions = await getSettlementOptions(orderId)
+  const [settlementOptions, contacts] = await Promise.all([getSettlementOptions(orderId), listAllContacts(orderId)])
 
-  return <SettlementOptionsPanel orderId={orderId} settlementOptions={settlementOptions} />
+  return <SettlementOptionsPanel orderId={orderId} settlementOptions={settlementOptions} contacts={contacts} />
 }

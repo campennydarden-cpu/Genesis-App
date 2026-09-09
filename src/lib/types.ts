@@ -770,6 +770,7 @@ export type SettlementOptions = {
   order_id: string
   settlement_type: string | null
   place_of_settlement_address: string | null
+  settlement_agent_contact_id: string | null
   admin_data_cdf1: string | null
   admin_data_cdf2: string | null
   admin_data_cdf3: string | null

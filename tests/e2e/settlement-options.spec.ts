@@ -74,3 +74,34 @@ test('settlement type, address, seller credit election, and admin data persist a
   await expect(page.locator('input[name="seller_credit_method"]').nth(1)).toBeChecked()
   await expect(page.locator('input[name="admin_data_cdf2"]')).toHaveValue('Loan #445621')
 })
+
+test('Settlement Agent picker refills the Place of Settlement address from the linked contact', async ({ page }) => {
+  const orderId = await createOrder(page)
+
+  // Seed a contact with a real address via the real Contacts screen (same pattern
+  // title-premiums-endorsements.spec.ts uses for its own underwriter contact).
+  await page.goto(`/orders/${orderId}/contacts`)
+  await page.getByText('Add a contact').click()
+  await page.getByLabel('Role').click()
+  await page.getByRole('option', { name: 'Settlement Agent', exact: true }).click()
+  await page.getByLabel('Name').fill('Acme Settlement Services')
+  await page.getByLabel('Address').fill('500 Main St, Suite 100, Asheville, NC 28801')
+  await page.getByRole('button', { name: 'Add Contact' }).click()
+  await expect(page.getByTestId('contact-row').filter({ hasText: 'Acme Settlement Services' })).toBeVisible()
+
+  await page.goto(`/orders/${orderId}/settlement-options`)
+  await page.locator('select[name="settlement_agent_contact_id"]').selectOption({ label: 'Acme Settlement Services' })
+  // Native `blur` doesn't bubble, and React's onBlur is implemented via the bubbling
+  // `focusout` event — locator.blur() doesn't reliably trigger it here, so dispatch
+  // focusout directly to fire this app's onBlur-based autosave before the Refill
+  // action reads the just-selected contact back from the DB.
+  await page.locator('select[name="settlement_agent_contact_id"]').dispatchEvent('focusout')
+  await expect(page.getByText('Saved')).toBeVisible()
+  await page.getByRole('button', { name: 'Refill address from contact' }).click()
+
+  await expect(page.locator('textarea[name="place_of_settlement_address"]')).toHaveValue('500 Main St, Suite 100, Asheville, NC 28801')
+
+  await page.reload()
+  await expect(page.locator('select[name="settlement_agent_contact_id"]')).toHaveValue(/.+/)
+  await expect(page.locator('textarea[name="place_of_settlement_address"]')).toHaveValue('500 Main St, Suite 100, Asheville, NC 28801')
+})
