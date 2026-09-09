@@ -1,9 +1,11 @@
 'use client'
 
-import { useTransition } from 'react'
+import { useRef, useTransition } from 'react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
+import { SaveIndicator } from '@/components/SaveIndicator'
+import { useAutosave } from '@/lib/use-autosave'
 import { TITLE_POLICY_LINE_TYPES, SPLIT_BASIS_TYPES } from '@/lib/constants'
 import {
   addPremium,
@@ -29,114 +31,120 @@ function refresh() {
   window.location.reload()
 }
 
-function SplitRows({
-  idPrefix,
+function SplitRow({
+  split,
+  contacts,
+  onUpdate,
+  onDelete,
+}: {
+  split: PremiumSplit | EndorsementSplit
+  contacts: Contact[]
+  onUpdate: (formData: FormData) => Promise<{ error?: string }>
+  onDelete: () => Promise<unknown>
+}) {
+  const formRef = useRef<HTMLFormElement>(null)
+  const { state, errorMessage, save } = useAutosave(onUpdate)
+  const [isPending, startTransition] = useTransition()
+
+  function handleSave() {
+    if (!formRef.current) return
+    save(new FormData(formRef.current))
+  }
+
+  return (
+    <form ref={formRef} className="grid grid-cols-6 items-end gap-2">
+      <div className="col-span-2">
+        <Label htmlFor={`${split.id}-payee`}>Payee</Label>
+        <select
+          id={`${split.id}-payee`}
+          name="payee_contact_id"
+          defaultValue={split.payee_contact_id ?? ''}
+          onBlur={handleSave}
+          className="block w-full rounded border px-2 py-1 text-sm"
+        >
+          <option value="">—</option>
+          {contacts.map((c) => (
+            <option key={c.id} value={c.id}>
+              {c.name}
+            </option>
+          ))}
+        </select>
+      </div>
+      <div className="col-span-2">
+        <Label htmlFor={`${split.id}-basis`}>Basis</Label>
+        <select
+          id={`${split.id}-basis`}
+          name="basis"
+          defaultValue={split.basis ?? ''}
+          onBlur={handleSave}
+          className="block w-full rounded border px-2 py-1 text-sm"
+        >
+          <option value="">—</option>
+          {SPLIT_BASIS_TYPES.map((b) => (
+            <option key={b} value={b}>
+              {b}
+            </option>
+          ))}
+        </select>
+      </div>
+      <div>
+        <Label htmlFor={`${split.id}-percent`}>%</Label>
+        <Input id={`${split.id}-percent`} name="percent" type="number" step="0.01" defaultValue={split.percent ?? ''} onBlur={handleSave} />
+      </div>
+      <div>
+        <Label htmlFor={`${split.id}-amount`}>Amount</Label>
+        <Input id={`${split.id}-amount`} name="amount" type="number" step="0.01" defaultValue={split.amount ?? ''} onBlur={handleSave} />
+      </div>
+      <div className="col-span-2">
+        <Label htmlFor={`${split.id}-bill_code`}>Bill Code</Label>
+        <Input id={`${split.id}-bill_code`} name="bill_code" defaultValue={split.bill_code ?? ''} onBlur={handleSave} />
+      </div>
+      <div className="col-span-6 flex items-center justify-between">
+        <SaveIndicator state={state} errorMessage={errorMessage} />
+        <button
+          type="button"
+          className="text-sm text-destructive hover:underline"
+          disabled={isPending}
+          onClick={() =>
+            startTransition(async () => {
+              await onDelete()
+              refresh()
+            })
+          }
+        >
+          Remove split
+        </button>
+      </div>
+    </form>
+  )
+}
+
+function SplitList({
   splits,
   contacts,
   onAdd,
   onUpdate,
   onDelete,
 }: {
-  idPrefix: string
   splits: (PremiumSplit | EndorsementSplit)[]
   contacts: Contact[]
   onAdd: () => Promise<unknown>
-  onUpdate: (id: string, formData: FormData) => Promise<unknown>
+  onUpdate: (id: string, formData: FormData) => Promise<{ error?: string }>
   onDelete: (id: string) => Promise<unknown>
 }) {
   const [isPending, startTransition] = useTransition()
 
   return (
-    <div className="space-y-2 rounded border p-3">
+    <div className="space-y-3 rounded border p-3">
       <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Split</p>
       {splits.map((s) => (
-        <form
+        <SplitRow
           key={s.id}
-          action={async (formData) => {
-            await onUpdate(s.id, formData)
-            refresh()
-          }}
-          className="grid grid-cols-6 items-end gap-2"
-        >
-          <div className="col-span-2">
-            <Label htmlFor={`${idPrefix}-${s.id}-payee`}>Payee</Label>
-            <select
-              id={`${idPrefix}-${s.id}-payee`}
-              name="payee_contact_id"
-              defaultValue={s.payee_contact_id ?? ''}
-              onBlur={(e) => e.currentTarget.form?.requestSubmit()}
-              className="block w-full rounded border px-2 py-1 text-sm"
-            >
-              <option value="">—</option>
-              {contacts.map((c) => (
-                <option key={c.id} value={c.id}>
-                  {c.name}
-                </option>
-              ))}
-            </select>
-          </div>
-          <div className="col-span-2">
-            <Label htmlFor={`${idPrefix}-${s.id}-basis`}>Basis</Label>
-            <select
-              id={`${idPrefix}-${s.id}-basis`}
-              name="basis"
-              defaultValue={s.basis ?? ''}
-              onBlur={(e) => e.currentTarget.form?.requestSubmit()}
-              className="block w-full rounded border px-2 py-1 text-sm"
-            >
-              <option value="">—</option>
-              {SPLIT_BASIS_TYPES.map((b) => (
-                <option key={b} value={b}>
-                  {b}
-                </option>
-              ))}
-            </select>
-          </div>
-          <div>
-            <Label htmlFor={`${idPrefix}-${s.id}-percent`}>%</Label>
-            <Input
-              id={`${idPrefix}-${s.id}-percent`}
-              name="percent"
-              type="number"
-              step="0.01"
-              defaultValue={s.percent ?? ''}
-              onBlur={(e) => e.currentTarget.form?.requestSubmit()}
-            />
-          </div>
-          <div>
-            <Label htmlFor={`${idPrefix}-${s.id}-amount`}>Amount</Label>
-            <Input
-              id={`${idPrefix}-${s.id}-amount`}
-              name="amount"
-              type="number"
-              step="0.01"
-              defaultValue={s.amount ?? ''}
-              onBlur={(e) => e.currentTarget.form?.requestSubmit()}
-            />
-          </div>
-          <div className="col-span-3">
-            <Label htmlFor={`${idPrefix}-${s.id}-bill_code`}>Bill Code</Label>
-            <Input
-              id={`${idPrefix}-${s.id}-bill_code`}
-              name="bill_code"
-              defaultValue={s.bill_code ?? ''}
-              onBlur={(e) => e.currentTarget.form?.requestSubmit()}
-            />
-          </div>
-          <button
-            type="button"
-            className="col-span-3 justify-self-start text-sm text-destructive hover:underline"
-            disabled={isPending}
-            onClick={() =>
-              startTransition(async () => {
-                await onDelete(s.id)
-                refresh()
-              })
-            }
-          >
-            Remove split
-          </button>
-        </form>
+          split={s}
+          contacts={contacts}
+          onUpdate={(formData) => onUpdate(s.id, formData)}
+          onDelete={() => onDelete(s.id)}
+        />
       ))}
       <Button
         type="button"
@@ -156,7 +164,93 @@ function SplitRows({
   )
 }
 
-function EndorsementRows({
+function EndorsementRow({
+  orderId,
+  endorsement,
+  splits,
+  contacts,
+  onDelete,
+}: {
+  orderId: string
+  endorsement: Endorsement
+  splits: EndorsementSplit[]
+  contacts: Contact[]
+  onDelete: () => Promise<unknown>
+}) {
+  const formRef = useRef<HTMLFormElement>(null)
+  const { state, errorMessage, save } = useAutosave((formData: FormData) => updateEndorsement(orderId, endorsement.id, formData))
+  const [isPending, startTransition] = useTransition()
+
+  function handleSave() {
+    if (!formRef.current) return
+    save(new FormData(formRef.current))
+  }
+
+  return (
+    <div className="space-y-2 rounded border p-3">
+      <form ref={formRef} className="grid grid-cols-6 items-end gap-2">
+        <div>
+          <Label htmlFor={`endorsement-${endorsement.id}-code`}>Code</Label>
+          <Input id={`endorsement-${endorsement.id}-code`} name="code" defaultValue={endorsement.code ?? ''} onBlur={handleSave} />
+        </div>
+        <div className="col-span-2">
+          <Label htmlFor={`endorsement-${endorsement.id}-description`}>Description</Label>
+          <Input
+            id={`endorsement-${endorsement.id}-description`}
+            name="description"
+            defaultValue={endorsement.description ?? ''}
+            onBlur={handleSave}
+          />
+        </div>
+        <div>
+          <Label htmlFor={`endorsement-${endorsement.id}-charge`}>Charge</Label>
+          <Input
+            id={`endorsement-${endorsement.id}-charge`}
+            name="charge"
+            type="number"
+            step="0.01"
+            defaultValue={endorsement.charge ?? ''}
+            onBlur={handleSave}
+          />
+        </div>
+        <div className="col-span-2">
+          <Label htmlFor={`endorsement-${endorsement.id}-bill_code`}>Bill Code</Label>
+          <Input
+            id={`endorsement-${endorsement.id}-bill_code`}
+            name="bill_code"
+            defaultValue={endorsement.bill_code ?? ''}
+            onBlur={handleSave}
+          />
+        </div>
+        <div className="col-span-6">
+          <SaveIndicator state={state} errorMessage={errorMessage} />
+        </div>
+      </form>
+      <SplitList
+        splits={splits}
+        contacts={contacts}
+        onAdd={() => addEndorsementSplit(orderId, endorsement.id)}
+        onUpdate={(id, formData) => updateEndorsementSplit(orderId, id, formData)}
+        onDelete={(id) => deleteEndorsementSplit(orderId, id)}
+      />
+      <button
+        type="button"
+        className="text-sm text-destructive hover:underline"
+        disabled={isPending}
+        onClick={() =>
+          startTransition(async () => {
+            await onDelete()
+            refresh()
+          })
+        }
+      >
+        Remove endorsement
+      </button>
+    </div>
+  )
+}
+
+function EndorsementList({
   orderId,
   premiumId,
   endorsements,
@@ -175,75 +269,14 @@ function EndorsementRows({
     <div className="space-y-3 rounded border p-3">
       <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Endorsements</p>
       {endorsements.map((e) => (
-        <div key={e.id} className="space-y-2 rounded border p-3">
-          <form
-            action={async (formData) => {
-              await updateEndorsement(orderId, e.id, formData)
-              refresh()
-            }}
-            className="grid grid-cols-6 items-end gap-2"
-          >
-            <div>
-              <Label htmlFor={`endorsement-${e.id}-code`}>Code</Label>
-              <Input
-                id={`endorsement-${e.id}-code`}
-                name="code"
-                defaultValue={e.code ?? ''}
-                onBlur={(ev) => ev.currentTarget.form?.requestSubmit()}
-              />
-            </div>
-            <div className="col-span-2">
-              <Label htmlFor={`endorsement-${e.id}-description`}>Description</Label>
-              <Input
-                id={`endorsement-${e.id}-description`}
-                name="description"
-                defaultValue={e.description ?? ''}
-                onBlur={(ev) => ev.currentTarget.form?.requestSubmit()}
-              />
-            </div>
-            <div>
-              <Label htmlFor={`endorsement-${e.id}-charge`}>Charge</Label>
-              <Input
-                id={`endorsement-${e.id}-charge`}
-                name="charge"
-                type="number"
-                step="0.01"
-                defaultValue={e.charge ?? ''}
-                onBlur={(ev) => ev.currentTarget.form?.requestSubmit()}
-              />
-            </div>
-            <div className="col-span-2">
-              <Label htmlFor={`endorsement-${e.id}-bill_code`}>Bill Code</Label>
-              <Input
-                id={`endorsement-${e.id}-bill_code`}
-                name="bill_code"
-                defaultValue={e.bill_code ?? ''}
-                onBlur={(ev) => ev.currentTarget.form?.requestSubmit()}
-              />
-            </div>
-          </form>
-          <SplitRows
-            idPrefix={`endorsement-split-${e.id}`}
-            splits={splitsByEndorsement[e.id] ?? []}
-            contacts={contacts}
-            onAdd={() => addEndorsementSplit(orderId, e.id)}
-            onUpdate={(id, formData) => updateEndorsementSplit(orderId, id, formData)}
-            onDelete={(id) => deleteEndorsementSplit(orderId, id)}
-          />
-          <button
-            type="button"
-            className="text-sm text-destructive hover:underline"
-            disabled={isPending}
-            onClick={() =>
-              startTransition(async () => {
-                await deleteEndorsement(orderId, e.id)
-                refresh()
-              })
-            }
-          >
-            Remove endorsement
-          </button>
-        </div>
+        <EndorsementRow
+          key={e.id}
+          orderId={orderId}
+          endorsement={e}
+          splits={splitsByEndorsement[e.id] ?? []}
+          contacts={contacts}
+          onDelete={() => deleteEndorsement(orderId, e.id)}
+        />
       ))}
       <Button
         type="button"
@@ -259,6 +292,144 @@ function EndorsementRows({
       >
         + Add Endorsement
       </Button>
+    </div>
+  )
+}
+
+function PremiumCard({
+  orderId,
+  premium,
+  splits,
+  endorsements,
+  endorsementSplits,
+  underwriterContacts,
+  allContacts,
+}: {
+  orderId: string
+  premium: TitleInsurancePremium
+  splits: PremiumSplit[]
+  endorsements: Endorsement[]
+  endorsementSplits: Record<string, EndorsementSplit[]>
+  underwriterContacts: Contact[]
+  allContacts: Contact[]
+}) {
+  const formRef = useRef<HTMLFormElement>(null)
+  const { state, errorMessage, save } = useAutosave((formData: FormData) => updatePremium(orderId, premium.id, formData))
+  const [isPending, startTransition] = useTransition()
+
+  function handleSave() {
+    if (!formRef.current) return
+    save(new FormData(formRef.current))
+  }
+
+  return (
+    <div className="space-y-3 rounded border p-4" data-testid={`premium-${premium.id}`}>
+      <form ref={formRef} className="grid grid-cols-4 gap-3">
+        <div>
+          <Label htmlFor={`premium-${premium.id}-policy_type`}>Policy Type</Label>
+          <select
+            id={`premium-${premium.id}-policy_type`}
+            name="policy_type"
+            defaultValue={premium.policy_type ?? ''}
+            onBlur={handleSave}
+            className="block w-full rounded border px-2 py-1 text-sm"
+          >
+            <option value="">—</option>
+            {TITLE_POLICY_LINE_TYPES.map((t) => (
+              <option key={t} value={t}>
+                {t}
+              </option>
+            ))}
+          </select>
+        </div>
+        <div>
+          <Label htmlFor={`premium-${premium.id}-underwriter`}>Underwriter</Label>
+          <select
+            id={`premium-${premium.id}-underwriter`}
+            name="underwriter_contact_id"
+            defaultValue={premium.underwriter_contact_id ?? ''}
+            onBlur={handleSave}
+            className="block w-full rounded border px-2 py-1 text-sm"
+          >
+            <option value="">—</option>
+            {underwriterContacts.map((c) => (
+              <option key={c.id} value={c.id}>
+                {c.name}
+              </option>
+            ))}
+          </select>
+        </div>
+        <div>
+          <Label htmlFor={`premium-${premium.id}-coverage_amount`}>Coverage Amount</Label>
+          <Input
+            id={`premium-${premium.id}-coverage_amount`}
+            name="coverage_amount"
+            type="number"
+            step="0.01"
+            defaultValue={premium.coverage_amount ?? ''}
+            onBlur={handleSave}
+          />
+        </div>
+        <div>
+          <Label htmlFor={`premium-${premium.id}-bill_code`}>Bill Code</Label>
+          <Input id={`premium-${premium.id}-bill_code`} name="bill_code" defaultValue={premium.bill_code ?? ''} onBlur={handleSave} />
+        </div>
+        <div>
+          <Label htmlFor={`premium-${premium.id}-base_premium`}>Base Premium</Label>
+          <Input
+            id={`premium-${premium.id}-base_premium`}
+            name="base_premium"
+            type="number"
+            step="0.01"
+            defaultValue={premium.base_premium ?? ''}
+            onBlur={handleSave}
+          />
+        </div>
+        <div>
+          <Label htmlFor={`premium-${premium.id}-final_premium`}>Final Premium</Label>
+          <Input
+            id={`premium-${premium.id}-final_premium`}
+            name="final_premium"
+            type="number"
+            step="0.01"
+            defaultValue={premium.final_premium ?? ''}
+            onBlur={handleSave}
+          />
+        </div>
+        <div className="col-span-4">
+          <SaveIndicator state={state} errorMessage={errorMessage} />
+        </div>
+      </form>
+
+      <SplitList
+        splits={splits}
+        contacts={allContacts}
+        onAdd={() => addPremiumSplit(orderId, premium.id)}
+        onUpdate={(id, formData) => updatePremiumSplit(orderId, id, formData)}
+        onDelete={(id) => deletePremiumSplit(orderId, id)}
+      />
+
+      <EndorsementList
+        orderId={orderId}
+        premiumId={premium.id}
+        endorsements={endorsements}
+        splitsByEndorsement={endorsementSplits}
+        contacts={allContacts}
+      />
+
+      <button
+        type="button"
+        className="text-sm text-destructive hover:underline"
+        disabled={isPending}
+        onClick={() =>
+          startTransition(async () => {
+            await deletePremium(orderId, premium.id)
+            refresh()
+          })
+        }
+      >
+        Remove policy
+      </button>
     </div>
   )
 }
@@ -291,123 +462,16 @@ export function PremiumsPanel({
 
       <div className="space-y-4" data-testid="premium-list">
         {premiums.map((p) => (
-          <div key={p.id} className="space-y-3 rounded border p-4" data-testid={`premium-${p.id}`}>
-            <form
-              action={async (formData) => {
-                await updatePremium(orderId, p.id, formData)
-                refresh()
-              }}
-              className="grid grid-cols-4 gap-3"
-            >
-              <div>
-                <Label htmlFor={`premium-${p.id}-policy_type`}>Policy Type</Label>
-                <select
-                  id={`premium-${p.id}-policy_type`}
-                  name="policy_type"
-                  defaultValue={p.policy_type ?? ''}
-                  onBlur={(e) => e.currentTarget.form?.requestSubmit()}
-                  className="block w-full rounded border px-2 py-1 text-sm"
-                >
-                  <option value="">—</option>
-                  {TITLE_POLICY_LINE_TYPES.map((t) => (
-                    <option key={t} value={t}>
-                      {t}
-                    </option>
-                  ))}
-                </select>
-              </div>
-              <div>
-                <Label htmlFor={`premium-${p.id}-underwriter`}>Underwriter</Label>
-                <select
-                  id={`premium-${p.id}-underwriter`}
-                  name="underwriter_contact_id"
-                  defaultValue={p.underwriter_contact_id ?? ''}
-                  onBlur={(e) => e.currentTarget.form?.requestSubmit()}
-                  className="block w-full rounded border px-2 py-1 text-sm"
-                >
-                  <option value="">—</option>
-                  {underwriterContacts.map((c) => (
-                    <option key={c.id} value={c.id}>
-                      {c.name}
-                    </option>
-                  ))}
-                </select>
-              </div>
-              <div>
-                <Label htmlFor={`premium-${p.id}-coverage_amount`}>Coverage Amount</Label>
-                <Input
-                  id={`premium-${p.id}-coverage_amount`}
-                  name="coverage_amount"
-                  type="number"
-                  step="0.01"
-                  defaultValue={p.coverage_amount ?? ''}
-                  onBlur={(e) => e.currentTarget.form?.requestSubmit()}
-                />
-              </div>
-              <div>
-                <Label htmlFor={`premium-${p.id}-bill_code`}>Bill Code</Label>
-                <Input
-                  id={`premium-${p.id}-bill_code`}
-                  name="bill_code"
-                  defaultValue={p.bill_code ?? ''}
-                  onBlur={(e) => e.currentTarget.form?.requestSubmit()}
-                />
-              </div>
-              <div>
-                <Label htmlFor={`premium-${p.id}-base_premium`}>Base Premium</Label>
-                <Input
-                  id={`premium-${p.id}-base_premium`}
-                  name="base_premium"
-                  type="number"
-                  step="0.01"
-                  defaultValue={p.base_premium ?? ''}
-                  onBlur={(e) => e.currentTarget.form?.requestSubmit()}
-                />
-              </div>
-              <div>
-                <Label htmlFor={`premium-${p.id}-final_premium`}>Final Premium</Label>
-                <Input
-                  id={`premium-${p.id}-final_premium`}
-                  name="final_premium"
-                  type="number"
-                  step="0.01"
-                  defaultValue={p.final_premium ?? ''}
-                  onBlur={(e) => e.currentTarget.form?.requestSubmit()}
-                />
-              </div>
-            </form>
-
-            <SplitRows
-              idPrefix={`premium-split-${p.id}`}
-              splits={splitsByPremium[p.id] ?? []}
-              contacts={allContacts}
-              onAdd={() => addPremiumSplit(orderId, p.id)}
-              onUpdate={(id, formData) => updatePremiumSplit(orderId, id, formData)}
-              onDelete={(id) => deletePremiumSplit(orderId, id)}
-            />
-
-            <EndorsementRows
-              orderId={orderId}
-              premiumId={p.id}
-              endorsements={endorsementsByPremium[p.id] ?? []}
-              splitsByEndorsement={endorsementSplits}
-              contacts={allContacts}
-            />
-
-            <button
-              type="button"
-              className="text-sm text-destructive hover:underline"
-              disabled={isPending}
-              onClick={() =>
-                startTransition(async () => {
-                  await deletePremium(orderId, p.id)
-                  refresh()
-                })
-              }
-            >
-              Remove policy
-            </button>
-          </div>
+          <PremiumCard
+            key={p.id}
+            orderId={orderId}
+            premium={p}
+            splits={splitsByPremium[p.id] ?? []}
+            endorsements={endorsementsByPremium[p.id] ?? []}
+            endorsementSplits={endorsementSplits}
+            underwriterContacts={underwriterContacts}
+            allContacts={allContacts}
+          />
         ))}
         {premiums.length === 0 && <p className="text-sm text-muted-foreground">No policies yet.</p>}
       </div>
