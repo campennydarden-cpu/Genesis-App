@@ -43,9 +43,20 @@ export async function listCdfPage5Contacts(orderId: string): Promise<CdfPage5Con
   return data ?? []
 }
 
-export async function listAllContacts(orderId: string): Promise<{ id: string; name: string }[]> {
+// Selects the extra fields "pull Lender/Title Company/Settlement Agent info from
+// Contacts" (Fix Plan) needs to default from — Contacts only stores one license
+// field (license_number, not a separate Agency/Firm vs Licensee split, and no NMLS
+// ID at all), so only Address/License ID/Email/Phone default; NMLS ID and the
+// Licensee sub-person fields stay manual, same as every other un-sourced field here.
+export async function listAllContacts(
+  orderId: string
+): Promise<{ id: string; name: string; current_address: string | null; phone: string | null; email: string | null; license_number: string | null }[]> {
   const supabase = await createClient()
-  const { data } = await supabase.from('contacts').select('id, name').eq('order_id', orderId).order('name')
+  const { data } = await supabase
+    .from('contacts')
+    .select('id, name, current_address, phone, email, license_number')
+    .eq('order_id', orderId)
+    .order('name')
   return data ?? []
 }
 
@@ -76,6 +87,7 @@ export async function updateCdfPage5Contact(orderId: string, id: string, formDat
     .update({
       role: (formData.get('role') as string) || null,
       contact_id: (formData.get('contact_id') as string) || null,
+      address: (formData.get('address') as string) || null,
       nmls_id: (formData.get('nmls_id') as string) || null,
       license_id: (formData.get('license_id') as string) || null,
       contact_person: (formData.get('contact_person') as string) || null,

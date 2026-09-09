@@ -367,6 +367,21 @@ export const INVOICE_STATUSES = ['Pending', 'Sent', 'Paid', 'Void'] as const
 
 export const SETTLEMENT_TYPES = ['Combined', 'Borrower-Buyer', 'Seller', 'Cash'] as const
 
+// Payoff Calculation.png and Prepaid Interest Config.png both anchor their per-diem
+// date range to a "date basis" dropdown; only "Disbursement" is confirmed by either
+// screenshot (the dropdown wasn't expanded) — ponytail: Closing/Recording are
+// reasonable title/escrow anchors, not confirmed with Cam.
+export const DATE_BASIS_OPTIONS = ['Disbursement', 'Closing', 'Recording'] as const
+
+// Section F's 4 fixed lines, in order — Cam's exact wording: "these should default
+// this way on every CD." Seeded idempotently by listCdfPage2Lines (cdf-page2.ts).
+export const CDF_PAGE2_SECTION_F_FIXED_LINES = [
+  "Homeowner's Insurance",
+  'Mortgage Insurance Premium',
+  'Prepaid Interest',
+  'Property Taxes',
+] as const
+
 export const SELLER_CREDIT_METHODS = [
   'Apply seller credit to borrower paid loan policy on CDF Page 2',
   'Apply general seller credit on CDF Page 3',

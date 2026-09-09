@@ -24,14 +24,16 @@ function parseDate(s: string): { y: number; m: number; d: number } {
   return { y, m, d }
 }
 
-function actualDaysBetween(a: string, b: string): number {
+// Exported for reuse by CDF Page 2's Prepaid Interest config (cdf-page2.ts) —
+// same day-count conventions, different screen.
+export function actualDaysBetween(a: string, b: string): number {
   const da = new Date(`${a}T00:00:00Z`).getTime()
   const db = new Date(`${b}T00:00:00Z`).getTime()
   return Math.round((db - da) / 86400000)
 }
 
 // US (NASD) 30/360 day-count convention.
-function days360Between(a: string, b: string): number {
+export function days360Between(a: string, b: string): number {
   const pa = parseDate(a)
   const pb = parseDate(b)
   let d1 = pa.d

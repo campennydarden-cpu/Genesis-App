@@ -68,6 +68,7 @@ export async function updateCharge(orderId: string, id: string, formData: FormDa
       seller_pay_percent: formData.get('seller_pay_percent') ? Number(formData.get('seller_pay_percent')) : null,
       issued_date: (formData.get('issued_date') as string) || null,
       effective_date: (formData.get('effective_date') as string) || null,
+      payee_contact_id: (formData.get('payee_contact_id') as string) || null,
     })
     .eq('id', id)
 

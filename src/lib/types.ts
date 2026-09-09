@@ -555,6 +555,7 @@ export type AdditionalTitleCharge = {
   seller_pay_percent: number | null
   issued_date: string | null
   effective_date: string | null
+  payee_contact_id: string | null
 }
 
 export type AdditionalTitleChargeSplit = {
@@ -611,6 +612,11 @@ export type CdfPage2Line = {
   points_adjustment_for: string | null
   per_month: number | null
   months: number | null
+  prepaid_interest_from: string | null
+  prepaid_interest_to: string | null
+  prepaid_interest_per_diem_rate: number | null
+  prepaid_interest_use_30_day_months: boolean
+  prepaid_interest_date_basis: string | null
 }
 
 export type CdfPage2Totals = {
@@ -680,6 +686,15 @@ export type CdfPayoffPayment = {
   additional_interest: number | null
   late_fee: number | null
   payoff_expires_on: string | null
+  payoff_method: 'principal_balance' | 'payoff_amount'
+  interest_charged: number | null
+  late_fee_after: string | null
+  payoff_amount: number | null
+  per_diem_days_basis: '365' | '360'
+  payoff_date_basis: string | null
+  payoff_date_basis_from: string | null
+  payoff_date_basis_to: string | null
+  extra_days: number | null
 }
 
 export type CdfPayoffAdditionalCharge = {
@@ -740,6 +755,7 @@ export type CdfPage5Contact = {
   sort_order: number
   role: string | null
   contact_id: string | null
+  address: string | null
   nmls_id: string | null
   license_id: string | null
   contact_person: string | null
@@ -763,6 +779,9 @@ export type RecordingDocument = {
   page: string | null
   number_of_pages: number | null
   e_recording_reference: string | null
+  fee: number | null
+  seller_pay_percent: number | null
+  cdf_page2_line_id: string | null
 }
 
 export type SettlementOptions = {

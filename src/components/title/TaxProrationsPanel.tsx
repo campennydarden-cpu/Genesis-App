@@ -6,7 +6,12 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { SaveIndicator } from '@/components/SaveIndicator'
 import { useAutosave } from '@/lib/use-autosave'
-import { TAX_PRORATION_CATEGORIES, PRORATION_COMPUTE_FOR, PRORATION_CREDIT_DEBIT } from '@/lib/constants'
+import { TAX_PRORATION_CATEGORIES, PRORATION_COMPUTE_FOR, PRORATION_CREDIT_DEBIT, CDF_PAGE2_SECTIONS } from '@/lib/constants'
+
+// Tax/Other Prorations can also assign into Section F's fixed Property Taxes line
+// (Cam: "the Fees that are assigned there need to be able to be assigned to those
+// lines in the Tax Proration screen"), alongside the existing B/C/H append targets.
+const TAX_PRORATION_SECTIONS = CDF_PAGE2_SECTIONS.filter((s) => s.code === 'B' || s.code === 'C' || s.code === 'H' || s.code === 'F')
 import { calculateProration } from '@/lib/tax-proration'
 import { addProration, updateProration, deleteProration, setProrationCdfLine } from '@/app/actions/tax-prorations'
 import { assignNextCdfPage2Line } from '@/app/actions/cdf-page2'
@@ -269,9 +274,14 @@ function ProrationRow({
           <CdfLineAssign
             cdfLineId={proration.cdf_page2_line_id}
             cdfLines={cdfLines}
+            sections={TAX_PRORATION_SECTIONS}
             onAssign={async (section) => {
               const { id } = await assignNextCdfPage2Line(orderId, section, proration.description, proration.prorated_amount)
               if (id) await setProrationCdfLine(orderId, proration.id, id)
+              refresh()
+            }}
+            onLinkExisting={async (lineId) => {
+              await setProrationCdfLine(orderId, proration.id, lineId)
               refresh()
             }}
             onUnassign={async () => {

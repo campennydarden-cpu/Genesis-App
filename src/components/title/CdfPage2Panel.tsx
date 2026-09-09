@@ -8,7 +8,8 @@ import { SaveIndicator } from '@/components/SaveIndicator'
 import { useAutosave } from '@/lib/use-autosave'
 import { addCdfPage2Line, updateCdfPage2Line, deleteCdfPage2Line } from '@/app/actions/cdf-page2'
 import { computeCdfPage2Totals } from '@/lib/cdf-page2'
-import { CDF_PAGE2_SECTIONS } from '@/lib/constants'
+import { actualDaysBetween, days360Between } from '@/lib/tax-proration'
+import { CDF_PAGE2_SECTIONS, DATE_BASIS_OPTIONS } from '@/lib/constants'
 import { CdfWrap, CdfBar, CdfTable, CdfRow, CdfNum, cdfInputClass, cdfAmtInputClass, cdfSelectClass } from '@/components/title/cdf-chrome'
 import type { CdfPage2Line, CdfPage2Totals } from '@/lib/types'
 
@@ -41,6 +42,18 @@ function computePerMonthAmount(line: CdfPage2Line) {
   return line.per_month * line.months
 }
 
+// Section F's "Prepaid Interest" fixed line — Prepaid Interest Config.png confirms
+// a plain day count (no +1, unlike the Buyer-side proration convention on Tax/Other
+// Prorations) times a manually entered per diem rate. Same display-only
+// computed-help pattern as Section A/G above.
+function computePrepaidInterest(line: CdfPage2Line) {
+  if (line.prepaid_interest_from == null || line.prepaid_interest_to == null || line.prepaid_interest_per_diem_rate == null) return null
+  const days = line.prepaid_interest_use_30_day_months
+    ? days360Between(line.prepaid_interest_from, line.prepaid_interest_to)
+    : actualDaysBetween(line.prepaid_interest_from, line.prepaid_interest_to)
+  return days * line.prepaid_interest_per_diem_rate
+}
+
 function LineRow({
   orderId,
   line,
@@ -65,6 +78,8 @@ function LineRow({
 
   const computedPoints = line.is_fixed && line.section === 'A' ? computePointsAmount(line, loanAmount) : null
   const computedPerMonth = line.section === 'G' && !line.is_fixed ? computePerMonthAmount(line) : null
+  const isPrepaidInterest = line.is_fixed && line.section === 'F' && line.description === 'Prepaid Interest'
+  const computedPrepaidInterest = isPrepaidInterest ? computePrepaidInterest(line) : null
 
   return (
     <div className="border-t border-border py-1.5 first:border-t-0" data-testid={`cdf-line-${line.id}`}>
@@ -228,6 +243,66 @@ function LineRow({
           )}
         </div>
       )}
+      {isPrepaidInterest && (
+        <div className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 pl-[calc(24px+0.5rem)] text-[12px] text-muted-foreground">
+          <span className="text-foreground">Per Diem From</span>
+          <Input
+            aria-label="Prepaid Interest From"
+            name="prepaid_interest_from"
+            type="date"
+            defaultValue={line.prepaid_interest_from ?? ''}
+            onBlur={handleSave}
+            className="h-7 w-36 px-1.5"
+          />
+          <span>To</span>
+          <Input
+            aria-label="Prepaid Interest To"
+            name="prepaid_interest_to"
+            type="date"
+            defaultValue={line.prepaid_interest_to ?? ''}
+            onBlur={handleSave}
+            className="h-7 w-36 px-1.5"
+          />
+          <span>at</span>
+          <Input
+            aria-label="Prepaid Interest Per Diem Rate"
+            name="prepaid_interest_per_diem_rate"
+            type="number"
+            step="0.0001"
+            defaultValue={line.prepaid_interest_per_diem_rate ?? ''}
+            onBlur={handleSave}
+            className="h-7 w-24 px-1.5 text-right"
+          />
+          <span>per day</span>
+          <label className="flex items-center gap-1">
+            <input
+              type="checkbox"
+              name="prepaid_interest_use_30_day_months"
+              defaultChecked={line.prepaid_interest_use_30_day_months}
+              onChange={handleSave}
+              className="h-3.5 w-3.5"
+            />
+            30-day months
+          </label>
+          <span>Date basis</span>
+          <select
+            name="prepaid_interest_date_basis"
+            defaultValue={line.prepaid_interest_date_basis ?? ''}
+            onBlur={handleSave}
+            className="h-7 rounded border px-1.5"
+          >
+            <option value="">—</option>
+            {DATE_BASIS_OPTIONS.map((d) => (
+              <option key={d} value={d}>
+                {d}
+              </option>
+            ))}
+          </select>
+          {computedPrepaidInterest != null && (
+            <span className="ml-auto font-mono font-semibold text-foreground">= ${money(computedPrepaidInterest)}</span>
+          )}
+        </div>
+      )}
       </form>
       <div className="pl-[calc(24px+0.5rem)]">
         <SaveIndicator state={state} errorMessage={errorMessage} />
@@ -279,12 +354,12 @@ function SubtotalLine({
   )
 }
 
-// Section A's Points line and Section G's Aggregate Adjustment line are fixed rows
-// (see `listCdfPage2Lines`'s auto-seed) rendered outside each section's normal
-// `cdf-section-{code}-list` container — that container stays scoped to user-added
-// rows so every existing e2e selector (`+ Add Item` count checks, `.first()` lookups)
-// keeps working unchanged.
-const FIXED_LINE_POSITION: Record<string, 'first' | 'last'> = { A: 'first', G: 'last' }
+// Section A's Points line, Section F's 4 Prepaids lines, and Section G's Aggregate
+// Adjustment line are fixed rows (see `listCdfPage2Lines`'s auto-seed) rendered
+// outside each section's normal `cdf-section-{code}-list` container — that container
+// stays scoped to user-added rows so every existing e2e selector (`+ Add Item` count
+// checks, `.first()` lookups) keeps working unchanged.
+const FIXED_LINE_POSITION: Record<string, 'first' | 'last'> = { A: 'first', F: 'first', G: 'last' }
 
 function SectionGroup({
   title,
@@ -315,18 +390,21 @@ function SectionGroup({
         {codes.map((code) => {
           const label = CDF_PAGE2_SECTIONS.find((s) => s.code === code)!.label
           const sectionLines = lines.filter((l) => l.section === code && !l.is_fixed)
-          const fixedLine = lines.find((l) => l.section === code && l.is_fixed)
+          const fixedLinesForCode = lines
+            .filter((l) => l.section === code && l.is_fixed)
+            .sort((a, b) => a.sort_order - b.sort_order)
           const fixedPosition = FIXED_LINE_POSITION[code]
           return (
             <div key={code} data-testid={`cdf-section-${code}`}>
               <CdfRow variant="section">
                 {code}. {label}
               </CdfRow>
-              {fixedLine && fixedPosition === 'first' && (
-                <div data-testid={`cdf-section-${code}-fixed`}>
-                  <LineRow orderId={orderId} line={fixedLine} contacts={contacts} num={1} loanAmount={loanAmount} />
-                </div>
-              )}
+              {fixedPosition === 'first' &&
+                fixedLinesForCode.map((fixedLine, i) => (
+                  <div key={fixedLine.id} data-testid={`cdf-section-${code}-fixed`}>
+                    <LineRow orderId={orderId} line={fixedLine} contacts={contacts} num={i + 1} loanAmount={loanAmount} />
+                  </div>
+                ))}
               <div data-testid={`cdf-section-${code}-list`}>
                 {sectionLines.map((line, idx) => (
                   <LineRow
@@ -334,17 +412,24 @@ function SectionGroup({
                     orderId={orderId}
                     line={line}
                     contacts={contacts}
-                    num={fixedPosition === 'first' ? idx + 2 : idx + 1}
+                    num={fixedPosition === 'first' ? idx + 1 + fixedLinesForCode.length : idx + 1}
                     loanAmount={loanAmount}
                   />
                 ))}
                 {sectionLines.length === 0 && <p className="py-1.5 pl-[26px] text-xs text-muted-foreground">No items yet.</p>}
               </div>
-              {fixedLine && fixedPosition === 'last' && (
-                <div data-testid={`cdf-section-${code}-fixed`}>
-                  <LineRow orderId={orderId} line={fixedLine} contacts={contacts} num={sectionLines.length + 1} loanAmount={loanAmount} />
-                </div>
-              )}
+              {fixedPosition === 'last' &&
+                fixedLinesForCode.map((fixedLine, i) => (
+                  <div key={fixedLine.id} data-testid={`cdf-section-${code}-fixed`}>
+                    <LineRow
+                      orderId={orderId}
+                      line={fixedLine}
+                      contacts={contacts}
+                      num={sectionLines.length + i + 1}
+                      loanAmount={loanAmount}
+                    />
+                  </div>
+                ))}
               <div className="pt-1.5 pl-[26px]">
                 <Button type="button" variant="outline" size="sm" onClick={() => addSection(code)} disabled={isPending}>
                   + Add Item

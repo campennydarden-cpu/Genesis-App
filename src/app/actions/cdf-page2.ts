@@ -2,24 +2,31 @@
 
 import { revalidatePath } from 'next/cache'
 import { createClient } from '@/lib/supabase/server'
+import { CDF_PAGE2_SECTION_F_FIXED_LINES } from '@/lib/constants'
 import type { CdfPage2Line } from '@/lib/types'
 
 export async function listCdfPage2Lines(orderId: string): Promise<CdfPage2Line[]> {
   const supabase = await createClient()
 
   // Section A's "% of Loan Amount (Points)" line, Section G's "Aggregate Adjustment"
-  // line, and Section J's "Lender Credits" line are fixed, non-removable rows
-  // confirmed by Cam's click-through notes and SoftPro reference screenshots —
-  // ensure they exist before returning, so every order gets them automatically the
-  // first time this screen loads.
+  // line, Section J's "Lender Credits" line, and Section F's 4 Prepaids lines are
+  // fixed, non-removable rows confirmed by Cam's click-through notes and SoftPro
+  // reference screenshots — ensure they exist before returning, so every order gets
+  // them automatically the first time this screen loads.
   const { data: fixedLines } = await supabase.from('cdf_page2_lines').select('section').eq('order_id', orderId).eq('is_fixed', true)
   const hasFixedA = fixedLines?.some((l) => l.section === 'A')
   const hasFixedG = fixedLines?.some((l) => l.section === 'G')
   const hasFixedJ = fixedLines?.some((l) => l.section === 'J')
+  const hasFixedF = fixedLines?.some((l) => l.section === 'F')
   const toSeed = []
   if (!hasFixedA) toSeed.push({ order_id: orderId, section: 'A', sort_order: 0, description: '% of Loan Amount (Points)', is_fixed: true })
   if (!hasFixedG) toSeed.push({ order_id: orderId, section: 'G', sort_order: 999, description: 'Aggregate Adjustment', is_fixed: true })
   if (!hasFixedJ) toSeed.push({ order_id: orderId, section: 'J', sort_order: 0, description: 'Lender Credits', is_fixed: true })
+  if (!hasFixedF) {
+    CDF_PAGE2_SECTION_F_FIXED_LINES.forEach((description, idx) =>
+      toSeed.push({ order_id: orderId, section: 'F', sort_order: idx + 1, description, is_fixed: true })
+    )
+  }
   if (toSeed.length > 0) await supabase.from('cdf_page2_lines').insert(toSeed)
 
   const { data } = await supabase
@@ -123,6 +130,11 @@ export async function updateCdfPage2Line(orderId: string, id: string, formData: 
       points_adjustment_for: (formData.get('points_adjustment_for') as string) || null,
       per_month: numOrNull('per_month'),
       months: numOrNull('months'),
+      prepaid_interest_from: (formData.get('prepaid_interest_from') as string) || null,
+      prepaid_interest_to: (formData.get('prepaid_interest_to') as string) || null,
+      prepaid_interest_per_diem_rate: numOrNull('prepaid_interest_per_diem_rate'),
+      prepaid_interest_use_30_day_months: formData.get('prepaid_interest_use_30_day_months') === 'on',
+      prepaid_interest_date_basis: (formData.get('prepaid_interest_date_basis') as string) || null,
     })
     .eq('id', id)
 

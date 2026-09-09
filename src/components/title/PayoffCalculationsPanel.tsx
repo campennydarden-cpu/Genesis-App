@@ -1,11 +1,13 @@
 'use client'
 
-import { useRef, useTransition } from 'react'
+import { useRef, useState, useTransition } from 'react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { SaveIndicator } from '@/components/SaveIndicator'
 import { useAutosave } from '@/lib/use-autosave'
+import { actualDaysBetween } from '@/lib/tax-proration'
+import { DATE_BASIS_OPTIONS } from '@/lib/constants'
 import {
   updatePayoffCalculation,
   addPayoffAdditionalCharge,
@@ -16,6 +18,10 @@ import {
   deletePayoff,
 } from '@/app/actions/payoff-calculations'
 import type { CdfPayoffPayment, CdfPayoffAdditionalCharge } from '@/lib/types'
+
+function money(n: number) {
+  return n.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })
+}
 
 type Contact = { id: string; name: string }
 
@@ -76,6 +82,7 @@ function PayoffCalculationCard({
 }) {
   const formRef = useRef<HTMLFormElement>(null)
   const { state, errorMessage, save } = useAutosave((formData: FormData) => updatePayoffCalculation(orderId, payoff.id, formData))
+  const [method, setMethod] = useState<'principal_balance' | 'payoff_amount'>(payoff.payoff_method ?? 'principal_balance')
   const baseFormRef = useRef<HTMLFormElement>(null)
   const { state: baseState, errorMessage: baseErrorMessage, save: saveBase } = useAutosave((formData: FormData) =>
     updatePayoffBase(orderId, payoff.id, formData)
@@ -138,95 +145,240 @@ function PayoffCalculationCard({
         </div>
       </form>
 
-      <form ref={formRef} className="grid grid-cols-4 gap-2">
-        <div>
-          <Label htmlFor={`payoff-calc-${payoff.id}-principal_balance`}>Principal Balance</Label>
-          <Input
-            id={`payoff-calc-${payoff.id}-principal_balance`}
-            name="principal_balance"
-            type="number"
-            step="0.01"
-            defaultValue={payoff.principal_balance ?? ''}
-            onBlur={handleSave}
-          />
+      <form ref={formRef} className="space-y-3">
+        <input type="hidden" name="payoff_method" value={method} />
+        <div className="flex gap-4">
+          <label className="flex items-center gap-1.5 text-sm">
+            <input
+              type="radio"
+              name="payoff_method_radio"
+              checked={method === 'principal_balance'}
+              onChange={() => {
+                setMethod('principal_balance')
+                handleSave()
+              }}
+            />
+            Principal Balance
+          </label>
+          <label className="flex items-center gap-1.5 text-sm">
+            <input
+              type="radio"
+              name="payoff_method_radio"
+              checked={method === 'payoff_amount'}
+              onChange={() => {
+                setMethod('payoff_amount')
+                handleSave()
+              }}
+            />
+            Payoff Amount
+          </label>
         </div>
-        <div>
-          <Label htmlFor={`payoff-calc-${payoff.id}-interest_rate`}>Interest Rate (%)</Label>
-          <Input
-            id={`payoff-calc-${payoff.id}-interest_rate`}
-            name="interest_rate"
-            type="number"
-            step="0.001"
-            defaultValue={payoff.interest_rate ?? ''}
-            onBlur={handleSave}
-          />
-        </div>
-        <div>
-          <Label htmlFor={`payoff-calc-${payoff.id}-per_diem`}>Per Diem</Label>
-          <Input
-            id={`payoff-calc-${payoff.id}-per_diem`}
-            name="per_diem"
-            type="number"
-            step="0.01"
-            defaultValue={payoff.per_diem ?? ''}
-            onBlur={handleSave}
-          />
-        </div>
-        <div>
-          <Label htmlFor={`payoff-calc-${payoff.id}-payoff_expires_on`}>Payoff Expires On</Label>
-          <Input
-            id={`payoff-calc-${payoff.id}-payoff_expires_on`}
-            name="payoff_expires_on"
-            type="date"
-            defaultValue={payoff.payoff_expires_on ?? ''}
-            onBlur={handleSave}
-          />
-        </div>
-        <div>
-          <Label htmlFor={`payoff-calc-${payoff.id}-interest_from`}>Interest From</Label>
-          <Input
-            id={`payoff-calc-${payoff.id}-interest_from`}
-            name="interest_from"
-            type="date"
-            defaultValue={payoff.interest_from ?? ''}
-            onBlur={handleSave}
-          />
-        </div>
-        <div>
-          <Label htmlFor={`payoff-calc-${payoff.id}-interest_to`}>Interest To</Label>
-          <Input
-            id={`payoff-calc-${payoff.id}-interest_to`}
-            name="interest_to"
-            type="date"
-            defaultValue={payoff.interest_to ?? ''}
-            onBlur={handleSave}
-          />
-        </div>
-        <div>
-          <Label htmlFor={`payoff-calc-${payoff.id}-additional_interest`}>Additional Interest</Label>
-          <Input
-            id={`payoff-calc-${payoff.id}-additional_interest`}
-            name="additional_interest"
-            type="number"
-            step="0.01"
-            defaultValue={payoff.additional_interest ?? ''}
-            onBlur={handleSave}
-          />
-        </div>
-        <div>
-          <Label htmlFor={`payoff-calc-${payoff.id}-late_fee`}>Late Fee</Label>
-          <Input
-            id={`payoff-calc-${payoff.id}-late_fee`}
-            name="late_fee"
-            type="number"
-            step="0.01"
-            defaultValue={payoff.late_fee ?? ''}
-            onBlur={handleSave}
-          />
-        </div>
-        <div className="col-span-4">
-          <SaveIndicator state={state} errorMessage={errorMessage} />
-        </div>
+
+        {method === 'principal_balance' ? (
+          <div className="grid grid-cols-4 gap-2">
+            <div>
+              <Label htmlFor={`payoff-calc-${payoff.id}-principal_balance`}>Principal Balance</Label>
+              <Input
+                id={`payoff-calc-${payoff.id}-principal_balance`}
+                name="principal_balance"
+                type="number"
+                step="0.01"
+                defaultValue={payoff.principal_balance ?? ''}
+                onBlur={handleSave}
+              />
+            </div>
+            <div>
+              <Label htmlFor={`payoff-calc-${payoff.id}-interest_charged`}>Interest Charged</Label>
+              <Input
+                id={`payoff-calc-${payoff.id}-interest_charged`}
+                name="interest_charged"
+                type="number"
+                step="0.01"
+                defaultValue={payoff.interest_charged ?? ''}
+                onBlur={handleSave}
+              />
+            </div>
+            <div>
+              <Label htmlFor={`payoff-calc-${payoff.id}-interest_rate`}>Interest Rate (%)</Label>
+              <Input
+                id={`payoff-calc-${payoff.id}-interest_rate`}
+                name="interest_rate"
+                type="number"
+                step="0.001"
+                defaultValue={payoff.interest_rate ?? ''}
+                onBlur={handleSave}
+              />
+            </div>
+            <div>
+              <Label htmlFor={`payoff-calc-${payoff.id}-per_diem`}>Per Diem</Label>
+              <Input
+                id={`payoff-calc-${payoff.id}-per_diem`}
+                name="per_diem"
+                type="number"
+                step="0.01"
+                defaultValue={payoff.per_diem ?? ''}
+                onBlur={handleSave}
+              />
+            </div>
+            <div>
+              <Label htmlFor={`payoff-calc-${payoff.id}-interest_from`}>Additional Interest From</Label>
+              <Input
+                id={`payoff-calc-${payoff.id}-interest_from`}
+                name="interest_from"
+                type="date"
+                defaultValue={payoff.interest_from ?? ''}
+                onBlur={handleSave}
+              />
+            </div>
+            <div>
+              <Label htmlFor={`payoff-calc-${payoff.id}-additional_interest`}>Additional Interest</Label>
+              <Input
+                id={`payoff-calc-${payoff.id}-additional_interest`}
+                name="additional_interest"
+                type="number"
+                step="0.01"
+                defaultValue={payoff.additional_interest ?? ''}
+                onBlur={handleSave}
+              />
+            </div>
+            <div>
+              <Label htmlFor={`payoff-calc-${payoff.id}-late_fee`}>Late Fee</Label>
+              <Input
+                id={`payoff-calc-${payoff.id}-late_fee`}
+                name="late_fee"
+                type="number"
+                step="0.01"
+                defaultValue={payoff.late_fee ?? ''}
+                onBlur={handleSave}
+              />
+            </div>
+            <div>
+              <Label htmlFor={`payoff-calc-${payoff.id}-late_fee_after`}>Late Fee After</Label>
+              <Input
+                id={`payoff-calc-${payoff.id}-late_fee_after`}
+                name="late_fee_after"
+                type="date"
+                defaultValue={payoff.late_fee_after ?? ''}
+                onBlur={handleSave}
+              />
+            </div>
+            {payoff.principal_balance != null && (
+              <div className="col-span-4 text-sm font-medium">
+                Payoff Amount ={' '}
+                <span className="font-mono">
+                  $
+                  {money(
+                    (payoff.principal_balance ?? 0) +
+                      (payoff.interest_charged ?? 0) +
+                      (payoff.additional_interest ?? 0) +
+                      (payoff.late_fee ?? 0)
+                  )}
+                </span>
+              </div>
+            )}
+          </div>
+        ) : (
+          <div className="grid grid-cols-4 gap-2">
+            <div>
+              <Label htmlFor={`payoff-calc-${payoff.id}-payoff_amount`}>Payoff Amount</Label>
+              <Input
+                id={`payoff-calc-${payoff.id}-payoff_amount`}
+                name="payoff_amount"
+                type="number"
+                step="0.01"
+                defaultValue={payoff.payoff_amount ?? ''}
+                onBlur={handleSave}
+              />
+            </div>
+            <div>
+              <Label htmlFor={`payoff-calc-${payoff.id}-interest_to`}>Interest To</Label>
+              <Input
+                id={`payoff-calc-${payoff.id}-interest_to`}
+                name="interest_to"
+                type="date"
+                defaultValue={payoff.interest_to ?? ''}
+                onBlur={handleSave}
+              />
+            </div>
+            <div>
+              <Label htmlFor={`payoff-calc-${payoff.id}-per_diem_days_basis`}>Per Diem Based On</Label>
+              <select
+                id={`payoff-calc-${payoff.id}-per_diem_days_basis`}
+                name="per_diem_days_basis"
+                defaultValue={payoff.per_diem_days_basis ?? '365'}
+                onBlur={handleSave}
+                className="block w-full rounded border px-2 py-1 text-sm"
+              >
+                <option value="365">365 days/year</option>
+                <option value="360">360 days/year</option>
+              </select>
+            </div>
+            <div>
+              <Label htmlFor={`payoff-calc-${payoff.id}-payoff_expires_on`}>Payoff Expires On</Label>
+              <Input
+                id={`payoff-calc-${payoff.id}-payoff_expires_on`}
+                name="payoff_expires_on"
+                type="date"
+                defaultValue={payoff.payoff_expires_on ?? ''}
+                onBlur={handleSave}
+              />
+            </div>
+            <div>
+              <Label htmlFor={`payoff-calc-${payoff.id}-payoff_date_basis`}>Payoff Date Basis</Label>
+              <select
+                id={`payoff-calc-${payoff.id}-payoff_date_basis`}
+                name="payoff_date_basis"
+                defaultValue={payoff.payoff_date_basis ?? ''}
+                onBlur={handleSave}
+                className="block w-full rounded border px-2 py-1 text-sm"
+              >
+                <option value="">—</option>
+                {DATE_BASIS_OPTIONS.map((d) => (
+                  <option key={d} value={d}>
+                    {d}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <div>
+              <Label htmlFor={`payoff-calc-${payoff.id}-payoff_date_basis_from`}>From</Label>
+              <Input
+                id={`payoff-calc-${payoff.id}-payoff_date_basis_from`}
+                name="payoff_date_basis_from"
+                type="date"
+                defaultValue={payoff.payoff_date_basis_from ?? ''}
+                onBlur={handleSave}
+              />
+            </div>
+            <div>
+              <Label htmlFor={`payoff-calc-${payoff.id}-payoff_date_basis_to`}>To</Label>
+              <Input
+                id={`payoff-calc-${payoff.id}-payoff_date_basis_to`}
+                name="payoff_date_basis_to"
+                type="date"
+                defaultValue={payoff.payoff_date_basis_to ?? ''}
+                onBlur={handleSave}
+              />
+            </div>
+            <div>
+              <Label htmlFor={`payoff-calc-${payoff.id}-extra_days`}>Extra Day(s)</Label>
+              <Input
+                id={`payoff-calc-${payoff.id}-extra_days`}
+                name="extra_days"
+                type="number"
+                step="1"
+                defaultValue={payoff.extra_days ?? ''}
+                onBlur={handleSave}
+              />
+            </div>
+            {payoff.payoff_date_basis_from && payoff.payoff_date_basis_to && (
+              <div className="col-span-4 text-sm text-muted-foreground">
+                {actualDaysBetween(payoff.payoff_date_basis_from, payoff.payoff_date_basis_to) + (payoff.extra_days ?? 0)} day(s)
+              </div>
+            )}
+          </div>
+        )}
+        <SaveIndicator state={state} errorMessage={errorMessage} />
       </form>
 
       <div className="space-y-2">

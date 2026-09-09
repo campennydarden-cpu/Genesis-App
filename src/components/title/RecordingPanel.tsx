@@ -5,16 +5,25 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { SaveIndicator } from '@/components/SaveIndicator'
-import { addRecordingDocument, updateRecordingDocument, deleteRecordingDocument } from '@/app/actions/recording'
+import {
+  addRecordingDocument,
+  updateRecordingDocument,
+  deleteRecordingDocument,
+  setRecordingDocumentCdfLine,
+} from '@/app/actions/recording'
+import { assignNextCdfPage2Line } from '@/app/actions/cdf-page2'
 import { useAutosave } from '@/lib/use-autosave'
-import { RECORDING_STATUSES, RECORDING_DOCUMENT_TYPES } from '@/lib/constants'
-import type { RecordingDocument } from '@/lib/types'
+import { RECORDING_STATUSES, RECORDING_DOCUMENT_TYPES, CDF_PAGE2_SECTIONS } from '@/lib/constants'
+import { CdfLineAssign } from '@/components/title/CdfLineAssign'
+import type { RecordingDocument, CdfPage2Line } from '@/lib/types'
+
+const SECTION_E = CDF_PAGE2_SECTIONS.filter((s) => s.code === 'E')
 
 function refresh() {
   window.location.reload()
 }
 
-function DocumentRow({ orderId, doc }: { orderId: string; doc: RecordingDocument }) {
+function DocumentRow({ orderId, doc, cdfLines }: { orderId: string; doc: RecordingDocument; cdfLines: CdfPage2Line[] }) {
   const formRef = useRef<HTMLFormElement>(null)
   const { state, errorMessage, save } = useAutosave((formData: FormData) => updateRecordingDocument(orderId, doc.id, formData))
   const [isPending, startTransition] = useTransition()
@@ -120,6 +129,45 @@ function DocumentRow({ orderId, doc }: { orderId: string; doc: RecordingDocument
             onBlur={handleSave}
           />
         </div>
+        <div>
+          <Label htmlFor={`recording-doc-${doc.id}-fee`}>Fee</Label>
+          <Input
+            id={`recording-doc-${doc.id}-fee`}
+            name="fee"
+            type="number"
+            step="0.01"
+            defaultValue={doc.fee ?? ''}
+            onBlur={handleSave}
+          />
+        </div>
+        <div>
+          <Label htmlFor={`recording-doc-${doc.id}-seller_pay_percent`}>Seller Pay %</Label>
+          <Input
+            id={`recording-doc-${doc.id}-seller_pay_percent`}
+            name="seller_pay_percent"
+            type="number"
+            step="0.01"
+            defaultValue={doc.seller_pay_percent ?? ''}
+            onBlur={handleSave}
+          />
+        </div>
+        <div className="col-span-2">
+          <Label>CDF Page 2 Assignment</Label>
+          <CdfLineAssign
+            cdfLineId={doc.cdf_page2_line_id}
+            cdfLines={cdfLines}
+            sections={SECTION_E}
+            onAssign={async (section) => {
+              const { id } = await assignNextCdfPage2Line(orderId, section, doc.document_description, doc.fee)
+              if (id) await setRecordingDocumentCdfLine(orderId, doc.id, id)
+              refresh()
+            }}
+            onUnassign={async () => {
+              await setRecordingDocumentCdfLine(orderId, doc.id, null)
+              refresh()
+            }}
+          />
+        </div>
         <div className="col-span-4">
           <SaveIndicator state={state} errorMessage={errorMessage} />
         </div>
@@ -141,7 +189,15 @@ function DocumentRow({ orderId, doc }: { orderId: string; doc: RecordingDocument
   )
 }
 
-export function RecordingPanel({ orderId, documents }: { orderId: string; documents: RecordingDocument[] }) {
+export function RecordingPanel({
+  orderId,
+  documents,
+  cdfLines,
+}: {
+  orderId: string
+  documents: RecordingDocument[]
+  cdfLines: CdfPage2Line[]
+}) {
   const [isPending, startTransition] = useTransition()
 
   return (
@@ -155,7 +211,7 @@ export function RecordingPanel({ orderId, documents }: { orderId: string; docume
 
       <div className="space-y-3" data-testid="recording-doc-list">
         {documents.map((d) => (
-          <DocumentRow key={d.id} orderId={orderId} doc={d} />
+          <DocumentRow key={d.id} orderId={orderId} doc={d} cdfLines={cdfLines} />
         ))}
         {documents.length === 0 && <p className="text-sm text-muted-foreground">No documents yet.</p>}
       </div>

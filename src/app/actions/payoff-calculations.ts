@@ -79,17 +79,31 @@ export async function updatePayoffCalculation(orderId: string, id: string, formD
   const numOrNull = (key: string) => (formData.get(key) ? Number(formData.get(key)) : null)
   const strOrNull = (key: string) => (formData.get(key) as string) || null
 
+  const payoffMethod = (formData.get('payoff_method') as string) || 'principal_balance'
+  if (payoffMethod !== 'principal_balance' && payoffMethod !== 'payoff_amount') {
+    return { error: 'Invalid payoff method.' }
+  }
+
   const { error } = await supabase
     .from('cdf_payoffs_payments')
     .update({
+      payoff_method: payoffMethod,
       principal_balance: numOrNull('principal_balance'),
+      interest_charged: numOrNull('interest_charged'),
       interest_rate: numOrNull('interest_rate'),
       per_diem: numOrNull('per_diem'),
       interest_from: strOrNull('interest_from'),
       interest_to: strOrNull('interest_to'),
       additional_interest: numOrNull('additional_interest'),
       late_fee: numOrNull('late_fee'),
+      late_fee_after: strOrNull('late_fee_after'),
       payoff_expires_on: strOrNull('payoff_expires_on'),
+      payoff_amount: numOrNull('payoff_amount'),
+      per_diem_days_basis: (formData.get('per_diem_days_basis') as string) || '365',
+      payoff_date_basis: strOrNull('payoff_date_basis'),
+      payoff_date_basis_from: strOrNull('payoff_date_basis_from'),
+      payoff_date_basis_to: strOrNull('payoff_date_basis_to'),
+      extra_days: numOrNull('extra_days'),
     })
     .eq('id', id)
 

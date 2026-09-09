@@ -1,6 +1,6 @@
 'use client'
 
-import { useRef, useTransition } from 'react'
+import { useRef, useTransition, type ChangeEvent } from 'react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { SaveIndicator } from '@/components/SaveIndicator'
@@ -10,7 +10,7 @@ import { CDF_PAGE5_CONTACT_ROLES, CDF_LIABILITY_AFTER_FORECLOSURE } from '@/lib/
 import { CdfWrap, CdfBar, CdfTable, CdfRow, CdfMeta, CdfNum, cdfInputClass, cdfAmtInputClass, cdfSelectClass } from '@/components/title/cdf-chrome'
 import type { CdfPage5, CdfPage5Contact } from '@/lib/types'
 
-type Contact = { id: string; name: string }
+type Contact = { id: string; name: string; current_address: string | null; phone: string | null; email: string | null; license_number: string | null }
 
 function refresh() {
   window.location.reload()
@@ -130,7 +130,7 @@ function LoanCalculationsForm({ orderId, cdfPage5 }: { orderId: string; cdfPage5
   )
 }
 
-const CONTACT_GRID = 'grid-cols-[24px_1fr_1.2fr_0.8fr_0.8fr_1fr_0.9fr_1.2fr_0.9fr_26px]'
+const CONTACT_GRID = 'grid-cols-[24px_1fr_1.2fr_1.4fr_0.8fr_0.8fr_1fr_0.9fr_0.9fr_1.2fr_0.9fr_26px]'
 
 function ContactRow({
   orderId,
@@ -152,6 +152,26 @@ function ContactRow({
     save(new FormData(formRef.current))
   }
 
+  // "Pull Lender/Title Company/Settlement Agent info from Contacts": defaults
+  // Address/License ID/Email/Phone from the chosen Contact when those fields are
+  // still blank — same default-then-editable pattern as every other Contacts-pull
+  // on this app, just triggered by picking the contact rather than by row creation.
+  function handleContactChange(e: ChangeEvent<HTMLSelectElement>) {
+    const form = formRef.current
+    const picked = allContacts.find((c) => c.id === e.target.value)
+    if (form && picked) {
+      const address = form.elements.namedItem('address') as HTMLInputElement
+      const licenseId = form.elements.namedItem('license_id') as HTMLInputElement
+      const email = form.elements.namedItem('email') as HTMLInputElement
+      const phone = form.elements.namedItem('phone') as HTMLInputElement
+      if (address && !address.value) address.value = picked.current_address ?? ''
+      if (licenseId && !licenseId.value) licenseId.value = picked.license_number ?? ''
+      if (email && !email.value) email.value = picked.email ?? ''
+      if (phone && !phone.value) phone.value = picked.phone ?? ''
+    }
+    handleSave()
+  }
+
   return (
     <div className="border-t border-border py-1.5 first:border-t-0" data-testid={`cdf-page5-contact-${contact.id}`}>
       <form ref={formRef} className={`grid ${CONTACT_GRID} items-center gap-1.5`}>
@@ -164,7 +184,7 @@ function ContactRow({
             </option>
           ))}
         </select>
-        <select name="contact_id" defaultValue={contact.contact_id ?? ''} onBlur={handleSave} className={cdfSelectClass}>
+        <select name="contact_id" defaultValue={contact.contact_id ?? ''} onChange={handleContactChange} className={cdfSelectClass}>
           <option value="">—</option>
           {allContacts.map((c) => (
             <option key={c.id} value={c.id}>
@@ -172,6 +192,7 @@ function ContactRow({
             </option>
           ))}
         </select>
+        <Input name="address" placeholder="Address" defaultValue={contact.address ?? ''} onBlur={handleSave} className={cdfInputClass} />
         <Input name="nmls_id" placeholder="NMLS ID" defaultValue={contact.nmls_id ?? ''} onBlur={handleSave} className={cdfInputClass} />
         <Input name="license_id" placeholder="License ID" defaultValue={contact.license_id ?? ''} onBlur={handleSave} className={cdfInputClass} />
         <Input name="contact_person" placeholder="Contact" defaultValue={contact.contact_person ?? ''} onBlur={handleSave} className={cdfInputClass} />
@@ -179,6 +200,13 @@ function ContactRow({
           name="contact_nmls_id"
           placeholder="Contact NMLS ID"
           defaultValue={contact.contact_nmls_id ?? ''}
+          onBlur={handleSave}
+          className={cdfInputClass}
+        />
+        <Input
+          name="contact_license_id"
+          placeholder="Contact License ID"
+          defaultValue={contact.contact_license_id ?? ''}
           onBlur={handleSave}
           className={cdfInputClass}
         />
@@ -239,10 +267,12 @@ export function CdfPage5Panel({
             <div />
             <div>Role</div>
             <div>Name</div>
+            <div>Address</div>
             <div>NMLS ID</div>
             <div>License ID</div>
             <div>Contact</div>
             <div>Contact NMLS</div>
+            <div>Contact License</div>
             <div>Email</div>
             <div>Phone</div>
             <div />

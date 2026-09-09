@@ -60,6 +60,8 @@ export async function updateRecordingDocument(orderId: string, id: string, formD
       page: strOrNull('page'),
       number_of_pages: formData.get('number_of_pages') ? Number(formData.get('number_of_pages')) : null,
       e_recording_reference: strOrNull('e_recording_reference'),
+      fee: formData.get('fee') ? Number(formData.get('fee')) : null,
+      seller_pay_percent: formData.get('seller_pay_percent') ? Number(formData.get('seller_pay_percent')) : null,
     })
     .eq('id', id)
 
@@ -69,6 +71,18 @@ export async function updateRecordingDocument(orderId: string, id: string, formD
   }
 
   revalidatePath(`/orders/${orderId}/recording`)
+  return {}
+}
+
+export async function setRecordingDocumentCdfLine(orderId: string, id: string, cdfLineId: string | null): Promise<{ error?: string }> {
+  const supabase = await createClient()
+  const { error } = await supabase.from('recording_documents').update({ cdf_page2_line_id: cdfLineId }).eq('id', id)
+  if (error) {
+    console.error('setRecordingDocumentCdfLine failed:', error)
+    return { error: 'Could not save. Please try again.' }
+  }
+  revalidatePath(`/orders/${orderId}/recording`)
+  revalidatePath(`/orders/${orderId}/cdf-page-2`)
   return {}
 }
 

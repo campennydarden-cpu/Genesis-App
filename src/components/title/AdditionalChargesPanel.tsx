@@ -99,6 +99,23 @@ function ChargeRow({
           <Input id={`charge-${charge.id}-fee_type`} name="fee_type" defaultValue={charge.fee_type ?? ''} onBlur={handleSave} />
         </div>
         <div>
+          <Label htmlFor={`charge-${charge.id}-payee_contact_id`}>Payee (no split)</Label>
+          <select
+            id={`charge-${charge.id}-payee_contact_id`}
+            name="payee_contact_id"
+            defaultValue={charge.payee_contact_id ?? ''}
+            onBlur={handleSave}
+            className="block w-full rounded border px-2 py-1 text-sm"
+          >
+            <option value="">—</option>
+            {contacts.map((c) => (
+              <option key={c.id} value={c.id}>
+                {c.name}
+              </option>
+            ))}
+          </select>
+        </div>
+        <div>
           <Label htmlFor={`charge-${charge.id}-cdf_line`}>CDF Line (note)</Label>
           <Input id={`charge-${charge.id}-cdf_line`} name="cdf_line" defaultValue={charge.cdf_line ?? ''} onBlur={handleSave} />
         </div>
