@@ -47,7 +47,7 @@ const NAV_GROUPS: NavGroup[] = [
       { label: 'Additional Charges', segment: 'additional-charges' },
       { label: 'Recording' },
       { label: 'Payoff Calculations' },
-      { label: 'Tax/Other Prorations' },
+      { label: 'Tax/Other Prorations', segment: 'tax-prorations' },
       { label: 'CDF Pages 1-5' },
       { label: 'HUD Pages 1-3' },
     ],

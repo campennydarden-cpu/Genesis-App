@@ -304,6 +304,12 @@ export const SPLIT_BASIS_TYPES = [
   'Fixed Amount',
 ] as const
 
+export const TAX_PRORATION_CATEGORIES = ['County Tax', 'City/Town Tax', 'Assessment', 'HOA/COA', 'Other'] as const
+
+export const PRORATION_COMPUTE_FOR = ['Buyer', 'Seller'] as const
+
+export const PRORATION_CREDIT_DEBIT = ['Credit', 'Debit'] as const
+
 // Attachments upload validation (Genesis Rebuild - Attachments Core Design.md).
 export const ATTACHMENT_MAX_SIZE_BYTES = 25 * 1024 * 1024 // 25 MB
 

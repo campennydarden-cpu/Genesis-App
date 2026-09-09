@@ -529,6 +529,29 @@ export type AdditionalTitleChargeSplit = {
   bill_code: string | null
 }
 
+export type TaxProration = {
+  id: string
+  order_id: string
+  sort_order: number
+  description: string | null
+  category: string | null
+  payee_contact_id: string | null
+  account_number: string | null
+  compute_for: string | null
+  credit_debit: string | null
+  share_of_amount: number | null
+  proration_date: string | null
+  period_from: string | null
+  period_to: string | null
+  use_30_day_months: boolean
+  days_in_period: number | null
+  days_prorated: number | null
+  per_diem: number | null
+  prorated_amount: number | null
+  cdf_line: string | null
+  bill_code: string | null
+}
+
 export type Attachment = {
   id: string
   order_id: string
