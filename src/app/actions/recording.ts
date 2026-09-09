@@ -2,6 +2,7 @@
 
 import { revalidatePath } from 'next/cache'
 import { createClient } from '@/lib/supabase/server'
+import { RECORDING_STATUSES } from '@/lib/constants'
 import type { RecordingDocument } from '@/lib/types'
 
 export async function listRecordingDocuments(orderId: string): Promise<RecordingDocument[]> {
@@ -34,12 +35,20 @@ export async function updateRecordingDocument(orderId: string, id: string, formD
 
   const strOrNull = (key: string) => (formData.get(key) as string) || null
 
+  // Server Actions are directly invocable endpoints, not gated by the React tree that
+  // only ever passes one of RECORDING_STATUSES — validate here too, since an arbitrary
+  // status string would persist but never match the fixed <select> the UI renders.
+  const status = (formData.get('status') as string) || 'Not Submitted'
+  if (!(RECORDING_STATUSES as readonly string[]).includes(status)) {
+    return { error: 'Invalid status.' }
+  }
+
   const { error } = await supabase
     .from('recording_documents')
     .update({
       document_description: strOrNull('document_description'),
       county: strOrNull('county'),
-      status: (formData.get('status') as string) || 'Not Submitted',
+      status,
       date_submitted: strOrNull('date_submitted'),
       date_recorded: strOrNull('date_recorded'),
       instrument_number: strOrNull('instrument_number'),
