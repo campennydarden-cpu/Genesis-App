@@ -141,3 +141,38 @@ test('delete item removes row and recomputes totals', async ({ page }) => {
   await expect(page.getByTestId('cdf-section-B-list').getByText('No items yet.')).toBeVisible()
   await expect(page.getByTestId('cdf-subtotal-d')).toContainText('$0.00')
 })
+
+test('Section A shows a fixed, non-removable Points line with a working percent calculation', async ({ page }) => {
+  const orderId = await createOrder(page)
+  await page.goto(`/orders/${orderId}/cdf-page-2`)
+
+  const fixedRow = page.getByTestId('cdf-section-A-fixed')
+  await expect(fixedRow.locator('input[name="description"]')).toHaveValue('% of Loan Amount (Points)')
+  await expect(fixedRow.getByRole('button', { name: 'Remove item' })).toHaveCount(0)
+
+  // New order has no loan amount yet, so the computed total is just the adjustment.
+  await fixedRow.getByLabel('Points Percent').fill('1')
+  await fixedRow.locator('input[name="points_adjustment"]').fill('25.5')
+  await fixedRow.locator('input[name="points_adjustment_for"]').fill('rounding true-up')
+  await fixedRow.locator('input[name="points_adjustment_for"]').blur()
+  await expect(page.getByText('Saved')).toBeVisible()
+  await expect(fixedRow).toContainText('$25.50')
+
+  await page.reload()
+  const reloadedRow = page.getByTestId('cdf-section-A-fixed')
+  await expect(reloadedRow.getByLabel('Points Percent')).toHaveValue('1')
+  await expect(reloadedRow.locator('input[name="points_adjustment_for"]')).toHaveValue('rounding true-up')
+})
+
+test('Section G shows a fixed, non-removable Aggregate Adjustment line after any added items', async ({ page }) => {
+  const orderId = await createOrder(page)
+  await page.goto(`/orders/${orderId}/cdf-page-2`)
+
+  const fixedRow = page.getByTestId('cdf-section-G-fixed')
+  await expect(fixedRow.locator('input[name="description"]')).toHaveValue('Aggregate Adjustment')
+  await expect(fixedRow.getByRole('button', { name: 'Remove item' })).toHaveCount(0)
+
+  await page.getByTestId('cdf-section-G').getByRole('button', { name: '+ Add Item' }).click()
+  await expect(page.getByTestId('cdf-section-G-list').locator('[data-testid^="cdf-line-"]')).toHaveCount(1)
+  await expect(page.getByTestId('cdf-section-G-fixed')).toBeVisible()
+})

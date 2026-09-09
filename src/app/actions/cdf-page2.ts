@@ -6,6 +6,19 @@ import type { CdfPage2Line } from '@/lib/types'
 
 export async function listCdfPage2Lines(orderId: string): Promise<CdfPage2Line[]> {
   const supabase = await createClient()
+
+  // Section A's "% of Loan Amount (Points)" line and Section G's "Aggregate
+  // Adjustment" line are fixed, non-removable rows confirmed by SoftPro reference
+  // screenshots — ensure they exist before returning, so every order gets them
+  // automatically the first time this screen loads.
+  const { data: fixedLines } = await supabase.from('cdf_page2_lines').select('section').eq('order_id', orderId).eq('is_fixed', true)
+  const hasFixedA = fixedLines?.some((l) => l.section === 'A')
+  const hasFixedG = fixedLines?.some((l) => l.section === 'G')
+  const toSeed = []
+  if (!hasFixedA) toSeed.push({ order_id: orderId, section: 'A', sort_order: 0, description: '% of Loan Amount (Points)', is_fixed: true })
+  if (!hasFixedG) toSeed.push({ order_id: orderId, section: 'G', sort_order: 999, description: 'Aggregate Adjustment', is_fixed: true })
+  if (toSeed.length > 0) await supabase.from('cdf_page2_lines').insert(toSeed)
+
   const { data } = await supabase
     .from('cdf_page2_lines')
     .select('*')
@@ -86,6 +99,10 @@ export async function updateCdfPage2Line(orderId: string, id: string, formData: 
       seller_paid_at_closing: numOrNull('seller_paid_at_closing'),
       seller_paid_before_closing: numOrNull('seller_paid_before_closing'),
       paid_by_others: numOrNull('paid_by_others'),
+      points_percent: numOrNull('points_percent'),
+      points_round_whole_dollar: formData.get('points_round_whole_dollar') === 'on',
+      points_adjustment: numOrNull('points_adjustment'),
+      points_adjustment_for: (formData.get('points_adjustment_for') as string) || null,
     })
     .eq('id', id)
 

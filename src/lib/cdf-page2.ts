@@ -70,6 +70,11 @@ function demo() {
       seller_paid_at_closing: 500,
       seller_paid_before_closing: null,
       paid_by_others: null,
+      is_fixed: false,
+      points_percent: null,
+      points_round_whole_dollar: false,
+      points_adjustment: null,
+      points_adjustment_for: null,
     },
     {
       id: '2',
@@ -83,6 +88,11 @@ function demo() {
       seller_paid_at_closing: null,
       seller_paid_before_closing: null,
       paid_by_others: null,
+      is_fixed: false,
+      points_percent: null,
+      points_round_whole_dollar: false,
+      points_adjustment: null,
+      points_adjustment_for: null,
     },
     {
       id: '3',
@@ -96,6 +106,11 @@ function demo() {
       seller_paid_at_closing: 50,
       seller_paid_before_closing: null,
       paid_by_others: null,
+      is_fixed: false,
+      points_percent: null,
+      points_round_whole_dollar: false,
+      points_adjustment: null,
+      points_adjustment_for: null,
     },
     {
       id: '4',
@@ -109,6 +124,11 @@ function demo() {
       seller_paid_at_closing: null,
       seller_paid_before_closing: null,
       paid_by_others: null,
+      is_fixed: false,
+      points_percent: null,
+      points_round_whole_dollar: false,
+      points_adjustment: null,
+      points_adjustment_for: null,
     },
   ]
 

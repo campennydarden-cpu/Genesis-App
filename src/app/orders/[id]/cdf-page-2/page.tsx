@@ -11,7 +11,11 @@ export default async function CdfPage2Page({ params }: { params: Promise<{ id: s
   } = await supabase.auth.getUser()
   if (!user) redirect('/login')
 
-  const [lines, contacts] = await Promise.all([listCdfPage2Lines(orderId), listAllContacts(orderId)])
+  const [lines, contacts, { data: order }] = await Promise.all([
+    listCdfPage2Lines(orderId),
+    listAllContacts(orderId),
+    supabase.from('orders').select('loan_amount').eq('id', orderId).single(),
+  ])
 
-  return <CdfPage2Panel orderId={orderId} lines={lines} contacts={contacts} />
+  return <CdfPage2Panel orderId={orderId} lines={lines} contacts={contacts} loanAmount={order?.loan_amount ?? null} />
 }

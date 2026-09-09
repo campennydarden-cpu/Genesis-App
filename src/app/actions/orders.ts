@@ -59,29 +59,24 @@ export async function createOrder(formData: FormData) {
     created_by: user.id,
   }
 
-  // ponytail: count-based sequence has a race window under concurrent creates; move to a Postgres sequence if throughput ever demands it
+  // Race-free: next_file_number() is a single atomic upsert-increment (migration
+  // 0041) — Postgres serializes concurrent callers on the same year row, so this
+  // can never hand out (or collide on) the same number twice, unlike the prior
+  // count(*)+1 approach, which broke permanently the moment any order was deleted
+  // and left a gap between count and the real max file_number.
   const year = new Date().getFullYear()
-  const nextFileNumber = async () => {
-    const { count } = await supabase
-      .from('orders')
-      .select('*', { count: 'exact', head: true })
-      .like('file_number', `${year}-%`)
-    return `${year}-${String((count ?? 0) + 1).padStart(4, '0')}`
+  const { data: fileNumber, error: fileNumberError } = await supabase.rpc('next_file_number', { p_year: year })
+
+  if (fileNumberError) {
+    console.error('createOrder failed (file number):', fileNumberError)
+    redirect(`/orders/new?error=${encodeURIComponent('Could not save. Please check your entries and try again.')}`)
   }
 
-  let { data, error } = await supabase
+  const { data, error } = await supabase
     .from('orders')
-    .insert({ ...orderFields, file_number: await nextFileNumber() })
+    .insert({ ...orderFields, file_number: fileNumber })
     .select('id')
     .single()
-
-  if (error?.code === '23505') {
-    ;({ data, error } = await supabase
-      .from('orders')
-      .insert({ ...orderFields, file_number: await nextFileNumber() })
-      .select('id')
-      .single())
-  }
 
   if (error || !data) {
     console.error('createOrder failed:', error)

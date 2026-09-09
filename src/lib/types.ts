@@ -604,6 +604,11 @@ export type CdfPage2Line = {
   seller_paid_at_closing: number | null
   seller_paid_before_closing: number | null
   paid_by_others: number | null
+  is_fixed: boolean
+  points_percent: number | null
+  points_round_whole_dollar: boolean
+  points_adjustment: number | null
+  points_adjustment_for: string | null
 }
 
 export type CdfPage2Totals = {
