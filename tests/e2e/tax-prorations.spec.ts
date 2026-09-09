@@ -82,6 +82,27 @@ test('add item, Calculate button computes buyer proration correctly, persists af
   await expect(reloadedRow.locator('input[name="prorated_amount"]')).toHaveValue('1840')
 })
 
+test('Calculate with 30-day months: buyer + seller days sum to the period, no double-counted day', async ({ page }) => {
+  const orderId = await createOrder(page)
+  await page.goto(`/orders/${orderId}/tax-prorations`)
+  await page.getByRole('button', { name: '+ Add Item' }).click()
+
+  const row = page.getByTestId('proration-list').locator('[data-testid^="proration-"]').first()
+  await row.locator('input[name="share_of_amount"]').fill('3600')
+  await row.locator('select[name="compute_for"]').selectOption('Buyer')
+  await row.locator('input[name="period_from"]').fill('2026-01-01')
+  await row.locator('input[name="period_to"]').fill('2026-12-31')
+  await row.locator('input[name="proration_date"]').fill('2026-07-01')
+  await row.locator('input[name="use_30_day_months"]').check()
+
+  await row.getByRole('button', { name: 'Calculate' }).click()
+  await expect(page.getByText('Saved')).toBeVisible()
+
+  await expect(row.locator('input[name="days_in_period"]')).toHaveValue('360')
+  await expect(row.locator('input[name="days_prorated"]')).toHaveValue('180')
+  await expect(row.locator('input[name="prorated_amount"]')).toHaveValue('1800')
+})
+
 test('computed fields stay manually editable after Calculate', async ({ page }) => {
   const orderId = await createOrder(page)
   await page.goto(`/orders/${orderId}/tax-prorations`)

@@ -48,11 +48,13 @@ export function calculateProration(input: ProrationInput): ProrationResult {
     ? days360Between(periodFrom, periodTo)
     : actualDaysBetween(periodFrom, periodTo) + 1
 
+  // The 30/360 day-count is already additive end-to-end (days360(A,B) + days360(B,C)
+  // === days360(A,C)), so neither side gets a +1 — unlike actual/365, where the +1 on
+  // the Buyer side is what makes an inclusive endpoint and an exclusive endpoint sum
+  // back to daysInPeriod. Adding +1 here would double-count one day between the two sides.
   let daysProrated: number
   if (computeFor === 'Buyer') {
-    daysProrated = use30DayMonths
-      ? days360Between(prorationDate, periodTo) + 1
-      : actualDaysBetween(prorationDate, periodTo) + 1
+    daysProrated = use30DayMonths ? days360Between(prorationDate, periodTo) : actualDaysBetween(prorationDate, periodTo) + 1
   } else {
     daysProrated = use30DayMonths ? days360Between(periodFrom, prorationDate) : actualDaysBetween(periodFrom, prorationDate)
   }
@@ -104,6 +106,21 @@ function demo() {
   })
   console.assert(buyer30.daysInPeriod === 360, `expected 360 days (30-day convention), got ${buyer30.daysInPeriod}`)
   console.assert(Math.abs(buyer30.perDiem - 10) < 0.01, `expected 30-day perDiem ~10, got ${buyer30.perDiem}`)
+  console.assert(buyer30.daysProrated === 180, `expected 30-day buyer 180 days (Jul1-Dec31), got ${buyer30.daysProrated}`)
+
+  const seller30 = calculateProration({
+    shareOfAmount: 3600,
+    periodFrom: '2026-01-01',
+    periodTo: '2026-12-31',
+    prorationDate: '2026-07-01',
+    computeFor: 'Seller',
+    use30DayMonths: true,
+  })
+  console.assert(seller30.daysProrated === 180, `expected 30-day seller 180 days (Jan1-Jun30), got ${seller30.daysProrated}`)
+  console.assert(
+    buyer30.daysProrated + seller30.daysProrated === buyer30.daysInPeriod,
+    `30-day buyer+seller days (${buyer30.daysProrated}+${seller30.daysProrated}) should equal period days (${buyer30.daysInPeriod})`
+  )
 }
 
 if (process.env.NODE_ENV === 'test') demo()
