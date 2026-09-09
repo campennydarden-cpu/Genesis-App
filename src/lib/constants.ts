@@ -295,8 +295,11 @@ export const AFFIDAVIT_TYPES = [
 // POLICY_TYPES field, which includes 'None'/'Simultaneous' as a whole-order selection).
 export const TITLE_POLICY_LINE_TYPES = ["Owner's", 'Loan'] as const
 
+// Shared by Premiums, Endorsements, and Additional Title Charges — every "Split" section
+// in the Title group uses this same basis list (no stored data depends on the exact
+// wording as of 2026-09-08, so it stays screen-agnostic rather than premium-specific).
 export const SPLIT_BASIS_TYPES = [
-  'Percent of Final Premium',
+  'Percent of Final Charge',
   'Percent of Balance',
   'Fixed Amount',
 ] as const

@@ -94,14 +94,14 @@ test('add split under a policy', async ({ page }) => {
   await card.getByRole('button', { name: '+ Add Split' }).click()
   await expect(card.locator('select[name="basis"]')).toHaveCount(1)
 
-  await card.locator('select[name="basis"]').selectOption('Percent of Final Premium')
+  await card.locator('select[name="basis"]').selectOption('Percent of Final Charge')
   await card.locator('input[name="percent"]').fill('50')
   await card.locator('input[name="percent"]').blur()
   await expect(page.getByText('Saved')).toBeVisible()
 
   await page.reload()
   const reloadedCard = page.getByTestId('premium-list').locator('[data-testid^="premium-"]').first()
-  await expect(reloadedCard.locator('select[name="basis"]')).toHaveValue('Percent of Final Premium')
+  await expect(reloadedCard.locator('select[name="basis"]')).toHaveValue('Percent of Final Charge')
   await expect(reloadedCard.locator('input[name="percent"]')).toHaveValue('50')
 })
 

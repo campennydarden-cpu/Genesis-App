@@ -6,7 +6,8 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { SaveIndicator } from '@/components/SaveIndicator'
 import { useAutosave } from '@/lib/use-autosave'
-import { TITLE_POLICY_LINE_TYPES, SPLIT_BASIS_TYPES } from '@/lib/constants'
+import { TITLE_POLICY_LINE_TYPES } from '@/lib/constants'
+import { SplitList } from '@/components/title/SplitFields'
 import {
   addPremium,
   updatePremium,
@@ -29,139 +30,6 @@ type Contact = { id: string; name: string }
 
 function refresh() {
   window.location.reload()
-}
-
-function SplitRow({
-  split,
-  contacts,
-  onUpdate,
-  onDelete,
-}: {
-  split: PremiumSplit | EndorsementSplit
-  contacts: Contact[]
-  onUpdate: (formData: FormData) => Promise<{ error?: string }>
-  onDelete: () => Promise<unknown>
-}) {
-  const formRef = useRef<HTMLFormElement>(null)
-  const { state, errorMessage, save } = useAutosave(onUpdate)
-  const [isPending, startTransition] = useTransition()
-
-  function handleSave() {
-    if (!formRef.current) return
-    save(new FormData(formRef.current))
-  }
-
-  return (
-    <form ref={formRef} className="grid grid-cols-6 items-end gap-2">
-      <div className="col-span-2">
-        <Label htmlFor={`${split.id}-payee`}>Payee</Label>
-        <select
-          id={`${split.id}-payee`}
-          name="payee_contact_id"
-          defaultValue={split.payee_contact_id ?? ''}
-          onBlur={handleSave}
-          className="block w-full rounded border px-2 py-1 text-sm"
-        >
-          <option value="">—</option>
-          {contacts.map((c) => (
-            <option key={c.id} value={c.id}>
-              {c.name}
-            </option>
-          ))}
-        </select>
-      </div>
-      <div className="col-span-2">
-        <Label htmlFor={`${split.id}-basis`}>Basis</Label>
-        <select
-          id={`${split.id}-basis`}
-          name="basis"
-          defaultValue={split.basis ?? ''}
-          onBlur={handleSave}
-          className="block w-full rounded border px-2 py-1 text-sm"
-        >
-          <option value="">—</option>
-          {SPLIT_BASIS_TYPES.map((b) => (
-            <option key={b} value={b}>
-              {b}
-            </option>
-          ))}
-        </select>
-      </div>
-      <div>
-        <Label htmlFor={`${split.id}-percent`}>%</Label>
-        <Input id={`${split.id}-percent`} name="percent" type="number" step="0.01" defaultValue={split.percent ?? ''} onBlur={handleSave} />
-      </div>
-      <div>
-        <Label htmlFor={`${split.id}-amount`}>Amount</Label>
-        <Input id={`${split.id}-amount`} name="amount" type="number" step="0.01" defaultValue={split.amount ?? ''} onBlur={handleSave} />
-      </div>
-      <div className="col-span-2">
-        <Label htmlFor={`${split.id}-bill_code`}>Bill Code</Label>
-        <Input id={`${split.id}-bill_code`} name="bill_code" defaultValue={split.bill_code ?? ''} onBlur={handleSave} />
-      </div>
-      <div className="col-span-6 flex items-center justify-between">
-        <SaveIndicator state={state} errorMessage={errorMessage} />
-        <button
-          type="button"
-          className="text-sm text-destructive hover:underline"
-          disabled={isPending}
-          onClick={() =>
-            startTransition(async () => {
-              await onDelete()
-              refresh()
-            })
-          }
-        >
-          Remove split
-        </button>
-      </div>
-    </form>
-  )
-}
-
-function SplitList({
-  splits,
-  contacts,
-  onAdd,
-  onUpdate,
-  onDelete,
-}: {
-  splits: (PremiumSplit | EndorsementSplit)[]
-  contacts: Contact[]
-  onAdd: () => Promise<unknown>
-  onUpdate: (id: string, formData: FormData) => Promise<{ error?: string }>
-  onDelete: (id: string) => Promise<unknown>
-}) {
-  const [isPending, startTransition] = useTransition()
-
-  return (
-    <div className="space-y-3 rounded border p-3">
-      <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Split</p>
-      {splits.map((s) => (
-        <SplitRow
-          key={s.id}
-          split={s}
-          contacts={contacts}
-          onUpdate={(formData) => onUpdate(s.id, formData)}
-          onDelete={() => onDelete(s.id)}
-        />
-      ))}
-      <Button
-        type="button"
-        variant="outline"
-        size="sm"
-        onClick={() =>
-          startTransition(async () => {
-            await onAdd()
-            refresh()
-          })
-        }
-        disabled={isPending}
-      >
-        + Add Split
-      </Button>
-    </div>
-  )
 }
 
 function EndorsementRow({
@@ -232,6 +100,7 @@ function EndorsementRow({
         onAdd={() => addEndorsementSplit(orderId, endorsement.id)}
         onUpdate={(id, formData) => updateEndorsementSplit(orderId, id, formData)}
         onDelete={(id) => deleteEndorsementSplit(orderId, id)}
+        onChanged={refresh}
       />
       <button
         type="button"
@@ -407,6 +276,7 @@ function PremiumCard({
         onAdd={() => addPremiumSplit(orderId, premium.id)}
         onUpdate={(id, formData) => updatePremiumSplit(orderId, id, formData)}
         onDelete={(id) => deletePremiumSplit(orderId, id)}
+        onChanged={refresh}
       />
 
       <EndorsementList

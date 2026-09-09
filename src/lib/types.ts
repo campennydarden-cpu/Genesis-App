@@ -501,6 +501,34 @@ export type EndorsementSplit = {
   bill_code: string | null
 }
 
+export type AdditionalTitleCharge = {
+  id: string
+  order_id: string
+  sort_order: number
+  description: string | null
+  policy_id: string | null
+  charge: number | null
+  taxable: boolean
+  fee_type: string | null
+  cdf_line: string | null
+  invoice: string | null
+  bill_code: string | null
+  seller_pay_percent: number | null
+  issued_date: string | null
+  effective_date: string | null
+}
+
+export type AdditionalTitleChargeSplit = {
+  id: string
+  charge_id: string
+  sort_order: number
+  payee_contact_id: string | null
+  basis: string | null
+  percent: number | null
+  amount: number | null
+  bill_code: string | null
+}
+
 export type Attachment = {
   id: string
   order_id: string

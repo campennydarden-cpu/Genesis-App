@@ -44,7 +44,7 @@ const NAV_GROUPS: NavGroup[] = [
     items: [
       { label: 'Settlement Type' },
       { label: 'Options' },
-      { label: 'Additional Charges' },
+      { label: 'Additional Charges', segment: 'additional-charges' },
       { label: 'Recording' },
       { label: 'Payoff Calculations' },
       { label: 'Tax/Other Prorations' },
