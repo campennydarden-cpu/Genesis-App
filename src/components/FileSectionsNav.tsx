@@ -42,11 +42,10 @@ const NAV_GROUPS: NavGroup[] = [
   {
     heading: 'Escrow / Closing',
     items: [
-      { label: 'Settlement Type' },
-      { label: 'Options' },
+      { label: 'Settlement Type & Options', segment: 'settlement-options' },
       { label: 'Additional Charges', segment: 'additional-charges' },
-      { label: 'Recording' },
-      { label: 'Payoff Calculations' },
+      { label: 'Recording', segment: 'recording' },
+      { label: 'Payoff Calculations', segment: 'payoff-calculations' },
       { label: 'Tax/Other Prorations', segment: 'tax-prorations' },
       { label: 'CDF Page 1', segment: 'cdf-page-1' },
       { label: 'CDF Page 2', segment: 'cdf-page-2' },

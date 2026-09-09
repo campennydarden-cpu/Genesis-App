@@ -352,6 +352,16 @@ export const CDF_LIABILITY_AFTER_FORECLOSURE = [
   'State law does not protect you from liability',
 ] as const
 
+export const RECORDING_STATUSES = ['Not Submitted', 'Submitted', 'Recorded', 'Rejected'] as const
+
+export const SETTLEMENT_TYPES = ['Combined', 'Borrower-Buyer', 'Seller', 'Cash'] as const
+
+export const SELLER_CREDIT_METHODS = [
+  'Apply seller credit to borrower paid loan policy on CDF Page 2',
+  'Apply general seller credit on CDF Page 3',
+  'Charge borrower full premiums on CDF Page 2 and apply seller credit on CDF Page 3',
+] as const
+
 // Attachments upload validation (Genesis Rebuild - Attachments Core Design.md).
 export const ATTACHMENT_MAX_SIZE_BYTES = 25 * 1024 * 1024 // 25 MB
 

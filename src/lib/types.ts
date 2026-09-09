@@ -625,6 +625,22 @@ export type CdfPayoffPayment = {
   description: string | null
   payee_contact_id: string | null
   amount: number | null
+  principal_balance: number | null
+  interest_rate: number | null
+  per_diem: number | null
+  interest_from: string | null
+  interest_to: string | null
+  additional_interest: number | null
+  late_fee: number | null
+  payoff_expires_on: string | null
+}
+
+export type CdfPayoffAdditionalCharge = {
+  id: string
+  payoff_id: string
+  sort_order: number
+  description: string | null
+  fee: number | null
 }
 
 export type CdfTransactionSummaryLine = {
@@ -684,6 +700,35 @@ export type CdfPage5Contact = {
   contact_license_id: string | null
   email: string | null
   phone: string | null
+}
+
+export type RecordingDocument = {
+  id: string
+  order_id: string
+  sort_order: number
+  document_description: string | null
+  county: string | null
+  status: string
+  date_submitted: string | null
+  date_recorded: string | null
+  instrument_number: string | null
+  book: string | null
+  page: string | null
+  number_of_pages: number | null
+  e_recording_reference: string | null
+}
+
+export type SettlementOptions = {
+  id: string
+  order_id: string
+  settlement_type: string | null
+  place_of_settlement_address: string | null
+  admin_data_cdf1: string | null
+  admin_data_cdf2: string | null
+  admin_data_cdf3: string | null
+  admin_data_cdf4: string | null
+  admin_data_cdf5: string | null
+  seller_credit_method: string | null
 }
 
 export type Attachment = {
