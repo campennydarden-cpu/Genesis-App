@@ -322,6 +322,36 @@ export const CDF_PAGE2_SECTIONS = [
   { code: 'H', label: 'Other' },
 ] as const
 
+export const CDF_YES_NO = ['Yes', 'No'] as const
+
+// CDF Page 3 Summaries of Transactions — six subsections, mirrored for Borrower and
+// Seller. Order matches the official form's Borrower's Transaction column top-to-bottom
+// (the Seller's Transaction column uses the same six subsections in the same order).
+export const CDF_TRANSACTION_SUMMARY_SECTIONS = [
+  { code: 'due_from_at_closing', label: 'Due from Borrower/Seller at Closing' },
+  { code: 'due_to_at_closing', label: 'Due to Borrower/Seller at Closing' },
+  { code: 'paid_already', label: 'Paid Already by or on Behalf of Borrower/Seller at Closing' },
+  { code: 'due_from_before_closing', label: 'Due from Borrower/Seller Before Closing' },
+  { code: 'due_to_before_closing', label: 'Due to Borrower/Seller Before Closing' },
+  { code: 'adjustments', label: 'Adjustments' },
+] as const
+
+export const CDF_TRANSACTION_SUMMARY_PARTIES = ['Borrower', 'Seller'] as const
+
+export const CDF_PAGE5_CONTACT_ROLES = [
+  'Lender',
+  'Mortgage Broker',
+  "Real Estate Broker (B)",
+  "Real Estate Broker (S)",
+  'Settlement Agent',
+  'Additional',
+] as const
+
+export const CDF_LIABILITY_AFTER_FORECLOSURE = [
+  'State law may protect you from liability',
+  'State law does not protect you from liability',
+] as const
+
 // Attachments upload validation (Genesis Rebuild - Attachments Core Design.md).
 export const ATTACHMENT_MAX_SIZE_BYTES = 25 * 1024 * 1024 // 25 MB
 

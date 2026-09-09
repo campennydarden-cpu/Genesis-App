@@ -573,6 +573,119 @@ export type CdfPage2Totals = {
   sellerBeforeClosing: number
 }
 
+export type CdfPage1 = {
+  id: string
+  order_id: string
+  loan_amount: number | null
+  interest_rate: number | null
+  monthly_principal_interest: number | null
+  principal_interest_can_increase: boolean
+  principal_interest_increase_explanation: string | null
+  has_prepayment_penalty: boolean
+  prepayment_penalty_max: number | null
+  has_balloon_payment: boolean
+  balloon_payment_amount: number | null
+  estimated_total_monthly_payment: number | null
+  estimated_escrow_monthly: number | null
+  taxes_included_in_escrow: boolean
+  homeowners_insurance_included_in_escrow: boolean
+  other_escrow_included: boolean
+  other_escrow_description: string | null
+  closing_costs_total: number | null
+  closing_costs_note: string | null
+  cash_to_close_total: number | null
+  cash_to_close_note: string | null
+}
+
+export type CdfCashToClose = {
+  id: string
+  order_id: string
+  loan_amount_estimate: number | null
+  loan_amount_final: number | null
+  loan_amount_changed: string | null
+  closing_costs_j_estimate: number | null
+  closing_costs_j_final: number | null
+  closing_costs_changed: string | null
+  closing_costs_paid_before_closing_estimate: number | null
+  closing_costs_paid_before_closing_final: number | null
+  payoffs_k_estimate: number | null
+  payoffs_k_final: number | null
+  payoffs_changed: string | null
+  cash_to_close_estimate: number | null
+  cash_to_close_final: number | null
+  cash_to_close_from_borrower: boolean
+  cash_to_close_to_borrower: boolean
+  closing_costs_financed: number | null
+}
+
+export type CdfPayoffPayment = {
+  id: string
+  order_id: string
+  sort_order: number
+  description: string | null
+  payee_contact_id: string | null
+  amount: number | null
+}
+
+export type CdfTransactionSummaryLine = {
+  id: string
+  order_id: string
+  party: string
+  section: string
+  sort_order: number
+  description: string | null
+  amount: number | null
+}
+
+export type CdfPage4 = {
+  id: string
+  order_id: string
+  has_assumption: boolean
+  assumption_allowed: boolean
+  has_demand_feature: boolean
+  demand_feature_explanation: string | null
+  late_payment_grace_period_days: number | null
+  late_payment_fee_percent: number | null
+  has_negative_amortization: boolean
+  negative_amortization_explanation: string | null
+  partial_payments_accepted: boolean
+  partial_payments_explanation: string | null
+  has_security_interest: boolean
+  security_interest_property_address: string | null
+  escrow_type: string | null
+  escrow_initial_deposit: number | null
+  escrow_monthly_payment: number | null
+  no_escrow_estimated_property_costs: number | null
+  no_escrow_escrowed_note: string | null
+}
+
+export type CdfPage5 = {
+  id: string
+  order_id: string
+  total_of_payments: number | null
+  finance_charge: number | null
+  amount_financed: number | null
+  apr: number | null
+  total_interest_percentage: number | null
+  print_appraisal_disclosure: boolean
+  liability_after_foreclosure: string | null
+}
+
+export type CdfPage5Contact = {
+  id: string
+  order_id: string
+  sort_order: number
+  role: string | null
+  contact_id: string | null
+  nmls_id: string | null
+  license_id: string | null
+  contact_person: string | null
+  contact_nmls_id: string | null
+  contact_license_id: string | null
+  email: string | null
+  phone: string | null
+}
+
 export type Attachment = {
   id: string
   order_id: string
