@@ -54,20 +54,24 @@ export async function saveSecurityInstrument(orderId: string, formData: FormData
   return {}
 }
 
+// Atomic get-or-create — see ensureDeedId's comment in doc-prep-deed.ts for why this
+// can't be a select-then-insert (races two concurrent first-time actions, e.g. the
+// Mortgagor and Mortgagee "Copy" buttons clicked back-to-back).
 async function ensureSiId(supabase: Awaited<ReturnType<typeof createClient>>, orderId: string): Promise<string> {
-  const { data: existing } = await supabase
+  const { data, error } = await supabase
+    .from('doc_prep_security_instrument')
+    .upsert({ order_id: orderId }, { onConflict: 'order_id', ignoreDuplicates: true })
+    .select('id')
+    .single()
+  if (!error && data) return data.id
+
+  const { data: existing, error: fetchError } = await supabase
     .from('doc_prep_security_instrument')
     .select('id')
     .eq('order_id', orderId)
-    .maybeSingle()
-  if (existing) return existing.id
-  const { data: created, error } = await supabase
-    .from('doc_prep_security_instrument')
-    .insert({ order_id: orderId })
-    .select('id')
     .single()
-  if (error || !created) throw new Error('Could not create the Security Instrument record.')
-  return created.id
+  if (fetchError || !existing) throw new Error('Could not create the Security Instrument record.')
+  return existing.id
 }
 
 export async function copySiPartyFromContact(

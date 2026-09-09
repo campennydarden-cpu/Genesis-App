@@ -58,26 +58,34 @@ export async function listNotaryAcks(orderId: string): Promise<
   const { data: existingAcks } = await supabase.from('doc_prep_notary_acks').select('*').eq('order_id', orderId)
   const existing = existingAcks ?? []
 
+  // Stale pairs (a contact's role changed away from Seller/Buyer-Borrower) are never
+  // hard-deleted here — only filtered out of what's returned. Deleting on every read
+  // would silently destroy a preparer's hand-edited acknowledgment text the moment a
+  // role gets corrected, with no confirmation and no way to recover it. A contact that
+  // is actually deleted is already cleaned up by the FK's `on delete cascade`.
   const validKeys = new Set(signers.map((s) => `${s.c.id}|${s.doc}`))
-  const staleIds = existing.filter((a) => !validKeys.has(`${a.contact_id}|${a.doc_label}`)).map((a) => a.id)
-  if (staleIds.length > 0) {
-    await supabase.from('doc_prep_notary_acks').delete().in('id', staleIds)
-  }
 
   const missing = signers.filter((s) => !existing.some((a) => a.contact_id === s.c.id && a.doc_label === s.doc))
 
   for (const s of missing) {
     const { data: principals } = await supabase.from('contact_principals').select('name').eq('contact_id', s.c.id)
     const text = notaryAckTextForContact(s.c, s.doc, (principals ?? []).map((p) => p.name))
-    await supabase.from('doc_prep_notary_acks').insert({ order_id: orderId, contact_id: s.c.id, doc_label: s.doc, text })
+    const { error } = await supabase
+      .from('doc_prep_notary_acks')
+      .insert({ order_id: orderId, contact_id: s.c.id, doc_label: s.doc, text })
+    if (error) {
+      console.error(`listNotaryAcks failed to insert ack for contact ${s.c.id} / ${s.doc}:`, error)
+    }
   }
 
   const { data: finalAcks } = await supabase.from('doc_prep_notary_acks').select('*').eq('order_id', orderId)
 
-  return (finalAcks ?? []).map((a) => {
-    const c = (contacts ?? []).find((contact) => contact.id === a.contact_id)
-    return { ...a, contact_name: c?.name ?? '(unknown contact)' }
-  })
+  return (finalAcks ?? [])
+    .filter((a) => validKeys.has(`${a.contact_id}|${a.doc_label}`))
+    .map((a) => {
+      const c = (contacts ?? []).find((contact) => contact.id === a.contact_id)
+      return { ...a, contact_name: c?.name ?? '(unknown contact)' }
+    })
 }
 
 export async function updateNotaryAckText(orderId: string, id: string, text: string): Promise<{ error?: string }> {

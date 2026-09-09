@@ -81,16 +81,25 @@ export async function saveDeed(orderId: string, formData: FormData): Promise<{ e
   return {}
 }
 
+// Atomic get-or-create, matching saveDeed's own upsert(onConflict: 'order_id') pattern
+// (also used by curative_settings/property_details elsewhere in this codebase) — a
+// select-then-insert here would race two concurrent first-time actions (e.g. clicking
+// "Copy" for Grantor and Grantee back-to-back) into a unique-constraint violation.
 async function ensureDeedId(supabase: Awaited<ReturnType<typeof createClient>>, orderId: string): Promise<string> {
-  const { data: existing } = await supabase.from('doc_prep_deed').select('id').eq('order_id', orderId).maybeSingle()
-  if (existing) return existing.id
-  const { data: created, error } = await supabase
+  const { data, error } = await supabase
     .from('doc_prep_deed')
-    .insert({ order_id: orderId })
+    .upsert({ order_id: orderId }, { onConflict: 'order_id', ignoreDuplicates: true })
     .select('id')
     .single()
-  if (error || !created) throw new Error('Could not create the Deed record.')
-  return created.id
+  if (!error && data) return data.id
+
+  const { data: existing, error: fetchError } = await supabase
+    .from('doc_prep_deed')
+    .select('id')
+    .eq('order_id', orderId)
+    .single()
+  if (fetchError || !existing) throw new Error('Could not create the Deed record.')
+  return existing.id
 }
 
 // Copies one Contact's name/entity type/principals onto the Deed's Grantor or Grantee —
