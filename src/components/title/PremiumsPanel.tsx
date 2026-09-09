@@ -91,12 +91,20 @@ function EndorsementRow({
         </div>
         <div className="col-span-2">
           <Label htmlFor={`endorsement-${endorsement.id}-bill_code`}>Bill Code</Label>
-          <Input
+          <select
             id={`endorsement-${endorsement.id}-bill_code`}
             name="bill_code"
             defaultValue={endorsement.bill_code ?? ''}
             onBlur={handleSave}
-          />
+            className="block w-full rounded border px-2 py-1 text-sm"
+          >
+            <option value="">—</option>
+            {billCodes.map((b) => (
+              <option key={b.id} value={b.code}>
+                {b.code}
+              </option>
+            ))}
+          </select>
         </div>
         <div className="col-span-6">
           <SaveIndicator state={state} errorMessage={errorMessage} />
@@ -277,7 +285,20 @@ function PremiumCard({
         </div>
         <div>
           <Label htmlFor={`premium-${premium.id}-bill_code`}>Bill Code</Label>
-          <Input id={`premium-${premium.id}-bill_code`} name="bill_code" defaultValue={premium.bill_code ?? ''} onBlur={handleSave} />
+          <select
+            id={`premium-${premium.id}-bill_code`}
+            name="bill_code"
+            defaultValue={premium.bill_code ?? ''}
+            onBlur={handleSave}
+            className="block w-full rounded border px-2 py-1 text-sm"
+          >
+            <option value="">—</option>
+            {billCodes.map((b) => (
+              <option key={b.id} value={b.code}>
+                {b.code}
+              </option>
+            ))}
+          </select>
         </div>
         <div>
           <Label htmlFor={`premium-${premium.id}-base_premium`}>Base Premium</Label>

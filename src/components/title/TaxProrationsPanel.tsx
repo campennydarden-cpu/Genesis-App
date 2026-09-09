@@ -14,6 +14,7 @@ import { CdfLineAssign } from '@/components/title/CdfLineAssign'
 import type { TaxProration, CdfPage2Line } from '@/lib/types'
 
 type Contact = { id: string; name: string }
+type BillCode = { id: string; code: string }
 
 function refresh() {
   window.location.reload()
@@ -24,11 +25,13 @@ function ProrationRow({
   proration,
   contacts,
   cdfLines,
+  billCodes,
 }: {
   orderId: string
   proration: TaxProration
   contacts: Contact[]
   cdfLines: CdfPage2Line[]
+  billCodes: BillCode[]
 }) {
   const formRef = useRef<HTMLFormElement>(null)
   const { state, errorMessage, save } = useAutosave((formData: FormData) => updateProration(orderId, proration.id, formData))
@@ -279,7 +282,20 @@ function ProrationRow({
         </div>
         <div>
           <Label htmlFor={`proration-${proration.id}-bill_code`}>Bill Code</Label>
-          <Input id={`proration-${proration.id}-bill_code`} name="bill_code" defaultValue={proration.bill_code ?? ''} onBlur={handleSave} />
+          <select
+            id={`proration-${proration.id}-bill_code`}
+            name="bill_code"
+            defaultValue={proration.bill_code ?? ''}
+            onBlur={handleSave}
+            className="block w-full rounded border px-2 py-1 text-sm"
+          >
+            <option value="">—</option>
+            {billCodes.map((b) => (
+              <option key={b.id} value={b.code}>
+                {b.code}
+              </option>
+            ))}
+          </select>
         </div>
         <div className="col-span-4">
           <SaveIndicator state={state} errorMessage={errorMessage} />
@@ -308,11 +324,13 @@ export function TaxProrationsPanel({
   prorations,
   contacts,
   cdfLines,
+  billCodes,
 }: {
   orderId: string
   prorations: TaxProration[]
   contacts: Contact[]
   cdfLines: CdfPage2Line[]
+  billCodes: BillCode[]
 }) {
   const [isPending, startTransition] = useTransition()
 
@@ -326,7 +344,7 @@ export function TaxProrationsPanel({
 
       <div className="space-y-4" data-testid="proration-list">
         {prorations.map((p) => (
-          <ProrationRow key={p.id} orderId={orderId} proration={p} contacts={contacts} cdfLines={cdfLines} />
+          <ProrationRow key={p.id} orderId={orderId} proration={p} contacts={contacts} cdfLines={cdfLines} billCodes={billCodes} />
         ))}
         {prorations.length === 0 && <p className="text-sm text-muted-foreground">No tax or proration items yet.</p>}
       </div>

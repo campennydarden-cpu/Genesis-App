@@ -60,17 +60,17 @@ test('add charge, edit fields, autosave persists after reload', async ({ page })
   await expect(page.getByTestId('charge-list').locator('[data-testid^="charge-"]')).toHaveCount(1)
 
   const row = page.getByTestId('charge-list').locator('[data-testid^="charge-"]').first()
+  await row.locator('select[name="bill_code"]').selectOption('CLOSE')
   await row.locator('input[name="description"]').fill('Notary Fee')
   await row.locator('input[name="charge"]').fill('150')
-  await row.locator('input[name="bill_code"]').fill('NOTARY')
-  await row.locator('input[name="bill_code"]').blur()
+  await row.locator('input[name="charge"]').blur()
   await expect(page.getByText('Saved')).toBeVisible()
 
   await page.reload()
   const reloadedRow = page.getByTestId('charge-list').locator('[data-testid^="charge-"]').first()
   await expect(reloadedRow.locator('input[name="description"]')).toHaveValue('Notary Fee')
   await expect(reloadedRow.locator('input[name="charge"]')).toHaveValue('150')
-  await expect(reloadedRow.locator('input[name="bill_code"]')).toHaveValue('NOTARY')
+  await expect(reloadedRow.locator('select[name="bill_code"]')).toHaveValue('CLOSE')
 })
 
 test('add split under a charge', async ({ page }) => {

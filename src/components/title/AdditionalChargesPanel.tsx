@@ -124,7 +124,20 @@ function ChargeRow({
         </div>
         <div>
           <Label htmlFor={`charge-${charge.id}-bill_code`}>Bill Code</Label>
-          <Input id={`charge-${charge.id}-bill_code`} name="bill_code" defaultValue={charge.bill_code ?? ''} onBlur={handleSave} />
+          <select
+            id={`charge-${charge.id}-bill_code`}
+            name="bill_code"
+            defaultValue={charge.bill_code ?? ''}
+            onBlur={handleSave}
+            className="block w-full rounded border px-2 py-1 text-sm"
+          >
+            <option value="">—</option>
+            {billCodes.map((b) => (
+              <option key={b.id} value={b.code}>
+                {b.code}
+              </option>
+            ))}
+          </select>
         </div>
         <div>
           <Label htmlFor={`charge-${charge.id}-seller_pay_percent`}>Seller Pay %</Label>

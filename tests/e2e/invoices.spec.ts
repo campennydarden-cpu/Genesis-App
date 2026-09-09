@@ -79,12 +79,16 @@ test('generate line items from bill-coded splits, then remove invoice', async ({
   await page.getByRole('button', { name: '+ Add Policy' }).click()
   const premiumCard = page.getByTestId('premium-list').locator('[data-testid^="premium-"]').first()
   await premiumCard.locator('select[name="policy_type"]').selectOption("Owner's")
-  await premiumCard.locator('input[name="bill_code"]').fill('OP-1')
-  await premiumCard.locator('input[name="bill_code"]').blur()
+  await premiumCard.locator('select[name="bill_code"]').selectOption('PREMIUMS')
+  await premiumCard.getByLabel('Coverage Amount').fill('300000')
+  await premiumCard.getByLabel('Coverage Amount').blur()
   await expect(page.getByText('Saved').first()).toBeVisible()
 
   await premiumCard.getByRole('button', { name: '+ Add Split' }).click()
-  const splitRow = premiumCard.locator('form').filter({ has: page.locator('select[name="bill_code"]') }).first()
+  // Split rows are the only form on this card with a Basis select — a stable way to
+  // target the split's own form now that the card's own bill_code field is also a
+  // select (previously the split row was the only form with any bill_code select).
+  const splitRow = premiumCard.locator('form').filter({ has: page.locator('select[name="basis"]') }).first()
   await splitRow.locator('select[name="bill_code"]').selectOption('CLOSE')
   await splitRow.locator('input[name="amount"]').fill('100')
   await splitRow.locator('input[name="amount"]').blur()
