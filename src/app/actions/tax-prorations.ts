@@ -76,6 +76,17 @@ export async function updateProration(orderId: string, id: string, formData: For
   return {}
 }
 
+export async function setProrationCdfLine(orderId: string, id: string, cdfLineId: string | null): Promise<{ error?: string }> {
+  const supabase = await createClient()
+  const { error } = await supabase.from('tax_prorations').update({ cdf_page2_line_id: cdfLineId }).eq('id', id)
+  if (error) {
+    console.error('setProrationCdfLine failed:', error)
+    return { error: 'Could not save. Please try again.' }
+  }
+  revalidatePath(`/orders/${orderId}/tax-prorations`)
+  return {}
+}
+
 export async function deleteProration(orderId: string, id: string): Promise<{ error?: string }> {
   const supabase = await createClient()
   const { error } = await supabase.from('tax_prorations').delete().eq('id', id)

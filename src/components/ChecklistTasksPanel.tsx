@@ -78,15 +78,18 @@ export function ChecklistTasksPanel({ orderId }: { orderId: string }) {
               <p className="text-sm font-medium">{task.description}</p>
               <p className="text-xs text-muted-foreground">{task.milestone}</p>
             </div>
-            <Input
-              type="date"
-              aria-label={`Due date for ${task.description}`}
-              defaultValue={task.due_date ?? ''}
-              className="h-8 w-36 text-xs"
-              onBlur={(e) => {
-                if (e.target.value !== (task.due_date ?? '')) handleDueDateChange(task.id, e.target.value)
-              }}
-            />
+            <div className="flex flex-col gap-0.5">
+              <span className="text-[10px] font-medium text-muted-foreground">Due</span>
+              <Input
+                type="date"
+                aria-label={`Due date for ${task.description}`}
+                defaultValue={task.due_date ?? ''}
+                className="h-8 w-36 text-xs"
+                onBlur={(e) => {
+                  if (e.target.value !== (task.due_date ?? '')) handleDueDateChange(task.id, e.target.value)
+                }}
+              />
+            </div>
             {task.completed_date && (
               <span className="text-xs text-muted-foreground">Completed {task.completed_date}</span>
             )}

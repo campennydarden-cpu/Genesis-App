@@ -19,7 +19,11 @@ export async function addRecordingDocument(orderId: string): Promise<{ error?: s
     .select('*', { count: 'exact', head: true })
     .eq('order_id', orderId)
 
-  const { error } = await supabase.from('recording_documents').insert({ order_id: orderId, sort_order: (count ?? 0) + 1 })
+  const { data: order } = await supabase.from('orders').select('property_county').eq('id', orderId).single()
+
+  const { error } = await supabase
+    .from('recording_documents')
+    .insert({ order_id: orderId, sort_order: (count ?? 0) + 1, county: order?.property_county ?? null })
 
   if (error) {
     console.error('addRecordingDocument failed:', error)

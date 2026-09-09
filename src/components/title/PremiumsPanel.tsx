@@ -4,6 +4,7 @@ import { useRef, useTransition } from 'react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
+import { CurrencyInput } from '@/components/ui/currency-input'
 import { SaveIndicator } from '@/components/SaveIndicator'
 import { useAutosave } from '@/lib/use-autosave'
 import { TITLE_POLICY_LINE_TYPES } from '@/lib/constants'
@@ -15,6 +16,7 @@ import {
   addPremiumSplit,
   updatePremiumSplit,
   deletePremiumSplit,
+  setPremiumCdfLine,
 } from '@/app/actions/title-premiums'
 import {
   addEndorsement,
@@ -23,8 +25,11 @@ import {
   addEndorsementSplit,
   updateEndorsementSplit,
   deleteEndorsementSplit,
+  setEndorsementCdfLine,
 } from '@/app/actions/endorsements'
-import type { TitleInsurancePremium, PremiumSplit, Endorsement, EndorsementSplit } from '@/lib/types'
+import { assignNextCdfPage2Line } from '@/app/actions/cdf-page2'
+import { CdfLineAssign } from '@/components/title/CdfLineAssign'
+import type { TitleInsurancePremium, PremiumSplit, Endorsement, EndorsementSplit, CdfPage2Line } from '@/lib/types'
 
 type Contact = { id: string; name: string }
 
@@ -37,12 +42,14 @@ function EndorsementRow({
   endorsement,
   splits,
   contacts,
+  cdfLines,
   onDelete,
 }: {
   orderId: string
   endorsement: Endorsement
   splits: EndorsementSplit[]
   contacts: Contact[]
+  cdfLines: CdfPage2Line[]
   onDelete: () => Promise<unknown>
 }) {
   const formRef = useRef<HTMLFormElement>(null)
@@ -72,12 +79,10 @@ function EndorsementRow({
         </div>
         <div>
           <Label htmlFor={`endorsement-${endorsement.id}-charge`}>Charge</Label>
-          <Input
+          <CurrencyInput
             id={`endorsement-${endorsement.id}-charge`}
             name="charge"
-            type="number"
-            step="0.01"
-            defaultValue={endorsement.charge ?? ''}
+            defaultValue={endorsement.charge}
             onBlur={handleSave}
           />
         </div>
@@ -94,6 +99,19 @@ function EndorsementRow({
           <SaveIndicator state={state} errorMessage={errorMessage} />
         </div>
       </form>
+      <CdfLineAssign
+        cdfLineId={endorsement.cdf_page2_line_id}
+        cdfLines={cdfLines}
+        onAssign={async (section) => {
+          const { id } = await assignNextCdfPage2Line(orderId, section)
+          if (id) await setEndorsementCdfLine(orderId, endorsement.id, id)
+          refresh()
+        }}
+        onUnassign={async () => {
+          await setEndorsementCdfLine(orderId, endorsement.id, null)
+          refresh()
+        }}
+      />
       <SplitList
         splits={splits}
         contacts={contacts}
@@ -125,12 +143,14 @@ function EndorsementList({
   endorsements,
   splitsByEndorsement,
   contacts,
+  cdfLines,
 }: {
   orderId: string
   premiumId: string
   endorsements: Endorsement[]
   splitsByEndorsement: Record<string, EndorsementSplit[]>
   contacts: Contact[]
+  cdfLines: CdfPage2Line[]
 }) {
   const [isPending, startTransition] = useTransition()
 
@@ -144,6 +164,7 @@ function EndorsementList({
           endorsement={e}
           splits={splitsByEndorsement[e.id] ?? []}
           contacts={contacts}
+          cdfLines={cdfLines}
           onDelete={() => deleteEndorsement(orderId, e.id)}
         />
       ))}
@@ -173,6 +194,9 @@ function PremiumCard({
   endorsementSplits,
   underwriterContacts,
   allContacts,
+  purchasePrice,
+  loanAmount,
+  cdfLines,
 }: {
   orderId: string
   premium: TitleInsurancePremium
@@ -181,7 +205,12 @@ function PremiumCard({
   endorsementSplits: Record<string, EndorsementSplit[]>
   underwriterContacts: Contact[]
   allContacts: Contact[]
+  purchasePrice: number | null
+  loanAmount: number | null
+  cdfLines: CdfPage2Line[]
 }) {
+  const coverageDefault =
+    premium.coverage_amount ?? (premium.policy_type === "Owner's" ? purchasePrice : premium.policy_type === 'Loan' ? loanAmount : null)
   const formRef = useRef<HTMLFormElement>(null)
   const { state, errorMessage, save } = useAutosave((formData: FormData) => updatePremium(orderId, premium.id, formData))
   const [isPending, startTransition] = useTransition()
@@ -230,12 +259,10 @@ function PremiumCard({
         </div>
         <div>
           <Label htmlFor={`premium-${premium.id}-coverage_amount`}>Coverage Amount</Label>
-          <Input
+          <CurrencyInput
             id={`premium-${premium.id}-coverage_amount`}
             name="coverage_amount"
-            type="number"
-            step="0.01"
-            defaultValue={premium.coverage_amount ?? ''}
+            defaultValue={coverageDefault}
             onBlur={handleSave}
           />
         </div>
@@ -270,6 +297,20 @@ function PremiumCard({
         </div>
       </form>
 
+      <CdfLineAssign
+        cdfLineId={premium.cdf_page2_line_id}
+        cdfLines={cdfLines}
+        onAssign={async (section) => {
+          const { id } = await assignNextCdfPage2Line(orderId, section)
+          if (id) await setPremiumCdfLine(orderId, premium.id, id)
+          refresh()
+        }}
+        onUnassign={async () => {
+          await setPremiumCdfLine(orderId, premium.id, null)
+          refresh()
+        }}
+      />
+
       <SplitList
         splits={splits}
         contacts={allContacts}
@@ -285,6 +326,7 @@ function PremiumCard({
         endorsements={endorsements}
         splitsByEndorsement={endorsementSplits}
         contacts={allContacts}
+        cdfLines={cdfLines}
       />
 
       <button
@@ -312,6 +354,9 @@ export function PremiumsPanel({
   endorsementSplits,
   underwriterContacts,
   allContacts,
+  purchasePrice,
+  loanAmount,
+  cdfLines,
 }: {
   orderId: string
   premiums: TitleInsurancePremium[]
@@ -320,6 +365,9 @@ export function PremiumsPanel({
   endorsementSplits: Record<string, EndorsementSplit[]>
   underwriterContacts: Contact[]
   allContacts: Contact[]
+  purchasePrice: number | null
+  loanAmount: number | null
+  cdfLines: CdfPage2Line[]
 }) {
   const [isPending, startTransition] = useTransition()
 
@@ -341,6 +389,9 @@ export function PremiumsPanel({
             endorsementSplits={endorsementSplits}
             underwriterContacts={underwriterContacts}
             allContacts={allContacts}
+            purchasePrice={purchasePrice}
+            loanAmount={loanAmount}
+            cdfLines={cdfLines}
           />
         ))}
         {premiums.length === 0 && <p className="text-sm text-muted-foreground">No policies yet.</p>}

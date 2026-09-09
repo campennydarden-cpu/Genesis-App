@@ -21,24 +21,29 @@ const STATUS_CLASSES: Record<string, string> = {
 }
 
 function DateField({
+  shortLabel,
   label,
   value,
   onCommit,
 }: {
+  shortLabel: string
   label: string
   value: string | null
   onCommit: (value: string) => void
 }) {
   return (
-    <Input
-      type="date"
-      aria-label={label}
-      defaultValue={value ?? ''}
-      className="h-8 w-32 text-xs"
-      onBlur={(e) => {
-        if (e.target.value !== (value ?? '')) onCommit(e.target.value)
-      }}
-    />
+    <div className="flex flex-col gap-0.5">
+      <span className="text-[10px] font-medium text-muted-foreground">{shortLabel}</span>
+      <Input
+        type="date"
+        aria-label={label}
+        defaultValue={value ?? ''}
+        className="h-8 w-32 text-xs"
+        onBlur={(e) => {
+          if (e.target.value !== (value ?? '')) onCommit(e.target.value)
+        }}
+      />
+    </div>
   )
 }
 
@@ -103,21 +108,25 @@ export function RequestedTasksPanel({ orderId }: { orderId: string }) {
           <li key={task.id} className="flex flex-wrap items-center gap-3 py-2">
             <p className="w-48 shrink-0 text-sm font-medium">{task.task_name}</p>
             <DateField
+              shortLabel="Requested"
               label={`Requested date for ${task.task_name}`}
               value={task.requested_date}
               onCommit={(v) => handleFieldChange(task.id, 'requested_date', v)}
             />
             <DateField
+              shortLabel="Req. Due"
               label={`Requested due date for ${task.task_name}`}
               value={task.requested_due_date}
               onCommit={(v) => handleFieldChange(task.id, 'requested_due_date', v)}
             />
             <DateField
+              shortLabel="Due"
               label={`Due date for ${task.task_name}`}
               value={task.due_date}
               onCommit={(v) => handleFieldChange(task.id, 'due_date', v)}
             />
             <DateField
+              shortLabel="Received"
               label={`Received date for ${task.task_name}`}
               value={task.received_date}
               onCommit={(v) => handleFieldChange(task.id, 'received_date', v)}

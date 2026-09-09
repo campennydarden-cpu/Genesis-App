@@ -1,6 +1,7 @@
 import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
 import { listCharges, listChargeSplits, listPoliciesForOrder, listAllContacts } from '@/app/actions/additional-title-charges'
+import { listCdfPage2Lines } from '@/app/actions/cdf-page2'
 import { AdditionalChargesPanel } from '@/components/title/AdditionalChargesPanel'
 import type { AdditionalTitleChargeSplit } from '@/lib/types'
 
@@ -12,10 +13,11 @@ export default async function AdditionalChargesPage({ params }: { params: Promis
   } = await supabase.auth.getUser()
   if (!user) redirect('/login')
 
-  const [charges, policies, contacts] = await Promise.all([
+  const [charges, policies, contacts, cdfLines] = await Promise.all([
     listCharges(orderId),
     listPoliciesForOrder(orderId),
     listAllContacts(orderId),
+    listCdfPage2Lines(orderId),
   ])
 
   const splitsByCharge: Record<string, AdditionalTitleChargeSplit[]> = {}
@@ -30,6 +32,7 @@ export default async function AdditionalChargesPage({ params }: { params: Promis
       splitsByCharge={splitsByCharge}
       policies={policies}
       contacts={contacts}
+      cdfLines={cdfLines}
     />
   )
 }

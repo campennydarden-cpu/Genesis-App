@@ -55,6 +55,17 @@ export async function updateEndorsement(orderId: string, id: string, formData: F
   return {}
 }
 
+export async function setEndorsementCdfLine(orderId: string, id: string, cdfLineId: string | null): Promise<{ error?: string }> {
+  const supabase = await createClient()
+  const { error } = await supabase.from('endorsements').update({ cdf_page2_line_id: cdfLineId }).eq('id', id)
+  if (error) {
+    console.error('setEndorsementCdfLine failed:', error)
+    return { error: 'Could not save. Please try again.' }
+  }
+  revalidatePath(`/orders/${orderId}/premiums`)
+  return {}
+}
+
 export async function deleteEndorsement(orderId: string, id: string): Promise<{ error?: string }> {
   const supabase = await createClient()
   const { error } = await supabase.from('endorsements').delete().eq('id', id)

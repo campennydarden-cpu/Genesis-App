@@ -60,7 +60,7 @@ test('add recording document, edit, autosave persists, delete', async ({ page })
   await expect(page.getByTestId('recording-doc-list').locator('[data-testid^="recording-doc-"]')).toHaveCount(1)
 
   const row = page.getByTestId('recording-doc-list').locator('[data-testid^="recording-doc-"]').first()
-  await row.locator('input[name="document_description"]').fill('Warranty Deed')
+  await row.locator('select[name="document_description"]').selectOption('Deed')
   await row.locator('select[name="status"]').selectOption('Recorded')
   await row.locator('input[name="instrument_number"]').fill('2026-000123')
   await row.locator('input[name="instrument_number"]').blur()
@@ -68,7 +68,7 @@ test('add recording document, edit, autosave persists, delete', async ({ page })
 
   await page.reload()
   const reloadedRow = page.getByTestId('recording-doc-list').locator('[data-testid^="recording-doc-"]').first()
-  await expect(reloadedRow.locator('input[name="document_description"]')).toHaveValue('Warranty Deed')
+  await expect(reloadedRow.locator('select[name="document_description"]')).toHaveValue('Deed')
   await expect(reloadedRow.locator('select[name="status"]')).toHaveValue('Recorded')
   await expect(reloadedRow.locator('input[name="instrument_number"]')).toHaveValue('2026-000123')
 

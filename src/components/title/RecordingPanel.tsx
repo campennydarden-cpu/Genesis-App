@@ -7,7 +7,7 @@ import { Label } from '@/components/ui/label'
 import { SaveIndicator } from '@/components/SaveIndicator'
 import { addRecordingDocument, updateRecordingDocument, deleteRecordingDocument } from '@/app/actions/recording'
 import { useAutosave } from '@/lib/use-autosave'
-import { RECORDING_STATUSES } from '@/lib/constants'
+import { RECORDING_STATUSES, RECORDING_DOCUMENT_TYPES } from '@/lib/constants'
 import type { RecordingDocument } from '@/lib/types'
 
 function refresh() {
@@ -29,16 +29,34 @@ function DocumentRow({ orderId, doc }: { orderId: string; doc: RecordingDocument
       <form ref={formRef} className="grid grid-cols-4 gap-2">
         <div className="col-span-2">
           <Label htmlFor={`recording-doc-${doc.id}-document_description`}>Document</Label>
-          <Input
+          <select
             id={`recording-doc-${doc.id}-document_description`}
             name="document_description"
             defaultValue={doc.document_description ?? ''}
             onBlur={handleSave}
-          />
+            className="block w-full rounded border px-2 py-1 text-sm"
+          >
+            <option value="" />
+            {RECORDING_DOCUMENT_TYPES.map((t) => (
+              <option key={t} value={t}>
+                {t}
+              </option>
+            ))}
+          </select>
         </div>
         <div>
           <Label htmlFor={`recording-doc-${doc.id}-county`}>County</Label>
           <Input id={`recording-doc-${doc.id}-county`} name="county" defaultValue={doc.county ?? ''} onBlur={handleSave} />
+        </div>
+        <div>
+          <Label htmlFor={`recording-doc-${doc.id}-number_of_pages`}># of Pages</Label>
+          <Input
+            id={`recording-doc-${doc.id}-number_of_pages`}
+            name="number_of_pages"
+            type="number"
+            defaultValue={doc.number_of_pages ?? ''}
+            onBlur={handleSave}
+          />
         </div>
         <div>
           <Label htmlFor={`recording-doc-${doc.id}-status`}>Status</Label>
@@ -92,16 +110,6 @@ function DocumentRow({ orderId, doc }: { orderId: string; doc: RecordingDocument
         <div>
           <Label htmlFor={`recording-doc-${doc.id}-page`}>Page</Label>
           <Input id={`recording-doc-${doc.id}-page`} name="page" defaultValue={doc.page ?? ''} onBlur={handleSave} />
-        </div>
-        <div>
-          <Label htmlFor={`recording-doc-${doc.id}-number_of_pages`}># of Pages</Label>
-          <Input
-            id={`recording-doc-${doc.id}-number_of_pages`}
-            name="number_of_pages"
-            type="number"
-            defaultValue={doc.number_of_pages ?? ''}
-            onBlur={handleSave}
-          />
         </div>
         <div>
           <Label htmlFor={`recording-doc-${doc.id}-e_recording_reference`}>e-Recording Reference</Label>

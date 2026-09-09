@@ -51,7 +51,10 @@ export async function addContact(orderId: string, formData: FormData) {
     )
   }
 
-  revalidatePath(`/orders/${orderId}`)
+  // 'layout' (not the default 'page') so every sibling screen under this order that reads
+  // the contacts table — Payee dropdowns on Tax/Other Prorations, Premiums, Additional
+  // Charges, CDF Page 3, etc. — picks up the change too, not just this exact page.
+  revalidatePath(`/orders/${orderId}`, 'layout')
   revalidatePath('/orders')
 }
 
@@ -126,7 +129,10 @@ export async function saveContact(
     return { error: 'Could not save. Please check your entries and try again.' }
   }
 
-  revalidatePath(`/orders/${orderId}`)
+  // 'layout' (not the default 'page') so every sibling screen under this order that reads
+  // the contacts table — Payee dropdowns on Tax/Other Prorations, Premiums, Additional
+  // Charges, CDF Page 3, etc. — picks up the change too, not just this exact page.
+  revalidatePath(`/orders/${orderId}`, 'layout')
   revalidatePath('/orders')
   return {}
 }
@@ -142,7 +148,10 @@ export async function deleteContact(orderId: string, contactId: string) {
     )
   }
 
-  revalidatePath(`/orders/${orderId}`)
+  // 'layout' (not the default 'page') so every sibling screen under this order that reads
+  // the contacts table — Payee dropdowns on Tax/Other Prorations, Premiums, Additional
+  // Charges, CDF Page 3, etc. — picks up the change too, not just this exact page.
+  revalidatePath(`/orders/${orderId}`, 'layout')
   revalidatePath('/orders')
 }
 

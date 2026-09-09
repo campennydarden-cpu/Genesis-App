@@ -80,6 +80,17 @@ export async function updateCharge(orderId: string, id: string, formData: FormDa
   return {}
 }
 
+export async function setChargeCdfLine(orderId: string, id: string, cdfLineId: string | null): Promise<{ error?: string }> {
+  const supabase = await createClient()
+  const { error } = await supabase.from('additional_title_charges').update({ cdf_page2_line_id: cdfLineId }).eq('id', id)
+  if (error) {
+    console.error('setChargeCdfLine failed:', error)
+    return { error: 'Could not save. Please try again.' }
+  }
+  revalidatePath(`/orders/${orderId}/additional-charges`)
+  return {}
+}
+
 export async function deleteCharge(orderId: string, id: string): Promise<{ error?: string }> {
   const supabase = await createClient()
   const { error } = await supabase.from('additional_title_charges').delete().eq('id', id)

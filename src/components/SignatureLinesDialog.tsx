@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button'
 import { Textarea } from '@/components/ui/textarea'
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { addSignatureLine, updateSignatureLine, deleteSignatureLine } from '@/app/actions/contacts'
-import { entityQualifiedName } from '@/lib/derivation-clause'
+import { defaultSignatureLine } from '@/lib/signature-line'
 import type { Contact, ContactPrincipal, ContactSignatureLine } from '@/lib/types'
 
 export function SignatureLinesDialog({
@@ -22,11 +22,13 @@ export function SignatureLinesDialog({
   const [open, setOpen] = useState(false)
   const [editingId, setEditingId] = useState<string | null>(null)
 
-  const defaultText = entityQualifiedName(
-    contact.name,
-    (contact.entity_type as never) || null,
-    principals.map((p) => ({ name: p.name, role: p.role }))
-  )
+  const defaultText = defaultSignatureLine({
+    name: contact.name,
+    entityType: (contact.entity_type as never) || null,
+    principals: principals.map((p) => ({ name: p.name, role: p.role })),
+    poa: contact.poa,
+    attorneyInFactName: contact.poa_attorney_in_fact_name,
+  })
 
   return (
     <>

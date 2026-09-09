@@ -1,6 +1,6 @@
 import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
-import { listAffidavits } from '@/app/actions/doc-prep-affidavits'
+import { listAffidavits, listAllContacts } from '@/app/actions/doc-prep-affidavits'
 import { AffidavitsPanel } from '@/components/doc-prep/AffidavitsPanel'
 
 export default async function AffidavitsPage({ params }: { params: Promise<{ id: string }> }) {
@@ -11,7 +11,7 @@ export default async function AffidavitsPage({ params }: { params: Promise<{ id:
   } = await supabase.auth.getUser()
   if (!user) redirect('/login')
 
-  const affidavits = await listAffidavits(orderId)
+  const [affidavits, contacts] = await Promise.all([listAffidavits(orderId), listAllContacts(orderId)])
 
-  return <AffidavitsPanel orderId={orderId} affidavits={affidavits} />
+  return <AffidavitsPanel orderId={orderId} affidavits={affidavits} contacts={contacts} />
 }

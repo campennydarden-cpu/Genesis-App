@@ -7,6 +7,7 @@ import {
   listAllContacts,
 } from '@/app/actions/title-premiums'
 import { listEndorsements, listEndorsementSplits } from '@/app/actions/endorsements'
+import { listCdfPage2Lines } from '@/app/actions/cdf-page2'
 import { PremiumsPanel } from '@/components/title/PremiumsPanel'
 import type { PremiumSplit, Endorsement, EndorsementSplit } from '@/lib/types'
 
@@ -18,10 +19,12 @@ export default async function PremiumsPage({ params }: { params: Promise<{ id: s
   } = await supabase.auth.getUser()
   if (!user) redirect('/login')
 
-  const [premiums, underwriterContacts, allContacts] = await Promise.all([
+  const [premiums, underwriterContacts, allContacts, cdfLines, { data: order }] = await Promise.all([
     listPremiums(orderId),
     listUnderwriterContacts(orderId),
     listAllContacts(orderId),
+    listCdfPage2Lines(orderId),
+    supabase.from('orders').select('purchase_price, loan_amount').eq('id', orderId).single(),
   ])
 
   const splitsByPremium: Record<string, PremiumSplit[]> = {}
@@ -46,6 +49,9 @@ export default async function PremiumsPage({ params }: { params: Promise<{ id: s
       endorsementSplits={endorsementSplits}
       underwriterContacts={underwriterContacts}
       allContacts={allContacts}
+      purchasePrice={order?.purchase_price ?? null}
+      loanAmount={order?.loan_amount ?? null}
+      cdfLines={cdfLines}
     />
   )
 }

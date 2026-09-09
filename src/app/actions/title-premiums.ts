@@ -76,6 +76,17 @@ export async function updatePremium(orderId: string, id: string, formData: FormD
   return {}
 }
 
+export async function setPremiumCdfLine(orderId: string, id: string, cdfLineId: string | null): Promise<{ error?: string }> {
+  const supabase = await createClient()
+  const { error } = await supabase.from('title_insurance_premiums').update({ cdf_page2_line_id: cdfLineId }).eq('id', id)
+  if (error) {
+    console.error('setPremiumCdfLine failed:', error)
+    return { error: 'Could not save. Please try again.' }
+  }
+  revalidatePath(`/orders/${orderId}/premiums`)
+  return {}
+}
+
 export async function deletePremium(orderId: string, id: string): Promise<{ error?: string }> {
   const supabase = await createClient()
   const { error } = await supabase.from('title_insurance_premiums').delete().eq('id', id)

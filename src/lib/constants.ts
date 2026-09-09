@@ -354,6 +354,8 @@ export const CDF_LIABILITY_AFTER_FORECLOSURE = [
 
 export const RECORDING_STATUSES = ['Not Submitted', 'Submitted', 'Recorded', 'Rejected'] as const
 
+export const RECORDING_DOCUMENT_TYPES = ['Mortgage', 'Deed', 'Release', 'Power of Attorney', 'Affidavit', 'Other'] as const
+
 export const SETTLEMENT_TYPES = ['Combined', 'Borrower-Buyer', 'Seller', 'Cash'] as const
 
 export const SELLER_CREDIT_METHODS = [

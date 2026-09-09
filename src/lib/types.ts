@@ -57,6 +57,7 @@ export type Contact = {
   alta_id: string | null
   mortgagee_clause: string | null
   poa: boolean
+  poa_attorney_in_fact_name: string | null
   marital_status: string | null
   linked_contact_id: string | null
 }
@@ -439,6 +440,7 @@ export type DocPrepAffidavit = {
   order_id: string
   type: string
   affiant: string | null
+  affiant_contact_id: string | null
   dated_date: string | null
   recorded: boolean
   recorded_date: string | null
@@ -467,6 +469,7 @@ export type TitleInsurancePremium = {
   base_premium: number | null
   final_premium: number | null
   bill_code: string | null
+  cdf_page2_line_id: string | null
 }
 
 export type PremiumSplit = {
@@ -488,6 +491,7 @@ export type Endorsement = {
   description: string | null
   charge: number | null
   bill_code: string | null
+  cdf_page2_line_id: string | null
 }
 
 export type EndorsementSplit = {
@@ -511,6 +515,7 @@ export type AdditionalTitleCharge = {
   taxable: boolean
   fee_type: string | null
   cdf_line: string | null
+  cdf_page2_line_id: string | null
   invoice: string | null
   bill_code: string | null
   seller_pay_percent: number | null
@@ -549,6 +554,7 @@ export type TaxProration = {
   per_diem: number | null
   prorated_amount: number | null
   cdf_line: string | null
+  cdf_page2_line_id: string | null
   bill_code: string | null
 }
 

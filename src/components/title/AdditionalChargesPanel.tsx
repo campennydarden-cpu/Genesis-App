@@ -14,8 +14,11 @@ import {
   addChargeSplit,
   updateChargeSplit,
   deleteChargeSplit,
+  setChargeCdfLine,
 } from '@/app/actions/additional-title-charges'
-import type { AdditionalTitleCharge, AdditionalTitleChargeSplit } from '@/lib/types'
+import { assignNextCdfPage2Line } from '@/app/actions/cdf-page2'
+import { CdfLineAssign } from '@/components/title/CdfLineAssign'
+import type { AdditionalTitleCharge, AdditionalTitleChargeSplit, CdfPage2Line } from '@/lib/types'
 
 type Contact = { id: string; name: string }
 type Policy = { id: string; policy_type: string | null }
@@ -30,12 +33,14 @@ function ChargeRow({
   splits,
   policies,
   contacts,
+  cdfLines,
 }: {
   orderId: string
   charge: AdditionalTitleCharge
   splits: AdditionalTitleChargeSplit[]
   policies: Policy[]
   contacts: Contact[]
+  cdfLines: CdfPage2Line[]
 }) {
   const formRef = useRef<HTMLFormElement>(null)
   const { state, errorMessage, save } = useAutosave((formData: FormData) => updateCharge(orderId, charge.id, formData))
@@ -91,8 +96,24 @@ function ChargeRow({
           <Input id={`charge-${charge.id}-fee_type`} name="fee_type" defaultValue={charge.fee_type ?? ''} onBlur={handleSave} />
         </div>
         <div>
-          <Label htmlFor={`charge-${charge.id}-cdf_line`}>CDF Line</Label>
+          <Label htmlFor={`charge-${charge.id}-cdf_line`}>CDF Line (note)</Label>
           <Input id={`charge-${charge.id}-cdf_line`} name="cdf_line" defaultValue={charge.cdf_line ?? ''} onBlur={handleSave} />
+        </div>
+        <div className="col-span-2">
+          <Label>CDF Page 2 Assignment</Label>
+          <CdfLineAssign
+            cdfLineId={charge.cdf_page2_line_id}
+            cdfLines={cdfLines}
+            onAssign={async (section) => {
+              const { id } = await assignNextCdfPage2Line(orderId, section)
+              if (id) await setChargeCdfLine(orderId, charge.id, id)
+              refresh()
+            }}
+            onUnassign={async () => {
+              await setChargeCdfLine(orderId, charge.id, null)
+              refresh()
+            }}
+          />
         </div>
         <div>
           <Label htmlFor={`charge-${charge.id}-invoice`}>Invoice</Label>
@@ -180,12 +201,14 @@ export function AdditionalChargesPanel({
   splitsByCharge,
   policies,
   contacts,
+  cdfLines,
 }: {
   orderId: string
   charges: AdditionalTitleCharge[]
   splitsByCharge: Record<string, AdditionalTitleChargeSplit[]>
   policies: Policy[]
   contacts: Contact[]
+  cdfLines: CdfPage2Line[]
 }) {
   const [isPending, startTransition] = useTransition()
 
@@ -205,6 +228,7 @@ export function AdditionalChargesPanel({
             splits={splitsByCharge[c.id] ?? []}
             policies={policies}
             contacts={contacts}
+            cdfLines={cdfLines}
           />
         ))}
         {charges.length === 0 && <p className="text-sm text-muted-foreground">No charges yet.</p>}

@@ -21,6 +21,34 @@ export async function listAllContacts(orderId: string): Promise<{ id: string; na
   return data ?? []
 }
 
+// Shared by the "assign to CDF Page 2" Line control on Premiums & Endorsements, Additional
+// Title/Escrow Charges, and Tax/Other Prorations — creates the next line in the chosen
+// section (same insert as addCdfPage2Line) and returns its id so the caller can link a
+// charge/proration row to it via cdf_page2_line_id.
+export async function assignNextCdfPage2Line(orderId: string, section: string): Promise<{ id?: string; error?: string }> {
+  const supabase = await createClient()
+
+  const { count } = await supabase
+    .from('cdf_page2_lines')
+    .select('*', { count: 'exact', head: true })
+    .eq('order_id', orderId)
+    .eq('section', section)
+
+  const { data, error } = await supabase
+    .from('cdf_page2_lines')
+    .insert({ order_id: orderId, section, sort_order: (count ?? 0) + 1 })
+    .select('id')
+    .single()
+
+  if (error) {
+    console.error('assignNextCdfPage2Line failed:', error)
+    return { error: 'Could not assign. Please try again.' }
+  }
+
+  revalidatePath(`/orders/${orderId}/cdf-page-2`)
+  return { id: data.id }
+}
+
 export async function addCdfPage2Line(orderId: string, section: string): Promise<{ error?: string }> {
   const supabase = await createClient()
 

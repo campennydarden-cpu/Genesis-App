@@ -14,6 +14,12 @@ export async function listAffidavits(orderId: string): Promise<DocPrepAffidavit[
   return data ?? []
 }
 
+export async function listAllContacts(orderId: string): Promise<{ id: string; name: string }[]> {
+  const supabase = await createClient()
+  const { data } = await supabase.from('contacts').select('id, name').eq('order_id', orderId).order('name')
+  return data ?? []
+}
+
 export async function addAffidavit(orderId: string, formData: FormData): Promise<{ error?: string }> {
   const supabase = await createClient()
 
@@ -26,6 +32,7 @@ export async function addAffidavit(orderId: string, formData: FormData): Promise
     order_id: orderId,
     type: formData.get('type') as string,
     affiant: (formData.get('affiant') as string) || null,
+    affiant_contact_id: (formData.get('affiant_contact_id') as string) || null,
     dated_date: (formData.get('dated_date') as string) || null,
     recorded: formData.get('recorded') === 'on',
     recorded_date: (formData.get('recorded_date') as string) || null,
@@ -53,6 +60,7 @@ export async function updateAffidavit(orderId: string, id: string, formData: For
     .update({
       type: formData.get('type') as string,
       affiant: (formData.get('affiant') as string) || null,
+      affiant_contact_id: (formData.get('affiant_contact_id') as string) || null,
       dated_date: (formData.get('dated_date') as string) || null,
       recorded: formData.get('recorded') === 'on',
       recorded_date: (formData.get('recorded_date') as string) || null,

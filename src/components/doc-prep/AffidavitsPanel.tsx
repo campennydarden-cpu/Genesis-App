@@ -8,7 +8,15 @@ import { AFFIDAVIT_TYPES } from '@/lib/constants'
 import { addAffidavit, updateAffidavit, deleteAffidavit } from '@/app/actions/doc-prep-affidavits'
 import type { DocPrepAffidavit } from '@/lib/types'
 
-function AffidavitFields({ affidavit, idPrefix }: { affidavit?: DocPrepAffidavit; idPrefix: string }) {
+function AffidavitFields({
+  affidavit,
+  idPrefix,
+  contacts,
+}: {
+  affidavit?: DocPrepAffidavit
+  idPrefix: string
+  contacts: { id: string; name: string }[]
+}) {
   const [recorded, setRecorded] = useState(affidavit?.recorded ?? false)
   const id = (field: string) => `${idPrefix}-${field}`
   return (
@@ -31,6 +39,22 @@ function AffidavitFields({ affidavit, idPrefix }: { affidavit?: DocPrepAffidavit
       <div>
         <Label htmlFor={id('affiant')}>Affiant</Label>
         <Input id={id('affiant')} name="affiant" defaultValue={affidavit?.affiant ?? ''} placeholder="e.g. Seller" />
+      </div>
+      <div>
+        <Label htmlFor={id('affiant_contact_id')}>Linked Contact</Label>
+        <select
+          id={id('affiant_contact_id')}
+          name="affiant_contact_id"
+          defaultValue={affidavit?.affiant_contact_id ?? ''}
+          className="block w-full rounded border px-2 py-1 text-sm"
+        >
+          <option value="">—</option>
+          {contacts.map((c) => (
+            <option key={c.id} value={c.id}>
+              {c.name}
+            </option>
+          ))}
+        </select>
       </div>
       <div>
         <Label htmlFor={id('dated_date')}>Dated Date</Label>
@@ -74,7 +98,15 @@ function AffidavitFields({ affidavit, idPrefix }: { affidavit?: DocPrepAffidavit
   )
 }
 
-export function AffidavitsPanel({ orderId, affidavits }: { orderId: string; affidavits: DocPrepAffidavit[] }) {
+export function AffidavitsPanel({
+  orderId,
+  affidavits,
+  contacts,
+}: {
+  orderId: string
+  affidavits: DocPrepAffidavit[]
+  contacts: { id: string; name: string }[]
+}) {
   const [adding, setAdding] = useState(false)
   const [editingId, setEditingId] = useState<string | null>(null)
   const [isPending, startTransition] = useTransition()
@@ -102,7 +134,7 @@ export function AffidavitsPanel({ orderId, affidavits }: { orderId: string; affi
                 }}
                 className="space-y-3"
               >
-                <AffidavitFields affidavit={a} idPrefix={`edit-${a.id}`} />
+                <AffidavitFields affidavit={a} idPrefix={`edit-${a.id}`} contacts={contacts} />
                 <div className="flex gap-2">
                   <Button type="submit" size="sm">
                     Save
@@ -156,7 +188,7 @@ export function AffidavitsPanel({ orderId, affidavits }: { orderId: string; affi
           }}
           className="space-y-3 rounded border p-4"
         >
-          <AffidavitFields idPrefix="new-affidavit" />
+          <AffidavitFields idPrefix="new-affidavit" contacts={contacts} />
           <div className="flex gap-2">
             <Button type="submit" size="sm">
               Add Affidavit

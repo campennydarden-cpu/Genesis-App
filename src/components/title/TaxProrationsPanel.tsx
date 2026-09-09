@@ -8,8 +8,10 @@ import { SaveIndicator } from '@/components/SaveIndicator'
 import { useAutosave } from '@/lib/use-autosave'
 import { TAX_PRORATION_CATEGORIES, PRORATION_COMPUTE_FOR, PRORATION_CREDIT_DEBIT } from '@/lib/constants'
 import { calculateProration } from '@/lib/tax-proration'
-import { addProration, updateProration, deleteProration } from '@/app/actions/tax-prorations'
-import type { TaxProration } from '@/lib/types'
+import { addProration, updateProration, deleteProration, setProrationCdfLine } from '@/app/actions/tax-prorations'
+import { assignNextCdfPage2Line } from '@/app/actions/cdf-page2'
+import { CdfLineAssign } from '@/components/title/CdfLineAssign'
+import type { TaxProration, CdfPage2Line } from '@/lib/types'
 
 type Contact = { id: string; name: string }
 
@@ -17,7 +19,17 @@ function refresh() {
   window.location.reload()
 }
 
-function ProrationRow({ orderId, proration, contacts }: { orderId: string; proration: TaxProration; contacts: Contact[] }) {
+function ProrationRow({
+  orderId,
+  proration,
+  contacts,
+  cdfLines,
+}: {
+  orderId: string
+  proration: TaxProration
+  contacts: Contact[]
+  cdfLines: CdfPage2Line[]
+}) {
   const formRef = useRef<HTMLFormElement>(null)
   const { state, errorMessage, save } = useAutosave((formData: FormData) => updateProration(orderId, proration.id, formData))
   const [isPending, startTransition] = useTransition()
@@ -245,9 +257,25 @@ function ProrationRow({ orderId, proration, contacts }: { orderId: string; prora
           />
         </div>
 
-        <div className="col-span-4 border-t pt-3">
-          <Label htmlFor={`proration-${proration.id}-cdf_line`}>CDF Line</Label>
+        <div className="col-span-2 border-t pt-3">
+          <Label htmlFor={`proration-${proration.id}-cdf_line`}>CDF Line (note)</Label>
           <Input id={`proration-${proration.id}-cdf_line`} name="cdf_line" defaultValue={proration.cdf_line ?? ''} onBlur={handleSave} />
+        </div>
+        <div className="col-span-2 border-t pt-3">
+          <Label>CDF Page 2 Assignment</Label>
+          <CdfLineAssign
+            cdfLineId={proration.cdf_page2_line_id}
+            cdfLines={cdfLines}
+            onAssign={async (section) => {
+              const { id } = await assignNextCdfPage2Line(orderId, section)
+              if (id) await setProrationCdfLine(orderId, proration.id, id)
+              refresh()
+            }}
+            onUnassign={async () => {
+              await setProrationCdfLine(orderId, proration.id, null)
+              refresh()
+            }}
+          />
         </div>
         <div>
           <Label htmlFor={`proration-${proration.id}-bill_code`}>Bill Code</Label>
@@ -279,10 +307,12 @@ export function TaxProrationsPanel({
   orderId,
   prorations,
   contacts,
+  cdfLines,
 }: {
   orderId: string
   prorations: TaxProration[]
   contacts: Contact[]
+  cdfLines: CdfPage2Line[]
 }) {
   const [isPending, startTransition] = useTransition()
 
@@ -296,7 +326,7 @@ export function TaxProrationsPanel({
 
       <div className="space-y-4" data-testid="proration-list">
         {prorations.map((p) => (
-          <ProrationRow key={p.id} orderId={orderId} proration={p} contacts={contacts} />
+          <ProrationRow key={p.id} orderId={orderId} proration={p} contacts={contacts} cdfLines={cdfLines} />
         ))}
         {prorations.length === 0 && <p className="text-sm text-muted-foreground">No tax or proration items yet.</p>}
       </div>
