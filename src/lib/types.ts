@@ -357,6 +357,106 @@ export type RequestedTask = {
   sort_order: number
 }
 
+export type DocPrepDeed = {
+  id: string
+  order_id: string
+  instrument_type: string | null
+  consideration: number | null
+  dated_date: string | null
+  recorded_date: string | null
+  book: string | null
+  page: string | null
+  instrument_number: string | null
+  prepared_by_contact_id: string | null
+  return_to_contact_id: string | null
+  exemption_code: string | null
+  legal_as_exhibit: boolean
+  final: boolean
+  finalized_at: string | null
+  grantor_name: string | null
+  grantor_entity_type: string | null
+  grantee_name: string | null
+  grantee_entity_type: string | null
+  notary_block: string | null
+  legal_text: string | null
+  parcel_number: string | null
+  derivation_text: string | null
+  situs_address: string | null
+}
+
+export type DocPrepDeedPrincipal = {
+  id: string
+  deed_id: string
+  side: 'grantor' | 'grantee'
+  name: string
+  role: string | null
+}
+
+export type DocPrepDeedSignatureLine = {
+  id: string
+  deed_id: string
+  text: string
+}
+
+export type DocPrepDeedSubjectTo = {
+  id: string
+  deed_id: string
+  description: string
+  sort_order: number
+}
+
+export type DocPrepSecurityInstrument = {
+  id: string
+  order_id: string
+  instrument_type: string | null
+  trustee_name: string | null
+  loan_amount: number | null
+  dated_date: string | null
+  recorded_date: string | null
+  book: string | null
+  page: string | null
+  instrument_number: string | null
+  mortgagor_name: string | null
+  mortgagor_entity_type: string | null
+  mortgagee_name: string | null
+  mortgagee_entity_type: string | null
+  note_date: string | null
+  note_amount: number | null
+  maturity_date: string | null
+  interest_rate: number | null
+}
+
+export type DocPrepSiPrincipal = {
+  id: string
+  si_id: string
+  side: 'mortgagor' | 'mortgagee'
+  name: string
+  role: string | null
+}
+
+export type DocPrepAffidavit = {
+  id: string
+  order_id: string
+  type: string
+  affiant: string | null
+  dated_date: string | null
+  recorded: boolean
+  recorded_date: string | null
+  book: string | null
+  page: string | null
+  instrument_number: string | null
+  notes: string | null
+  sort_order: number
+}
+
+export type NotaryAck = {
+  id: string
+  order_id: string
+  contact_id: string
+  doc_label: string
+  text: string
+}
+
 export type Attachment = {
   id: string
   order_id: string

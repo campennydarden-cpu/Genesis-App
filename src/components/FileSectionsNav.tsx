@@ -31,11 +31,11 @@ const NAV_GROUPS: NavGroup[] = [
   {
     heading: 'Document Preparation',
     items: [
-      { label: 'Deed' },
-      { label: 'Security Instrument' },
-      { label: 'Affidavits' },
-      { label: 'Power of Attorney' },
-      { label: 'Notary Acknowledgement' },
+      { label: 'Deed', segment: 'deed' },
+      { label: 'Security Instrument', segment: 'security-instrument' },
+      { label: 'Affidavits', segment: 'affidavits' },
+      { label: 'Power of Attorney', segment: 'power-of-attorney' },
+      { label: 'Notary Acknowledgement', segment: 'notary-acknowledgement' },
     ],
   },
   {

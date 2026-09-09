@@ -278,6 +278,19 @@ export const REQUESTED_TASK_SEEDS = [
   'Order and Publish Updated Taxes',
 ] as const
 
+// Document Preparation — Affidavits type list (Design Notes - Platform.md / old prototype's
+// AFFIDAVIT_TYPES, code-verified since the vault doesn't itemize this list).
+export const AFFIDAVIT_TYPES = [
+  "Owner's Affidavit",
+  'Affidavit of Title',
+  'Name Affidavit / Affidavit of Identity',
+  'Non-Foreign Affidavit (FIRPTA)',
+  'Survey Affidavit',
+  'Gap Affidavit',
+  'Debts and Liens Affidavit',
+  'Other',
+] as const
+
 // Attachments upload validation (Genesis Rebuild - Attachments Core Design.md).
 export const ATTACHMENT_MAX_SIZE_BYTES = 25 * 1024 * 1024 // 25 MB
 
