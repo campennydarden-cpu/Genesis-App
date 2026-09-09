@@ -310,6 +310,18 @@ export const PRORATION_COMPUTE_FOR = ['Buyer', 'Seller'] as const
 
 export const PRORATION_CREDIT_DEBIT = ['Credit', 'Debit'] as const
 
+// CDF Page 2 itemized sections, in form order. D/I/J are computed subtotals, not
+// enterable sections, so they're not listed here — see computeCdfPage2Totals().
+export const CDF_PAGE2_SECTIONS = [
+  { code: 'A', label: 'Origination Charges' },
+  { code: 'B', label: 'Services Borrower Did Not Shop For' },
+  { code: 'C', label: 'Services Borrower Did Shop For' },
+  { code: 'E', label: 'Taxes and Other Government Fees' },
+  { code: 'F', label: 'Prepaids' },
+  { code: 'G', label: 'Initial Escrow Payment at Closing' },
+  { code: 'H', label: 'Other' },
+] as const
+
 // Attachments upload validation (Genesis Rebuild - Attachments Core Design.md).
 export const ATTACHMENT_MAX_SIZE_BYTES = 25 * 1024 * 1024 // 25 MB
 

@@ -552,6 +552,27 @@ export type TaxProration = {
   bill_code: string | null
 }
 
+export type CdfPage2Line = {
+  id: string
+  order_id: string
+  section: string
+  sort_order: number
+  description: string | null
+  to_contact_id: string | null
+  borrower_paid_at_closing: number | null
+  borrower_paid_before_closing: number | null
+  seller_paid_at_closing: number | null
+  seller_paid_before_closing: number | null
+  paid_by_others: number | null
+}
+
+export type CdfPage2Totals = {
+  borrowerAtClosing: number
+  borrowerBeforeClosing: number
+  sellerAtClosing: number
+  sellerBeforeClosing: number
+}
+
 export type Attachment = {
   id: string
   order_id: string
