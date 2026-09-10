@@ -7,17 +7,21 @@ import {
   CONTACT_ROLES_WITH_ENTITY_TYPE,
   CONTACT_ROLES_WITH_LICENSE,
   CONTACT_ROLES_WITH_MORTGAGEE_CLAUSE,
+  ENTITY_DIRECTORY_ROLE_TYPES,
   ENTITY_TYPES,
   MARITAL_STATUSES,
 } from '@/lib/constants'
 import { saveContact } from '@/app/actions/contacts'
-import type { Contact } from '@/lib/types'
+import { createDirectoryEntry, confirmCreateAsNew, mergeIntoExisting } from '@/app/actions/entity-directory'
+import type { Contact, EntityDirectoryRecord, EntityDirectoryRoleType } from '@/lib/types'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Checkbox } from '@/components/ui/checkbox'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { OrderFormSubmitButton } from '@/components/OrderFormSubmitButton'
 import { SaveIndicator } from '@/components/SaveIndicator'
+import { DirectoryLookupField } from '@/components/DirectoryLookupField'
+import { DirectoryDedupeDialog } from '@/components/DirectoryDedupeDialog'
 import { useAutosave } from '@/lib/use-autosave'
 
 type LinkCandidate = {
@@ -49,9 +53,12 @@ export function AddContactForm({
 }) {
   const [role, setRole] = useState(contact?.role ?? '')
   const [entityType, setEntityType] = useState(contact?.entity_type ?? 'Individual')
+  const [name, setName] = useState(contact?.name ?? '')
   const [currentAddress, setCurrentAddress] = useState(contact?.current_address ?? '')
   const [mailingAddress, setMailingAddress] = useState(contact?.mailing_address ?? '')
   const [forwardingAddress, setForwardingAddress] = useState(contact?.forwarding_address ?? '')
+  const [phone, setPhone] = useState(contact?.phone ?? '')
+  const [email, setEmail] = useState(contact?.email ?? '')
   const [linkedContactId, setLinkedContactId] = useState(contact?.linked_contact_id ?? '')
   const linkedContact = (linkCandidates ?? []).find((c) => c.id === linkedContactId)
 
@@ -61,6 +68,18 @@ export function AddContactForm({
   const showLicense = CONTACT_ROLES_WITH_LICENSE.includes(role)
   const showMortgagee = CONTACT_ROLES_WITH_MORTGAGEE_CLAUSE.includes(role)
   const showFillFromProperty = !showSingleAddress && !!propertyAddress
+
+  // Entity Directory (Cam, 2026-09-10: "'Add Lender' needs to be folded into the
+  // existing Contact role picker") -- only offered when adding a brand-new contact for
+  // a role the Directory covers, never when editing one. Skipping the picker and typing
+  // directly into Name/Phone/Email still works exactly as before; fuzzy-dedup only
+  // fires for names entered through "Add ... as new" below, not free-typed ones.
+  const showDirectoryLookup = !contact && (ENTITY_DIRECTORY_ROLE_TYPES as readonly string[]).includes(role)
+  const [directoryPendingName, setDirectoryPendingName] = useState<string | null>(null)
+  const [directoryDedupe, setDirectoryDedupe] = useState<{
+    candidates: EntityDirectoryRecord[]
+    pendingFormData: Record<string, string>
+  } | null>(null)
 
   const formRef = useRef<HTMLFormElement>(null)
   const { state, errorMessage, save } = useAutosave((formData: FormData) => {
@@ -77,8 +96,42 @@ export function AddContactForm({
     save(formData)
   }
 
+  function applyDirectoryRecord(record: EntityDirectoryRecord) {
+    setName(record.name)
+    setCurrentAddress([record.address_line1, record.address_line2].filter(Boolean).join(' '))
+    setPhone(record.phone ?? '')
+    setEmail(record.email ?? '')
+    setDirectoryPendingName(null)
+    setDirectoryDedupe(null)
+  }
+
+  function submitContact() {
+    if (!formRef.current || !action) return
+    action(new FormData(formRef.current))
+  }
+
+  async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
+    if (contact || !directoryPendingName) return // no Directory create pending -- let the normal action submit run
+
+    event.preventDefault()
+    const formData = new FormData()
+    formData.set('name', directoryPendingName)
+    formData.set('address_line1', currentAddress)
+    formData.set('phone', phone)
+    formData.set('email', email)
+
+    const result = await createDirectoryEntry(role as EntityDirectoryRoleType, formData)
+    if (result.status === 'duplicates_found') {
+      setDirectoryDedupe({ candidates: result.candidates, pendingFormData: result.pendingFormData })
+      return
+    }
+
+    applyDirectoryRecord(result.record)
+    submitContact()
+  }
+
   return (
-    <form ref={formRef} action={contact ? undefined : action} className="mt-4 space-y-4">
+    <form ref={formRef} action={contact ? undefined : action} onSubmit={handleSubmit} className="mt-4 space-y-4">
       {contact && <SaveIndicator state={state} errorMessage={errorMessage} />}
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
         <div>
@@ -132,6 +185,22 @@ export function AddContactForm({
         )}
       </div>
 
+      {showDirectoryLookup && (
+        <div>
+          <Label>Directory</Label>
+          <div className="mt-1">
+            <DirectoryLookupField
+              roleType={role as EntityDirectoryRoleType}
+              onSelected={applyDirectoryRecord}
+              onAddNew={(newName) => {
+                setDirectoryPendingName(newName)
+                setName(newName)
+              }}
+            />
+          </div>
+        </div>
+      )}
+
       <div>
         <Label htmlFor="name">Name</Label>
         <Input
@@ -139,7 +208,8 @@ export function AddContactForm({
           name="name"
           required
           className="mt-1"
-          defaultValue={contact?.name}
+          value={name}
+          onChange={(e) => setName(e.target.value)}
           onBlur={() => handleSave()}
         />
       </div>
@@ -282,7 +352,8 @@ export function AddContactForm({
             id="phone"
             name="phone"
             className="mt-1"
-            defaultValue={contact?.phone ?? undefined}
+            value={phone}
+            onChange={(e) => setPhone(e.target.value)}
             onBlur={() => handleSave()}
           />
         </div>
@@ -293,7 +364,8 @@ export function AddContactForm({
             name="email"
             type="email"
             className="mt-1"
-            defaultValue={contact?.email ?? undefined}
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
             onBlur={() => handleSave()}
           />
         </div>
@@ -416,6 +488,25 @@ export function AddContactForm({
       )}
 
       {!contact && <OrderFormSubmitButton label="Add Contact" />}
+
+      {directoryDedupe && (
+        <DirectoryDedupeDialog
+          open
+          onOpenChange={() => setDirectoryDedupe(null)}
+          candidates={directoryDedupe.candidates}
+          pendingName={directoryPendingName ?? ''}
+          onUpdateExisting={async (existingId) => {
+            const record = await mergeIntoExisting(existingId, directoryDedupe.pendingFormData)
+            applyDirectoryRecord(record)
+            submitContact()
+          }}
+          onAddAsNew={async () => {
+            const record = await confirmCreateAsNew(role as EntityDirectoryRoleType, directoryDedupe.pendingFormData)
+            applyDirectoryRecord(record)
+            submitContact()
+          }}
+        />
+      )}
     </form>
   )
 }
