@@ -111,6 +111,7 @@ function EndorsementRow({
         </div>
       </form>
       <CdfLineAssign
+        orderId={orderId}
         cdfLineId={endorsement.cdf_page2_line_id}
         cdfLines={cdfLines}
         onAssign={async (section) => {
@@ -302,23 +303,19 @@ function PremiumCard({
         </div>
         <div>
           <Label htmlFor={`premium-${premium.id}-base_premium`}>Base Premium</Label>
-          <Input
+          <CurrencyInput
             id={`premium-${premium.id}-base_premium`}
             name="base_premium"
-            type="number"
-            step="0.01"
-            defaultValue={premium.base_premium ?? ''}
+            defaultValue={premium.base_premium}
             onBlur={handleSave}
           />
         </div>
         <div>
           <Label htmlFor={`premium-${premium.id}-final_premium`}>Final Premium</Label>
-          <Input
+          <CurrencyInput
             id={`premium-${premium.id}-final_premium`}
             name="final_premium"
-            type="number"
-            step="0.01"
-            defaultValue={premium.final_premium ?? ''}
+            defaultValue={premium.final_premium}
             onBlur={handleSave}
           />
         </div>
@@ -328,6 +325,7 @@ function PremiumCard({
       </form>
 
       <CdfLineAssign
+        orderId={orderId}
         cdfLineId={premium.cdf_page2_line_id}
         cdfLines={cdfLines}
         onAssign={async (section) => {

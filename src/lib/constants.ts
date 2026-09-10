@@ -294,6 +294,19 @@ export const AFFIDAVIT_TYPES = [
   'DS-1 Form (IL Only)',
   'Notice of Availability',
   'Commitment Acknowledgement',
+  // Second batch, Cam's Screen Notes 2026-09-10 — "Commitment Acknowledgement" repeats
+  // the entry above, so it isn't duplicated here.
+  'Marital Status Affidavit',
+  'Waiver of Settlement Agent Responsibility',
+  'Buyer Personal Information Affidavit',
+  'Seller Personal Information Affidavit',
+  'Not Me Judgement Affidavit',
+  'Affidavit of Heirship',
+  'Affidavit of Death - JTWROS',
+  'Affidavit of Death - Trustee',
+  'Continuous Marriage Affidavit',
+  'Continuous Marriage Affidavit (Surviving Spouse)',
+  'Joint Tenancy Affidavit',
 ] as const
 
 // Title Insurance Premiums — per-line policy type (distinct from the order-level
@@ -381,6 +394,13 @@ export const CDF_PAGE2_SECTION_F_FIXED_LINES = [
   'Prepaid Interest',
   'Property Taxes',
 ] as const
+
+// Section E's 3 fixed lines — every Recording document's Fee/Recordation Tax/Transfer
+// Tax/Stamp Tax combines into whichever of these it belongs to (Recordation Tax and
+// Transfer Tax share one line; Cam's call, 2026-09-10). Unlike every other CDF Page 2
+// fixed line, these are computed and re-synced from Recording on every add/edit/delete
+// there (syncRecordingCdfLines, recording.ts) — read-only on CDF Page 2 itself.
+export const CDF_PAGE2_SECTION_E_RECORDING_LINES = ['Recording Fees', 'Recordation/Transfer Tax', 'Stamp Tax'] as const
 
 export const SELLER_CREDIT_METHODS = [
   'Apply seller credit to borrower paid loan policy on CDF Page 2',

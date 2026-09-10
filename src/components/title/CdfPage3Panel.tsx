@@ -3,6 +3,7 @@
 import { useRef, useTransition } from 'react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
+import { CurrencyInput } from '@/components/ui/currency-input'
 import { SaveIndicator } from '@/components/SaveIndicator'
 import { useAutosave } from '@/lib/use-autosave'
 import {
@@ -73,19 +74,17 @@ function CashToCloseForm({ orderId, cashToClose }: { orderId: string; cashToClos
           {rows.map((row) => (
             <CdfRow key={row.label} className={`grid ${CASH_GRID}`}>
               <div className="text-[12.5px]">{row.label}</div>
-              <Input
+              <CurrencyInput
+                id={row.est}
                 name={row.est}
-                type="number"
-                step="0.01"
-                defaultValue={(cashToClose?.[row.est] as number) ?? ''}
+                defaultValue={(cashToClose?.[row.est] as number) ?? null}
                 onBlur={handleSave}
                 className={cdfAmtInputClass}
               />
-              <Input
+              <CurrencyInput
+                id={row.fin}
                 name={row.fin}
-                type="number"
-                step="0.01"
-                defaultValue={(cashToClose?.[row.fin] as number) ?? ''}
+                defaultValue={(cashToClose?.[row.fin] as number) ?? null}
                 onBlur={handleSave}
                 className={cdfAmtInputClass}
               />
@@ -111,19 +110,17 @@ function CashToCloseForm({ orderId, cashToClose }: { orderId: string; cashToClos
 
           <CdfRow variant="total" className={`grid ${CASH_GRID}`}>
             <div className="text-[13px]">Cash to Close</div>
-            <Input
+            <CurrencyInput
+              id="cash_to_close_estimate"
               name="cash_to_close_estimate"
-              type="number"
-              step="0.01"
-              defaultValue={cashToClose?.cash_to_close_estimate ?? ''}
+              defaultValue={cashToClose?.cash_to_close_estimate}
               onBlur={handleSave}
               className={cdfAmtInputClass}
             />
-            <Input
+            <CurrencyInput
+              id="cash_to_close_final"
               name="cash_to_close_final"
-              type="number"
-              step="0.01"
-              defaultValue={cashToClose?.cash_to_close_final ?? ''}
+              defaultValue={cashToClose?.cash_to_close_final}
               onBlur={handleSave}
               className={cdfAmtInputClass}
             />
@@ -153,12 +150,10 @@ function CashToCloseForm({ orderId, cashToClose }: { orderId: string; cashToClos
             <label htmlFor="closing_costs_financed" className="mb-1 block text-[11.5px] font-semibold text-muted-foreground">
               Closing Costs Financed (Paid from your Loan Amount)
             </label>
-            <Input
+            <CurrencyInput
               id="closing_costs_financed"
               name="closing_costs_financed"
-              type="number"
-              step="0.01"
-              defaultValue={cashToClose?.closing_costs_financed ?? ''}
+              defaultValue={cashToClose?.closing_costs_financed}
               onBlur={handleSave}
               className={`${cdfAmtInputClass} max-w-[180px]`}
             />
@@ -194,12 +189,11 @@ function PayoffRow({ orderId, item, contacts, num }: { orderId: string; item: Cd
             </option>
           ))}
         </select>
-        <Input
+        <CurrencyInput
+          aria-label="Amount"
           name="amount"
-          type="number"
-          step="0.01"
           placeholder="Amount"
-          defaultValue={item.amount ?? ''}
+          defaultValue={item.amount}
           onBlur={handleSave}
           className={cdfAmtInputClass}
         />
@@ -248,13 +242,13 @@ function SummaryLineRow({ orderId, line }: { orderId: string; line: CdfTransacti
           onBlur={handleSave}
           className={cdfInputClass}
         />
-        <Input
+        <CurrencyInput
+          aria-label="Amount"
           name="amount"
-          type="number"
-          step="0.01"
           placeholder="Amount"
-          defaultValue={line.amount ?? ''}
+          defaultValue={line.amount}
           onBlur={handleSave}
+          allowNegative
           className={cdfAmtInputClass}
         />
         <button

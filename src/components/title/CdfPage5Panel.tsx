@@ -3,6 +3,7 @@
 import { useRef, useTransition, type ChangeEvent } from 'react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
+import { CurrencyInput } from '@/components/ui/currency-input'
 import { SaveIndicator } from '@/components/SaveIndicator'
 import { useAutosave } from '@/lib/use-autosave'
 import { saveCdfPage5, addCdfPage5Contact, updateCdfPage5Contact, deleteCdfPage5Contact } from '@/app/actions/cdf-page5'
@@ -35,34 +36,28 @@ function LoanCalculationsForm({ orderId, cdfPage5 }: { orderId: string; cdfPage5
           <CdfBar title="Loan Calculations" />
           <CdfTable>
             <CdfMeta label="Total of Payments">
-              <Input
+              <CurrencyInput
                 id="total_of_payments"
                 name="total_of_payments"
-                type="number"
-                step="0.01"
-                defaultValue={cdfPage5?.total_of_payments ?? ''}
+                defaultValue={cdfPage5?.total_of_payments}
                 onBlur={handleSave}
                 className={`${cdfAmtInputClass} max-w-[150px]`}
               />
             </CdfMeta>
             <CdfMeta label="Finance Charge">
-              <Input
+              <CurrencyInput
                 id="finance_charge"
                 name="finance_charge"
-                type="number"
-                step="0.01"
-                defaultValue={cdfPage5?.finance_charge ?? ''}
+                defaultValue={cdfPage5?.finance_charge}
                 onBlur={handleSave}
                 className={`${cdfAmtInputClass} max-w-[150px]`}
               />
             </CdfMeta>
             <CdfMeta label="Amount Financed">
-              <Input
+              <CurrencyInput
                 id="amount_financed"
                 name="amount_financed"
-                type="number"
-                step="0.01"
-                defaultValue={cdfPage5?.amount_financed ?? ''}
+                defaultValue={cdfPage5?.amount_financed}
                 onBlur={handleSave}
                 className={`${cdfAmtInputClass} max-w-[150px]`}
               />

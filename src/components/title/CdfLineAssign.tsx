@@ -3,6 +3,7 @@
 import { useMemo, useState, useTransition } from 'react'
 import { Button } from '@/components/ui/button'
 import { CDF_PAGE2_SECTIONS } from '@/lib/constants'
+import { deleteCdfPage2Line } from '@/app/actions/cdf-page2'
 import type { CdfPage2Line } from '@/lib/types'
 
 const DEFAULT_SECTIONS = CDF_PAGE2_SECTIONS.filter((s) => s.code === 'B' || s.code === 'C' || s.code === 'H')
@@ -19,8 +20,13 @@ const DEFAULT_SECTIONS = CDF_PAGE2_SECTIONS.filter((s) => s.code === 'B' || s.co
  * Sections that already carry fixed, named rows (e.g. F's 4 Prepaids lines) instead show a
  * picker of those existing lines and link to the chosen one via `onLinkExisting` — a fixed row
  * is meaningful on its own, not something a caller should be creating more of.
+ *
+ * Unassign deletes the line outright when it was created via `onAssign` — Cam's call,
+ * 2026-09-10, on "the fee needs to come off the CD" — but only clears the link when it's one
+ * of those fixed/shared rows, since deleting Section F's actual Prepaids line would be wrong.
  */
 export function CdfLineAssign({
+  orderId,
   cdfLineId,
   cdfLines,
   sections = DEFAULT_SECTIONS,
@@ -28,6 +34,7 @@ export function CdfLineAssign({
   onLinkExisting,
   onUnassign,
 }: {
+  orderId: string
   cdfLineId: string | null
   cdfLines: CdfPage2Line[]
   sections?: readonly { code: string; label: string }[]
@@ -60,6 +67,15 @@ export function CdfLineAssign({
           disabled={isPending}
           onClick={() =>
             startTransition(async () => {
+              // A regular line created via onAssign (B/C/H, etc.) is deleted outright on
+              // unassign — Cam's call, 2026-09-10: "the fee needs to come off the CD."
+              // A fixed, shared row linked via onLinkExisting (e.g. Section F's Prepaids)
+              // stays put — it's meaningful on its own, not something unassigning here
+              // should destroy. The FK's `on delete set null` clears the source row's
+              // link automatically, so onUnassign()'s own clear is a no-op in that case.
+              if (line && !line.is_fixed) {
+                await deleteCdfPage2Line(orderId, line.id)
+              }
               await onUnassign()
             })
           }

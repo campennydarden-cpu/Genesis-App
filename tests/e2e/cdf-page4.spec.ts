@@ -62,8 +62,8 @@ test('fill disclosure checkboxes and escrow radio, autosave persists after reloa
   await page.locator('input[name="escrow_type"][value="Escrow"]').check()
   await expect(page.getByText('Saved')).toBeVisible()
 
-  await page.locator('input[name="escrow_monthly_payment"]').fill('350')
-  await page.locator('input[name="escrow_monthly_payment"]').blur()
+  await page.locator('#escrow_monthly_payment').fill('350')
+  await page.locator('#escrow_monthly_payment').blur()
   await expect(page.getByText('Saved')).toBeVisible()
 
   await page.reload()

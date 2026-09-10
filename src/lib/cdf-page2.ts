@@ -31,19 +31,29 @@ function addTotals(a: CdfPage2Totals, b: CdfPage2Totals): CdfPage2Totals {
   }
 }
 
-export function computeCdfPage2Totals(lines: CdfPage2Line[]) {
+export function computeCdfPage2Totals(lines: CdfPage2Line[], transactionType?: string | null) {
   const bySection = Object.fromEntries(CDF_PAGE2_SECTIONS.map(({ code }) => [code, sumSection(lines, code)])) as Record<
     string,
     CdfPage2Totals
   >
 
-  // D = A + B + C, Loan Costs — borrower-paid only on the real CD form. The line-item
-  // grid still captures seller/paid-by-others on A/B/C rows for flexibility (matching
-  // SoftPro), but those columns must NOT flow into D (or, via D, into J) — D's own
-  // definition has no seller side, so folding them in here would silently inflate J
-  // with money never shown on any subtotal line.
-  const abc = addTotals(addTotals(bySection.A, bySection.B), bySection.C)
-  const d: CdfPage2Totals = { ...ZERO, borrowerAtClosing: abc.borrowerAtClosing, borrowerBeforeClosing: abc.borrowerBeforeClosing }
+  // D = A + B + C, Loan Costs. Section A (Origination Charges) is borrower-only on
+  // every transaction type — the real CD form has no seller column there at all. B and
+  // C are borrower-only on Refinance/Equity/Other, but a Purchase file can genuinely
+  // carry seller-paid loan costs in B/C (Cam's call, 2026-09-10) — those need to flow
+  // into D's and J's seller columns like every other section, not be silently dropped.
+  const bc = addTotals(bySection.B, bySection.C)
+  const abc = addTotals(bySection.A, bc)
+  const d: CdfPage2Totals =
+    transactionType === 'Purchase'
+      ? {
+          ...ZERO,
+          borrowerAtClosing: abc.borrowerAtClosing,
+          borrowerBeforeClosing: abc.borrowerBeforeClosing,
+          sellerAtClosing: bc.sellerAtClosing,
+          sellerBeforeClosing: bc.sellerBeforeClosing,
+        }
+      : { ...ZERO, borrowerAtClosing: abc.borrowerAtClosing, borrowerBeforeClosing: abc.borrowerBeforeClosing }
 
   // I = E + F + G + H, Other Costs — carries all four columns.
   const i: CdfPage2Totals = [bySection.E, bySection.F, bySection.G, bySection.H].reduce(addTotals, { ...ZERO })
@@ -97,7 +107,9 @@ function demo() {
       to_contact_id: null,
       borrower_paid_at_closing: 100,
       borrower_paid_before_closing: null,
-      seller_paid_at_closing: null,
+      // Purchase-only: a real seller-paid loan cost in Section B (unlike A's seller
+      // amount below, which is never real on any transaction type).
+      seller_paid_at_closing: 500,
       seller_paid_before_closing: null,
       paid_by_others: null,
       is_fixed: false,
@@ -210,6 +222,21 @@ function demo() {
   console.assert(
     j.sellerAtClosing === 50,
     `expected J seller-at-closing 50 (from section E only — section A's 500 must not leak through D), got ${j.sellerAtClosing}`
+  )
+
+  // On a Purchase file, B's seller money (unlike A's) is real and must reach D/J.
+  const purchase = computeCdfPage2Totals(lines, 'Purchase')
+  console.assert(
+    purchase.d.sellerAtClosing === 500,
+    `Purchase: expected D seller-at-closing 500 (from section B), got ${purchase.d.sellerAtClosing}`
+  )
+  console.assert(
+    purchase.d.borrowerAtClosing === 600,
+    `Purchase: expected D borrower-at-closing unchanged at 600, got ${purchase.d.borrowerAtClosing}`
+  )
+  console.assert(
+    purchase.j.sellerAtClosing === 550,
+    `Purchase: expected J seller-at-closing 550 (500 from B + 50 from E), got ${purchase.j.sellerAtClosing}`
   )
 }
 

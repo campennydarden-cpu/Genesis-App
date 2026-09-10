@@ -45,18 +45,26 @@ export async function listAllContacts(orderId: string): Promise<{ id: string; na
 }
 
 // Shared by the "assign to CDF Page 2" Line control on Premiums & Endorsements, Additional
-// Title/Escrow Charges, and Tax/Other Prorations — creates the next line in the chosen
-// section (same insert as addCdfPage2Line) and returns its id so the caller can link a
+// Title/Escrow Charges, Recording, and Tax/Other Prorations — creates the next line in the
+// chosen section (same insert as addCdfPage2Line) and returns its id so the caller can link a
 // charge/proration row to it via cdf_page2_line_id. Cam's click-through notes flagged
 // that assigning "added the lines but none of the data transferred" — description and
 // amount are now seeded from the source row as a one-time starting point (still freely
 // editable after on either side, not a live sync, matching every other assign/link
 // pattern already built on this table).
+//
+// Recording and Additional Charges also carry a `seller_pay_percent` field that, until
+// now, was captured on the source row and never actually used anywhere — "Seller Pay
+// percentage needs to move the fee from Buyer-Paid at Closing to Seller-Paid at Closing"
+// (Cam's note). When it's set, split `amount` between the two columns at assignment time
+// instead of booking it 100% to the Borrower; callers without the concept (Premiums,
+// Endorsements, Tax Prorations) simply don't pass it, so behavior there is unchanged.
 export async function assignNextCdfPage2Line(
   orderId: string,
   section: string,
   description?: string | null,
-  amount?: number | null
+  amount?: number | null,
+  sellerPayPercent?: number | null
 ): Promise<{ id?: string; error?: string }> {
   const supabase = await createClient()
 
@@ -66,6 +74,10 @@ export async function assignNextCdfPage2Line(
     .eq('order_id', orderId)
     .eq('section', section)
 
+  const pct = sellerPayPercent ? Math.min(Math.max(sellerPayPercent, 0), 100) / 100 : 0
+  const sellerShare = amount != null ? amount * pct : null
+  const borrowerShare = amount != null ? amount - (sellerShare ?? 0) : null
+
   const { data, error } = await supabase
     .from('cdf_page2_lines')
     .insert({
@@ -73,7 +85,8 @@ export async function assignNextCdfPage2Line(
       section,
       sort_order: (count ?? 0) + 1,
       description: description || null,
-      borrower_paid_at_closing: amount ?? null,
+      borrower_paid_at_closing: borrowerShare,
+      seller_paid_at_closing: sellerShare || null,
     })
     .select('id')
     .single()

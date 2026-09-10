@@ -58,8 +58,8 @@ test('Calculating Cash to Close fields persist after reload', async ({ page }) =
 
   const form = page.getByTestId('cdf-cash-to-close-form')
   await form.locator('select[name="loan_amount_changed"]').selectOption('Yes')
-  await form.locator('input[name="loan_amount_final"]').fill('227920')
-  await form.locator('input[name="loan_amount_final"]').blur()
+  await form.locator('#loan_amount_final').fill('227920')
+  await form.locator('#loan_amount_final').blur()
   await expect(page.getByText('Saved')).toBeVisible()
 
   await page.reload()
@@ -77,8 +77,8 @@ test('add K. Payoffs and Payments item, edit, autosave persists, delete', async 
 
   const row = page.getByTestId('cdf-payoffs-list').locator('[data-testid^="cdf-payoff-"]').first()
   await row.locator('input[name="description"]').fill('Payoff of First Mortgage Loan')
-  await row.locator('input[name="amount"]').fill('185000')
-  await row.locator('input[name="amount"]').blur()
+  await row.getByLabel('Amount').fill('185000')
+  await row.getByLabel('Amount').blur()
   await expect(page.getByText('Saved')).toBeVisible()
 
   await page.reload()
@@ -100,8 +100,8 @@ test('add Summaries of Transactions item under Borrower, autosave persists', asy
   const line = section.getByTestId('cdf-summary-borrower-due_from_at_closing-list').locator('[data-testid^="cdf-summary-line-"]').first()
   await expect(line).toBeVisible()
   await line.locator('input[name="description"]').fill('Sale Price of Property')
-  await line.locator('input[name="amount"]').fill('245000')
-  await line.locator('input[name="amount"]').blur()
+  await line.getByLabel('Amount').fill('245000')
+  await line.getByLabel('Amount').blur()
   await expect(page.getByText('Saved')).toBeVisible()
 
   await page.reload()

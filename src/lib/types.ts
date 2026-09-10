@@ -780,6 +780,9 @@ export type RecordingDocument = {
   number_of_pages: number | null
   e_recording_reference: string | null
   fee: number | null
+  recordation_tax: number | null
+  transfer_tax: number | null
+  stamp_tax: number | null
   seller_pay_percent: number | null
   cdf_page2_line_id: string | null
 }

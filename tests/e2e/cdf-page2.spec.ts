@@ -61,8 +61,8 @@ test('add item to section A, edit fields, autosave persists after reload', async
 
   const row = page.getByTestId('cdf-section-A-list').locator('[data-testid^="cdf-line-"]').first()
   await row.locator('input[name="description"]').fill('Origination Fee')
-  await row.locator('input[name="borrower_paid_at_closing"]').fill('500')
-  await row.locator('input[name="borrower_paid_at_closing"]').blur()
+  await row.getByLabel('Borrower-Paid At Closing').fill('500')
+  await row.getByLabel('Borrower-Paid At Closing').blur()
   await expect(page.getByText('Saved')).toBeVisible()
 
   await page.reload()
@@ -77,15 +77,15 @@ test('section subtotals and grand total compute correctly across sections and co
 
   await page.getByTestId('cdf-section-A').getByRole('button', { name: '+ Add Item' }).click()
   const rowA = page.getByTestId('cdf-section-A-list').locator('[data-testid^="cdf-line-"]').first()
-  await rowA.locator('input[name="borrower_paid_at_closing"]').fill('500')
-  await rowA.locator('input[name="borrower_paid_at_closing"]').blur()
+  await rowA.getByLabel('Borrower-Paid At Closing').fill('500')
+  await rowA.getByLabel('Borrower-Paid At Closing').blur()
   await expect(page.getByText('Saved')).toBeVisible()
 
   await page.getByTestId('cdf-section-E').getByRole('button', { name: '+ Add Item' }).click()
   const rowE = page.getByTestId('cdf-section-E-list').locator('[data-testid^="cdf-line-"]').first()
-  await rowE.locator('input[name="borrower_paid_at_closing"]').fill('271')
-  await rowE.locator('input[name="seller_paid_at_closing"]').fill('50')
-  await rowE.locator('input[name="seller_paid_at_closing"]').blur()
+  await rowE.getByLabel('Borrower-Paid At Closing').fill('271')
+  await rowE.getByLabel('Seller-Paid At Closing').fill('50')
+  await rowE.getByLabel('Seller-Paid At Closing').blur()
   await expect(page.getByText('Saved')).toBeVisible()
 
   await page.reload()
@@ -102,23 +102,55 @@ test('section subtotals and grand total compute correctly across sections and co
   await expect(jRow).toContainText('$50.00')
 })
 
-test('seller-paid amount entered on a Loan Cost row (section A) does not leak into D or J', async ({ page }) => {
+test('Section A (Origination Charges) never shows Seller-Paid columns, on any transaction type', async ({ page }) => {
   const orderId = await createOrder(page)
   await page.goto(`/orders/${orderId}/cdf-page-2`)
 
   await page.getByTestId('cdf-section-A').getByRole('button', { name: '+ Add Item' }).click()
   const row = page.getByTestId('cdf-section-A-list').locator('[data-testid^="cdf-line-"]').first()
-  await row.locator('input[name="borrower_paid_at_closing"]').fill('500')
-  await row.locator('input[name="seller_paid_at_closing"]').fill('500')
-  await row.locator('input[name="seller_paid_at_closing"]').blur()
+  await row.getByLabel('Borrower-Paid At Closing').fill('500')
+  await row.getByLabel('Borrower-Paid At Closing').blur()
+  await expect(page.getByText('Saved')).toBeVisible()
+
+  // Section A's seller cells render as blank placeholders, not inputs — there's no
+  // seller money possible on Origination Charges on the real CD form, on any
+  // transaction type, so there's nothing to leak into D or J in the first place.
+  await expect(row.getByLabel('Seller-Paid At Closing')).toHaveCount(0)
+  await expect(row.getByLabel('Seller-Paid Before Closing')).toHaveCount(0)
+
+  await page.reload()
+  await expect(page.getByTestId('cdf-subtotal-d')).toContainText('$500.00')
+  await expect(page.getByTestId('cdf-subtotal-j')).toContainText('$500.00')
+})
+
+test('Purchase file: seller-paid amount on a Section B/C Loan Cost row flows into D and J; Refinance does not', async ({ page }) => {
+  const orderId = await createOrder(page)
+  await page.goto(`/orders/${orderId}/cdf-page-2`)
+
+  await page.getByTestId('cdf-section-B').getByRole('button', { name: '+ Add Item' }).click()
+  const row = page.getByTestId('cdf-section-B-list').locator('[data-testid^="cdf-line-"]').first()
+  await row.getByLabel('Borrower-Paid At Closing').fill('100')
+  await row.getByLabel('Seller-Paid At Closing').fill('500')
+  await row.getByLabel('Seller-Paid At Closing').blur()
   await expect(page.getByText('Saved')).toBeVisible()
   await page.reload()
 
-  // D has no seller column on the real CD form — the seller amount stays on the line
-  // itself but must not be folded into D's (or J's) totals.
-  await expect(page.getByTestId('cdf-subtotal-d')).toContainText('$500.00')
+  // New orders default to Purchase (Order Entry's own default) — seller money on B
+  // is real here and must show up in D and J.
+  const dRow = page.getByTestId('cdf-subtotal-d')
+  await expect(dRow).toContainText('$100.00')
+  await expect(dRow).toContainText('$500.00')
   await expect(page.getByTestId('cdf-subtotal-j')).toContainText('$500.00')
-  await expect(page.getByTestId('cdf-subtotal-j')).not.toContainText('$1,000.00')
+
+  // Flip to Refinance directly (Transaction Type is a radio group, not worth a flaky
+  // UI interaction here when the point of this test is the totals math) — the same
+  // seller amount on B must stop counting.
+  const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY)
+  await supabase.auth.signInWithPassword({ email: SEEDED_EMAIL, password: SEEDED_PASSWORD })
+  await supabase.from('orders').update({ transaction_type: 'Refinance' }).eq('id', orderId)
+
+  await page.goto(`/orders/${orderId}/cdf-page-2`)
+  await expect(page.getByTestId('cdf-subtotal-d')).not.toContainText('$500.00')
 })
 
 test('delete item removes row and recomputes totals', async ({ page }) => {
@@ -127,8 +159,8 @@ test('delete item removes row and recomputes totals', async ({ page }) => {
 
   await page.getByTestId('cdf-section-B').getByRole('button', { name: '+ Add Item' }).click()
   const row = page.getByTestId('cdf-section-B-list').locator('[data-testid^="cdf-line-"]').first()
-  await row.locator('input[name="borrower_paid_at_closing"]').fill('100')
-  await row.locator('input[name="borrower_paid_at_closing"]').blur()
+  await row.getByLabel('Borrower-Paid At Closing').fill('100')
+  await row.getByLabel('Borrower-Paid At Closing').blur()
   await expect(page.getByText('Saved')).toBeVisible()
   await page.reload()
 
@@ -152,7 +184,7 @@ test('Section A shows a fixed, non-removable Points line with a working percent 
 
   // New order has no loan amount yet, so the computed total is just the adjustment.
   await fixedRow.getByLabel('Points Percent').fill('1')
-  await fixedRow.locator('input[name="points_adjustment"]').fill('25.5')
+  await fixedRow.getByLabel('Points Adjustment', { exact: true }).fill('25.5')
   await fixedRow.locator('input[name="points_adjustment_for"]').fill('rounding true-up')
   await fixedRow.locator('input[name="points_adjustment_for"]').blur()
   await expect(page.getByText('Saved')).toBeVisible()
@@ -170,8 +202,8 @@ test('Section J shows a fixed Closing Costs Subtotal line and an editable Lender
 
   await page.getByTestId('cdf-section-A').getByRole('button', { name: '+ Add Item' }).click()
   const rowA = page.getByTestId('cdf-section-A-list').locator('[data-testid^="cdf-line-"]').first()
-  await rowA.locator('input[name="borrower_paid_at_closing"]').fill('1000')
-  await rowA.locator('input[name="borrower_paid_at_closing"]').blur()
+  await rowA.getByLabel('Borrower-Paid At Closing').fill('1000')
+  await rowA.getByLabel('Borrower-Paid At Closing').blur()
   await expect(page.getByText('Saved')).toBeVisible()
 
   await expect(page.getByTestId('cdf-subtotal-j-subtotal')).toContainText('$1,000.00')
@@ -181,8 +213,8 @@ test('Section J shows a fixed Closing Costs Subtotal line and an editable Lender
   await expect(lenderCreditsRow.locator('input[name="description"]')).toHaveValue('Lender Credits')
   await expect(lenderCreditsRow.getByRole('button', { name: 'Remove item' })).toHaveCount(0)
 
-  await lenderCreditsRow.locator('input[name="borrower_paid_at_closing"]').fill('-150')
-  await lenderCreditsRow.locator('input[name="borrower_paid_at_closing"]').blur()
+  await lenderCreditsRow.getByLabel('Borrower-Paid At Closing').fill('-150')
+  await lenderCreditsRow.getByLabel('Borrower-Paid At Closing').blur()
   await expect(page.getByText('Saved')).toBeVisible()
   await page.reload()
 
@@ -212,7 +244,7 @@ test('Section G regular items show a Per Month / Months calculation, not shown o
 
   await page.getByTestId('cdf-section-G').getByRole('button', { name: '+ Add Item' }).click()
   const row = page.getByTestId('cdf-section-G-list').locator('[data-testid^="cdf-line-"]').first()
-  await row.locator('input[name="per_month"]').fill('100')
+  await row.getByLabel('Per Month').fill('100')
   await row.locator('input[name="months"]').fill('3')
   await row.locator('input[name="months"]').blur()
   await expect(page.getByText('Saved')).toBeVisible()

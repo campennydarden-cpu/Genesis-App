@@ -272,6 +272,7 @@ function ProrationRow({
         <div className="col-span-2 border-t pt-3">
           <Label>CDF Page 2 Assignment</Label>
           <CdfLineAssign
+            orderId={orderId}
             cdfLineId={proration.cdf_page2_line_id}
             cdfLines={cdfLines}
             sections={TAX_PRORATION_SECTIONS}

@@ -4,12 +4,13 @@ import { useRef, useTransition } from 'react'
 import type { ReactNode } from 'react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
+import { CurrencyInput } from '@/components/ui/currency-input'
 import { SaveIndicator } from '@/components/SaveIndicator'
 import { useAutosave } from '@/lib/use-autosave'
 import { addCdfPage2Line, updateCdfPage2Line, deleteCdfPage2Line } from '@/app/actions/cdf-page2'
 import { computeCdfPage2Totals } from '@/lib/cdf-page2'
 import { actualDaysBetween, days360Between } from '@/lib/tax-proration'
-import { CDF_PAGE2_SECTIONS, DATE_BASIS_OPTIONS } from '@/lib/constants'
+import { CDF_PAGE2_SECTIONS, DATE_BASIS_OPTIONS, CDF_PAGE2_SECTION_E_RECORDING_LINES } from '@/lib/constants'
 import { CdfWrap, CdfBar, CdfTable, CdfRow, CdfNum, cdfInputClass, cdfAmtInputClass, cdfSelectClass } from '@/components/title/cdf-chrome'
 import type { CdfPage2Line, CdfPage2Totals } from '@/lib/types'
 
@@ -80,19 +81,29 @@ function LineRow({
   const computedPerMonth = line.section === 'G' && !line.is_fixed ? computePerMonthAmount(line) : null
   const isPrepaidInterest = line.is_fixed && line.section === 'F' && line.description === 'Prepaid Interest'
   const computedPrepaidInterest = isPrepaidInterest ? computePrepaidInterest(line) : null
+  // Section E's 3 Recording totals are re-synced from Recording on every add/edit/delete
+  // there (syncRecordingCdfLines) — editing them here would just be overwritten on the
+  // next sync, and renaming the description would break that sync's own matching, so
+  // both render read-only instead of the usual editable inputs.
+  const isRecordingComputed =
+    line.is_fixed && line.section === 'E' && (CDF_PAGE2_SECTION_E_RECORDING_LINES as readonly string[]).includes(line.description ?? '')
 
   return (
     <div className="border-t border-border py-1.5 first:border-t-0" data-testid={`cdf-line-${line.id}`}>
       <form ref={formRef}>
         <div className={`grid ${GRID} items-center gap-2`}>
           <CdfNum>{num}</CdfNum>
-        <Input
-          aria-label="Description"
-          name="description"
-          defaultValue={line.description ?? ''}
-          onBlur={handleSave}
-          className={cdfInputClass}
-        />
+        {isRecordingComputed ? (
+          <span className={`${cdfInputClass} flex items-center text-muted-foreground`}>{line.description}</span>
+        ) : (
+          <Input
+            aria-label="Description"
+            name="description"
+            defaultValue={line.description ?? ''}
+            onBlur={handleSave}
+            className={cdfInputClass}
+          />
+        )}
         <select
           aria-label="To"
           name="to_contact_id"
@@ -107,51 +118,66 @@ function LineRow({
             </option>
           ))}
         </select>
-        <Input
-          aria-label="Borrower-Paid At Closing"
-          name="borrower_paid_at_closing"
-          type="number"
-          step="0.01"
-          defaultValue={line.borrower_paid_at_closing ?? ''}
-          onBlur={handleSave}
-          className={cdfAmtInputClass}
-        />
-        <Input
-          aria-label="Borrower-Paid Before Closing"
-          name="borrower_paid_before_closing"
-          type="number"
-          step="0.01"
-          defaultValue={line.borrower_paid_before_closing ?? ''}
-          onBlur={handleSave}
-          className={cdfAmtInputClass}
-        />
-        <Input
-          aria-label="Seller-Paid At Closing"
-          name="seller_paid_at_closing"
-          type="number"
-          step="0.01"
-          defaultValue={line.seller_paid_at_closing ?? ''}
-          onBlur={handleSave}
-          className={cdfAmtInputClass}
-        />
-        <Input
-          aria-label="Seller-Paid Before Closing"
-          name="seller_paid_before_closing"
-          type="number"
-          step="0.01"
-          defaultValue={line.seller_paid_before_closing ?? ''}
-          onBlur={handleSave}
-          className={cdfAmtInputClass}
-        />
-        <Input
-          aria-label="Paid By Others"
-          name="paid_by_others"
-          type="number"
-          step="0.01"
-          defaultValue={line.paid_by_others ?? ''}
-          onBlur={handleSave}
-          className={cdfAmtInputClass}
-        />
+        {isRecordingComputed ? (
+          <span className={cdfAmtInputClass}>${money(line.borrower_paid_at_closing ?? 0)}</span>
+        ) : (
+          <CurrencyInput
+            aria-label="Borrower-Paid At Closing"
+            name="borrower_paid_at_closing"
+            defaultValue={line.borrower_paid_at_closing}
+            onBlur={handleSave}
+            allowNegative
+            className={cdfAmtInputClass}
+          />
+        )}
+        {isRecordingComputed ? <span className={cdfAmtInputClass} /> : (
+          <CurrencyInput
+            aria-label="Borrower-Paid Before Closing"
+            name="borrower_paid_before_closing"
+            defaultValue={line.borrower_paid_before_closing}
+            onBlur={handleSave}
+            allowNegative
+            className={cdfAmtInputClass}
+          />
+        )}
+        {line.section === 'A' ? (
+          <div />
+        ) : isRecordingComputed ? (
+          <span className={cdfAmtInputClass}>${money(line.seller_paid_at_closing ?? 0)}</span>
+        ) : (
+          <CurrencyInput
+            aria-label="Seller-Paid At Closing"
+            name="seller_paid_at_closing"
+            defaultValue={line.seller_paid_at_closing}
+            onBlur={handleSave}
+            allowNegative
+            className={cdfAmtInputClass}
+          />
+        )}
+        {line.section === 'A' || isRecordingComputed ? (
+          <div />
+        ) : (
+          <CurrencyInput
+            aria-label="Seller-Paid Before Closing"
+            name="seller_paid_before_closing"
+            defaultValue={line.seller_paid_before_closing}
+            onBlur={handleSave}
+            allowNegative
+            className={cdfAmtInputClass}
+          />
+        )}
+        {isRecordingComputed ? (
+          <div />
+        ) : (
+          <CurrencyInput
+            aria-label="Paid By Others"
+            name="paid_by_others"
+            defaultValue={line.paid_by_others}
+            onBlur={handleSave}
+            allowNegative
+            className={cdfAmtInputClass}
+          />
+        )}
         {line.is_fixed ? (
           <div />
         ) : (
@@ -196,13 +222,12 @@ function LineRow({
             Round to nearest whole dollar
           </label>
           <span>Adjustment +/-</span>
-          <Input
+          <CurrencyInput
             aria-label="Points Adjustment"
             name="points_adjustment"
-            type="number"
-            step="0.01"
-            defaultValue={line.points_adjustment ?? ''}
+            defaultValue={line.points_adjustment}
             onBlur={handleSave}
+            allowNegative
             className="h-7 w-24 px-1.5 text-right"
           />
           <span>For</span>
@@ -219,12 +244,10 @@ function LineRow({
       {line.section === 'G' && !line.is_fixed && (
         <div className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 pl-[calc(24px+0.5rem)] text-[12px] text-muted-foreground">
           <span>Per Month</span>
-          <Input
+          <CurrencyInput
             aria-label="Per Month"
             name="per_month"
-            type="number"
-            step="0.01"
-            defaultValue={line.per_month ?? ''}
+            defaultValue={line.per_month}
             onBlur={handleSave}
             className="h-7 w-24 px-1.5 text-right"
           />
@@ -264,12 +287,10 @@ function LineRow({
             className="h-7 w-36 px-1.5"
           />
           <span>at</span>
-          <Input
+          <CurrencyInput
             aria-label="Prepaid Interest Per Diem Rate"
             name="prepaid_interest_per_diem_rate"
-            type="number"
-            step="0.0001"
-            defaultValue={line.prepaid_interest_per_diem_rate ?? ''}
+            defaultValue={line.prepaid_interest_per_diem_rate}
             onBlur={handleSave}
             className="h-7 w-24 px-1.5 text-right"
           />
@@ -359,7 +380,7 @@ function SubtotalLine({
 // outside each section's normal `cdf-section-{code}-list` container — that container
 // stays scoped to user-added rows so every existing e2e selector (`+ Add Item` count
 // checks, `.first()` lookups) keeps working unchanged.
-const FIXED_LINE_POSITION: Record<string, 'first' | 'last'> = { A: 'first', F: 'first', G: 'last' }
+const FIXED_LINE_POSITION: Record<string, 'first' | 'last'> = { A: 'first', E: 'first', F: 'first', G: 'last' }
 
 function SectionGroup({
   title,
@@ -449,14 +470,16 @@ export function CdfPage2Panel({
   lines,
   contacts,
   loanAmount,
+  transactionType,
 }: {
   orderId: string
   lines: CdfPage2Line[]
   contacts: Contact[]
   loanAmount: number | null
+  transactionType: string | null
 }) {
   const [isPending, startTransition] = useTransition()
-  const { d, i, closingCostsSubtotal, j } = computeCdfPage2Totals(lines)
+  const { d, i, closingCostsSubtotal, j } = computeCdfPage2Totals(lines, transactionType)
   const lenderCreditsLine = lines.find((l) => l.section === 'J' && l.is_fixed)
 
   function addSection(section: string) {
@@ -486,7 +509,14 @@ export function CdfPage2Panel({
           orderId={orderId}
           isPending={isPending}
           addSection={addSection}
-          totalRow={<SubtotalLine id="d" label="D. Total Loan Costs (Borrower-Paid)" totals={d} showSeller={false} />}
+          totalRow={
+            <SubtotalLine
+              id="d"
+              label={transactionType === 'Purchase' ? 'D. Total Loan Costs' : 'D. Total Loan Costs (Borrower-Paid)'}
+              totals={d}
+              showSeller={transactionType === 'Purchase'}
+            />
+          }
           loanAmount={loanAmount}
         />
         <SectionGroup

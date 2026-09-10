@@ -4,6 +4,7 @@ import { useRef, useTransition } from 'react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
+import { CurrencyInput } from '@/components/ui/currency-input'
 import { SaveIndicator } from '@/components/SaveIndicator'
 import { useAutosave } from '@/lib/use-autosave'
 import { SplitList } from '@/components/title/SplitFields'
@@ -85,14 +86,7 @@ function ChargeRow({
         </div>
         <div>
           <Label htmlFor={`charge-${charge.id}-charge`}>Charge</Label>
-          <Input
-            id={`charge-${charge.id}-charge`}
-            name="charge"
-            type="number"
-            step="0.01"
-            defaultValue={charge.charge ?? ''}
-            onBlur={handleSave}
-          />
+          <CurrencyInput id={`charge-${charge.id}-charge`} name="charge" defaultValue={charge.charge} onBlur={handleSave} />
         </div>
         <div>
           <Label htmlFor={`charge-${charge.id}-fee_type`}>Fee Type</Label>
@@ -122,10 +116,11 @@ function ChargeRow({
         <div className="col-span-2">
           <Label>CDF Page 2 Assignment</Label>
           <CdfLineAssign
+            orderId={orderId}
             cdfLineId={charge.cdf_page2_line_id}
             cdfLines={cdfLines}
             onAssign={async (section) => {
-              const { id } = await assignNextCdfPage2Line(orderId, section, charge.description, charge.charge)
+              const { id } = await assignNextCdfPage2Line(orderId, section, charge.description, charge.charge, charge.seller_pay_percent)
               if (id) await setChargeCdfLine(orderId, charge.id, id)
               refresh()
             }}

@@ -3,6 +3,7 @@
 import { useRef } from 'react'
 import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
+import { CurrencyInput } from '@/components/ui/currency-input'
 import { SaveIndicator } from '@/components/SaveIndicator'
 import { useAutosave } from '@/lib/use-autosave'
 import { saveCdfPage1 } from '@/app/actions/cdf-page1'
@@ -35,11 +36,10 @@ export function CdfPage1Panel({ orderId, cdfPage1 }: { orderId: string; cdfPage1
         <CdfBar title="Loan Terms" />
         <CdfTable>
           <CdfMeta label="Loan Amount">
-            <Input
+            <CurrencyInput
+              id="loan_amount"
               name="loan_amount"
-              type="number"
-              step="0.01"
-              defaultValue={cdfPage1?.loan_amount ?? ''}
+              defaultValue={cdfPage1?.loan_amount}
               onBlur={handleSave}
               className={`${cdfAmtInputClass} max-w-[160px]`}
             />
@@ -55,11 +55,9 @@ export function CdfPage1Panel({ orderId, cdfPage1 }: { orderId: string; cdfPage1
             />
           </CdfMeta>
           <CdfMeta label="Monthly Principal & Interest">
-            <Input
+            <CurrencyInput
               name="monthly_principal_interest"
-              type="number"
-              step="0.01"
-              defaultValue={cdfPage1?.monthly_principal_interest ?? ''}
+              defaultValue={cdfPage1?.monthly_principal_interest}
               onBlur={handleSave}
               className={`${cdfAmtInputClass} max-w-[160px]`}
             />
@@ -96,12 +94,10 @@ export function CdfPage1Panel({ orderId, cdfPage1 }: { orderId: string; cdfPage1
                 onChange={handleSave}
                 className="h-4 w-4"
               />
-              <Input
+              <CurrencyInput
                 name="prepayment_penalty_max"
-                type="number"
-                step="0.01"
                 placeholder="Max amount"
-                defaultValue={cdfPage1?.prepayment_penalty_max ?? ''}
+                defaultValue={cdfPage1?.prepayment_penalty_max}
                 onBlur={handleSave}
                 className={`${cdfAmtInputClass} max-w-[140px]`}
               />
@@ -117,12 +113,10 @@ export function CdfPage1Panel({ orderId, cdfPage1 }: { orderId: string; cdfPage1
                 onChange={handleSave}
                 className="h-4 w-4"
               />
-              <Input
+              <CurrencyInput
                 name="balloon_payment_amount"
-                type="number"
-                step="0.01"
                 placeholder="Amount"
-                defaultValue={cdfPage1?.balloon_payment_amount ?? ''}
+                defaultValue={cdfPage1?.balloon_payment_amount}
                 onBlur={handleSave}
                 className={`${cdfAmtInputClass} max-w-[140px]`}
               />
@@ -135,23 +129,19 @@ export function CdfPage1Panel({ orderId, cdfPage1 }: { orderId: string; cdfPage1
         <CdfBar title="Projected Payments" />
         <CdfTable>
           <CdfMeta label="Estimated Total Monthly Payment">
-            <Input
+            <CurrencyInput
               id="estimated_total_monthly_payment"
               name="estimated_total_monthly_payment"
-              type="number"
-              step="0.01"
-              defaultValue={cdfPage1?.estimated_total_monthly_payment ?? ''}
+              defaultValue={cdfPage1?.estimated_total_monthly_payment}
               onBlur={handleSave}
               className={`${cdfAmtInputClass} max-w-[160px]`}
             />
           </CdfMeta>
           <CdfMeta label="Estimated Escrow (monthly)">
-            <Input
+            <CurrencyInput
               id="estimated_escrow_monthly"
               name="estimated_escrow_monthly"
-              type="number"
-              step="0.01"
-              defaultValue={cdfPage1?.estimated_escrow_monthly ?? ''}
+              defaultValue={cdfPage1?.estimated_escrow_monthly}
               onBlur={handleSave}
               className={`${cdfAmtInputClass} max-w-[160px]`}
             />
@@ -207,23 +197,19 @@ export function CdfPage1Panel({ orderId, cdfPage1 }: { orderId: string; cdfPage1
         <CdfBar title="Costs at Closing" />
         <CdfTable>
           <CdfMeta label="Closing Costs">
-            <Input
+            <CurrencyInput
               id="closing_costs_total"
               name="closing_costs_total"
-              type="number"
-              step="0.01"
-              defaultValue={cdfPage1?.closing_costs_total ?? ''}
+              defaultValue={cdfPage1?.closing_costs_total}
               onBlur={handleSave}
               className={`${cdfAmtInputClass} max-w-[160px]`}
             />
           </CdfMeta>
           <CdfMeta label="Cash to Close">
-            <Input
+            <CurrencyInput
               id="cash_to_close_total"
               name="cash_to_close_total"
-              type="number"
-              step="0.01"
-              defaultValue={cdfPage1?.cash_to_close_total ?? ''}
+              defaultValue={cdfPage1?.cash_to_close_total}
               onBlur={handleSave}
               className={`${cdfAmtInputClass} max-w-[160px]`}
             />

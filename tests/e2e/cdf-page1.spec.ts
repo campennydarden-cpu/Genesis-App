@@ -56,10 +56,10 @@ test('fill Loan Terms and Costs at Closing fields, autosave persists after reloa
   const orderId = await createOrder(page)
   await page.goto(`/orders/${orderId}/cdf-page-1`)
 
-  await page.locator('input[name="loan_amount"]').fill('227920')
+  await page.locator('#loan_amount').fill('227920')
   await page.locator('input[name="interest_rate"]').fill('6.5')
-  await page.locator('input[name="closing_costs_total"]').fill('1266')
-  await page.locator('input[name="closing_costs_total"]').blur()
+  await page.locator('#closing_costs_total').fill('1266')
+  await page.locator('#closing_costs_total').blur()
   await expect(page.getByText('Saved')).toBeVisible()
 
   await page.reload()

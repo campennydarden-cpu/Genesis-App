@@ -62,8 +62,8 @@ test('add charge, edit fields, autosave persists after reload', async ({ page })
   const row = page.getByTestId('charge-list').locator('[data-testid^="charge-"]').first()
   await row.locator('select[name="bill_code"]').selectOption('CLOSE')
   await row.locator('input[name="description"]').fill('Notary Fee')
-  await row.locator('input[name="charge"]').fill('150')
-  await row.locator('input[name="charge"]').blur()
+  await row.getByLabel('Charge').fill('150')
+  await row.getByLabel('Charge').blur()
   await expect(page.getByText('Saved')).toBeVisible()
 
   await page.reload()
@@ -100,8 +100,8 @@ test('assign to CDF Page 2 copies the charge description and amount onto the new
 
   const row = page.getByTestId('charge-list').locator('[data-testid^="charge-"]').first()
   await row.locator('input[name="description"]').fill('Courier Fee')
-  await row.locator('input[name="charge"]').fill('45')
-  await row.locator('input[name="charge"]').blur()
+  await row.getByLabel('Charge').fill('45')
+  await row.getByLabel('Charge').blur()
   await expect(page.getByText('Saved')).toBeVisible()
 
   await row.getByRole('button', { name: '+ Assign to CDF Page 2' }).click()

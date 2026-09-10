@@ -3,6 +3,7 @@
 import { useRef } from 'react'
 import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
+import { CurrencyInput } from '@/components/ui/currency-input'
 import { SaveIndicator } from '@/components/SaveIndicator'
 import { useAutosave } from '@/lib/use-autosave'
 import { saveCdfPage4 } from '@/app/actions/cdf-page4'
@@ -218,34 +219,28 @@ export function CdfPage4Panel({ orderId, cdfPage4 }: { orderId: string; cdfPage4
             </label>
           </div>
           <CdfMeta label="Initial Deposit">
-            <Input
+            <CurrencyInput
               id="escrow_initial_deposit"
               name="escrow_initial_deposit"
-              type="number"
-              step="0.01"
-              defaultValue={cdfPage4?.escrow_initial_deposit ?? ''}
+              defaultValue={cdfPage4?.escrow_initial_deposit}
               onBlur={handleSave}
               className={`${cdfAmtInputClass} max-w-[160px]`}
             />
           </CdfMeta>
           <CdfMeta label="Monthly Escrow Payment">
-            <Input
+            <CurrencyInput
               id="escrow_monthly_payment"
               name="escrow_monthly_payment"
-              type="number"
-              step="0.01"
-              defaultValue={cdfPage4?.escrow_monthly_payment ?? ''}
+              defaultValue={cdfPage4?.escrow_monthly_payment}
               onBlur={handleSave}
               className={`${cdfAmtInputClass} max-w-[160px]`}
             />
           </CdfMeta>
           <CdfMeta label="No Escrow — estimated property costs over year 1">
-            <Input
+            <CurrencyInput
               id="no_escrow_estimated_property_costs"
               name="no_escrow_estimated_property_costs"
-              type="number"
-              step="0.01"
-              defaultValue={cdfPage4?.no_escrow_estimated_property_costs ?? ''}
+              defaultValue={cdfPage4?.no_escrow_estimated_property_costs}
               onBlur={handleSave}
               className={`${cdfAmtInputClass} max-w-[160px]`}
             />

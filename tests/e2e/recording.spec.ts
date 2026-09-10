@@ -75,3 +75,36 @@ test('add recording document, edit, autosave persists, delete', async ({ page })
   await Promise.all([page.waitForNavigation(), reloadedRow.getByRole('button', { name: 'Remove document' }).click()])
   await expect(page.getByTestId('recording-doc-list').getByText('No documents yet.')).toBeVisible()
 })
+
+test('Recording Fee, Recordation/Transfer Tax, and Stamp Tax auto-sum into fixed CDF Page 2 Section E lines, split by Seller Pay %', async ({
+  page,
+}) => {
+  const orderId = await createOrder(page)
+  await page.goto(`/orders/${orderId}/recording`)
+
+  await page.getByRole('button', { name: '+ Add Document' }).click()
+  const row = page.getByTestId('recording-doc-list').locator('[data-testid^="recording-doc-"]').first()
+  await row.getByLabel('Recording Fee').fill('100')
+  await row.getByLabel('Recordation Tax').fill('50')
+  await row.getByLabel('Transfer Tax').fill('25')
+  await row.getByLabel('Stamp Tax').fill('10')
+  await row.locator('input[name="seller_pay_percent"]').fill('50')
+  await row.locator('input[name="seller_pay_percent"]').blur()
+  await expect(page.getByText('Saved')).toBeVisible()
+
+  await page.goto(`/orders/${orderId}/cdf-page-2`)
+  const feeLine = page.getByTestId('cdf-section-E-fixed').filter({ hasText: 'Recording Fees' })
+  await expect(feeLine).toContainText('$50.00') // half of $100, Borrower
+  const taxLine = page.getByTestId('cdf-section-E-fixed').filter({ hasText: 'Recordation/Transfer Tax' })
+  await expect(taxLine).toContainText('$37.50') // half of ($50 + $25)
+  const stampLine = page.getByTestId('cdf-section-E-fixed').filter({ hasText: 'Stamp Tax' })
+  await expect(stampLine).toContainText('$5.00') // half of $10
+
+  // Removing the document zeroes the totals rather than deleting the fixed lines.
+  await page.goto(`/orders/${orderId}/recording`)
+  await Promise.all([page.waitForNavigation(), page.getByRole('button', { name: 'Remove document' }).click()])
+  await expect(page.getByTestId('recording-doc-list').getByText('No documents yet.')).toBeVisible()
+
+  await page.goto(`/orders/${orderId}/cdf-page-2`)
+  await expect(page.getByTestId('cdf-section-E-fixed').filter({ hasText: 'Recording Fees' })).toContainText('$0.00')
+})
