@@ -31,7 +31,7 @@ export function DirectoryLookupField({
 
   return (
     <Popover open={open} onOpenChange={setOpen}>
-      <PopoverTrigger render={<div />}>
+      <PopoverTrigger render={<div />} nativeButton={false}>
         <Command shouldFilter={false}>
           <CommandInput
             placeholder={`Search ${roleType.toLowerCase()}s or add new…`}
