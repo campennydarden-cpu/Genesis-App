@@ -787,6 +787,64 @@ export type RecordingDocument = {
   cdf_page2_line_id: string | null
 }
 
+export type EntityDirectoryRoleType =
+  | 'Lender'
+  | 'Mortgage Broker'
+  | 'Underwriter'
+  | 'Settlement Agent'
+  | 'Title Company'
+  | "Listing Agent (Seller's Agent)"
+  | "Selling Agent (Buyer's Agent)"
+  | 'Recording Office'
+  | 'Tax Collector'
+  | 'Payoff Lender'
+
+// Preference-profile fields per Cam's Q3 answer ("Yes," fold in settlement type/CD-HUD
+// preference, Premium/Endorsement policy-type defaults, communication routing) --
+// first-pass field names, not yet confirmed field-by-field with Cam.
+export type LenderDetails = {
+  nmls_number: string | null
+  cdf_payee_type: string | null
+  proposed_insured_clause: string | null
+  vesting_loss_payable: string | null
+  settlement_type_preference: string | null
+  cd_hud_preference: string | null
+  premium_policy_type_default: string | null
+  endorsement_defaults: string | null
+  communication_routing: string | null
+}
+
+export type EntityDirectoryRecord = {
+  id: string
+  lookup_code: string
+  role_type: EntityDirectoryRoleType
+  name: string
+  address_line1: string | null
+  address_line2: string | null
+  city: string | null
+  state: string | null
+  zip: string | null
+  county: string | null
+  phone: string | null
+  fax: string | null
+  email: string | null
+  license_number: string | null
+  details: Record<string, unknown>
+  is_active: boolean
+}
+
+export type EntityDirectoryPerson = {
+  id: string
+  entity_id: string
+  first_name: string
+  last_name: string | null
+  title: string | null
+  email: string | null
+  phone: string | null
+  ext: string | null
+  cell: string | null
+}
+
 export type SettlementOptions = {
   id: string
   order_id: string

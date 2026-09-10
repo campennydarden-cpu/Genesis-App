@@ -95,6 +95,30 @@ export const CONTACT_ROLES = [
   'Payoff Lender',
 ] as const
 
+// Matches CONTACT_ROLES minus Buyer/Borrower and Seller (transaction parties, not
+// reusable firm vendors -- see Entity Directory - Implementation Readiness.md Q2/Q6).
+export const ENTITY_DIRECTORY_ROLE_TYPES = [
+  'Lender',
+  'Mortgage Broker',
+  'Underwriter',
+  'Settlement Agent',
+  'Title Company',
+  "Listing Agent (Seller's Agent)",
+  "Selling Agent (Buyer's Agent)",
+  'Recording Office',
+  'Tax Collector',
+  'Payoff Lender',
+] as const
+
+// Cam's "Local VIP Client Management" group (2026-09-10) -- these get a nested
+// entity_directory_people roster; the rest don't.
+export const ENTITY_DIRECTORY_ROLE_TYPES_WITH_PEOPLE = [
+  'Lender',
+  'Mortgage Broker',
+  "Selling Agent (Buyer's Agent)",
+  "Listing Agent (Seller's Agent)",
+] as const
+
 // Roles where Entity Type applies in the UI (and, when Individual, SSN/DOB show).
 export const CONTACT_ROLES_WITH_ENTITY_TYPE: readonly string[] = ['Buyer/Borrower', 'Seller']
 
