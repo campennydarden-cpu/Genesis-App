@@ -44,7 +44,9 @@ export default async function CurativePage({
     : (curativeSettings?.commitment_status ?? 'draft')
   const ctcIssued = curativeSettingsError ? true : !!curativeSettings?.ctc_issued_at
 
-  const allDispositioned = [...(requirements ?? []), ...(exceptions ?? [])].every((r) => r.disposition || r.dont_show)
+  // Exceptions don't gate CTC issuance (Cam's call, 2026-09-10) — only Requirements do,
+  // matching issueCTC's own server-side check in actions/curative.ts.
+  const allDispositioned = (requirements ?? []).every((r) => r.disposition || r.dont_show)
 
   return (
     <div>

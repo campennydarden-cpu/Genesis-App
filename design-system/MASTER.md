@@ -74,4 +74,6 @@ Subtle hover states (200–250ms), smooth transitions, sharp shadows if any (avo
 
 ## Page pattern
 
-Not sourced from the plugin's landing-page pattern dataset (built for marketing sites — Hero/Features/CTA/Footer, inapplicable here). Genesis's own established convention, set by the existing Title-increment design docs: one scrolling **File Section** page per screen, no tab switchers, applied consistently across Prelim Title Search, Schedule A, Schedule B-I/B-II, and Curative.
+Not sourced from the plugin's landing-page pattern dataset (built for marketing sites — Hero/Features/CTA/Footer, inapplicable here). Genesis's own established convention, set by the existing Title-increment design docs: one scrolling **File Section** page per screen by default — Schedule A, Schedule B-I/B-II, and Curative all follow this.
+
+**Nested sub-screens (in-page tabs) are a known, generally available option for a complex File Section, not an exception limited to specific screens.** Property and Prelim Title Search already use this pattern (`role="tablist"`, hidden-toggled panels inside one persistent form/component tree so unsaved state survives switching tabs — see `PropertyForm.tsx` and `DerivationSection.tsx`) and it's fine to reach for on any other screen where a single scroll would get unwieldy (Cam's call, 2026-09-10: "I just want it as a known option," not scoped to a named list). Pick single-scroll by default; reach for tabs when a screen's own sections are genuinely separate concerns a user jumps between, not sequential reading order.

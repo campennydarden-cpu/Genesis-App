@@ -7,7 +7,16 @@ import { Label } from '@/components/ui/label'
 import { addChainOfTitleEntry, updateChainOfTitleEntry, deleteChainOfTitleEntry } from '@/app/actions/commitment-sch-a'
 import type { ChainOfTitleEntry } from '@/lib/types'
 
-type DerivationSeed = { instrumentType: string; grantor: string; grantee: string } | null
+type DerivationSeed = {
+  instrumentType: string
+  grantor: string
+  grantee: string
+  datedDate: string
+  recordedDate: string
+  book: string
+  page: string
+  instrumentNumber: string
+} | null
 
 function ChainOfTitleFields({
   entry,
@@ -21,6 +30,11 @@ function ChainOfTitleFields({
   const [instrumentType, setInstrumentType] = useState(entry?.instrument_type ?? '')
   const [grantor, setGrantor] = useState(entry?.grantor ?? '')
   const [grantee, setGrantee] = useState(entry?.grantee ?? '')
+  const [datedDate, setDatedDate] = useState(entry?.dated_date ?? '')
+  const [recordedDate, setRecordedDate] = useState(entry?.recorded_date ?? '')
+  const [book, setBook] = useState(entry?.book ?? '')
+  const [page, setPage] = useState(entry?.page ?? '')
+  const [instrumentNumber, setInstrumentNumber] = useState(entry?.instrument_number ?? '')
 
   return (
     <div className="space-y-3">
@@ -32,6 +46,11 @@ function ChainOfTitleFields({
             setInstrumentType(seedValues.instrumentType)
             setGrantor(seedValues.grantor)
             setGrantee(seedValues.grantee)
+            setDatedDate(seedValues.datedDate)
+            setRecordedDate(seedValues.recordedDate)
+            setBook(seedValues.book)
+            setPage(seedValues.page)
+            setInstrumentNumber(seedValues.instrumentNumber)
           }}
         >
           + Copy from Derivation ({seedValues.grantor || '?'} → {seedValues.grantee || '?'})
@@ -58,23 +77,40 @@ function ChainOfTitleFields({
         </div>
         <div>
           <Label htmlFor={`${idPrefix}-dated_date`}>Dated Date</Label>
-          <Input id={`${idPrefix}-dated_date`} name="dated_date" type="date" defaultValue={entry?.dated_date ?? undefined} />
+          <Input
+            id={`${idPrefix}-dated_date`}
+            name="dated_date"
+            type="date"
+            value={datedDate}
+            onChange={(e) => setDatedDate(e.target.value)}
+          />
         </div>
         <div>
           <Label htmlFor={`${idPrefix}-recorded_date`}>Recorded Date</Label>
-          <Input id={`${idPrefix}-recorded_date`} name="recorded_date" type="date" defaultValue={entry?.recorded_date ?? undefined} />
+          <Input
+            id={`${idPrefix}-recorded_date`}
+            name="recorded_date"
+            type="date"
+            value={recordedDate}
+            onChange={(e) => setRecordedDate(e.target.value)}
+          />
         </div>
         <div>
           <Label htmlFor={`${idPrefix}-book`}>Book</Label>
-          <Input id={`${idPrefix}-book`} name="book" defaultValue={entry?.book ?? undefined} />
+          <Input id={`${idPrefix}-book`} name="book" value={book} onChange={(e) => setBook(e.target.value)} />
         </div>
         <div>
           <Label htmlFor={`${idPrefix}-page`}>Page</Label>
-          <Input id={`${idPrefix}-page`} name="page" defaultValue={entry?.page ?? undefined} />
+          <Input id={`${idPrefix}-page`} name="page" value={page} onChange={(e) => setPage(e.target.value)} />
         </div>
         <div>
           <Label htmlFor={`${idPrefix}-instrument_number`}>Instrument Number</Label>
-          <Input id={`${idPrefix}-instrument_number`} name="instrument_number" defaultValue={entry?.instrument_number ?? undefined} />
+          <Input
+            id={`${idPrefix}-instrument_number`}
+            name="instrument_number"
+            value={instrumentNumber}
+            onChange={(e) => setInstrumentNumber(e.target.value)}
+          />
         </div>
       </div>
     </div>

@@ -124,21 +124,13 @@ export async function issueCTC(orderId: string, formData: FormData) {
     fail(orderId, 'Could not save. Please check your entries and try again.')
   }
 
-  const { data: exceptions, error: excError } = await supabase
-    .from('commitment_exceptions')
-    .select('disposition, dont_show')
-    .eq('order_id', orderId)
-  if (excError) {
-    console.error('issueCTC failed:', excError)
-    fail(orderId, 'Could not save. Please check your entries and try again.')
-  }
-
-  const allDispositioned = [...(requirements ?? []), ...(exceptions ?? [])].every(
-    (r) => r.disposition || r.dont_show
-  )
+  // Exceptions are deliberately NOT gated here (Cam's call, 2026-09-10) — "No Action" is
+  // now a real Exception disposition option for the cases where nothing else applies, and
+  // separately, Exceptions no longer block CTC issuance the way Requirements still do.
+  const allDispositioned = (requirements ?? []).every((r) => r.disposition || r.dont_show)
 
   if (!allDispositioned) {
-    fail(orderId, "Every Requirement and Exception must have a Disposition set or Don't Show checked before issuing a CTC.")
+    fail(orderId, "Every Requirement must have a Disposition set or Don't Show checked before issuing a CTC.")
   }
 
   const { data: issued, error: settingsError } = await supabase

@@ -248,7 +248,7 @@ export const REQUIREMENT_DISPOSITIONS = [
 ] as const
 
 export const EXCEPTION_DISPOSITIONS = [
-  'Removed by Affidavit', 'Deleted per Underwriter',
+  'Removed by Affidavit', 'Deleted per Underwriter', 'No Action',
 ] as const
 
 // Canonical ordered Milestone list (Design Notes.md's "Milestone list, in order").

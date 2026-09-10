@@ -24,7 +24,16 @@ type ContactSeed = {
   current_address?: string | null
 }
 type TitleCompanyContact = { name: string; current_address: string | null; alta_id: string | null } | null
-type DerivationSeed = { instrumentType: string; grantor: string; grantee: string } | null
+type DerivationSeed = {
+  instrumentType: string
+  grantor: string
+  grantee: string
+  datedDate: string
+  recordedDate: string
+  book: string
+  page: string
+  instrumentNumber: string
+} | null
 
 export function CommitmentScheduleAForm({
   orderId,

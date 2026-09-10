@@ -38,7 +38,9 @@ export default async function CommitmentScheduleAPage({
 
   const { data: prelimSearch } = await supabase
     .from('prelim_search')
-    .select('effective_date, effective_time, derivation_instrument_type, derivation_grantor_name, derivation_grantee_name')
+    .select(
+      'effective_date, effective_time, derivation_instrument_type, derivation_grantor_name, derivation_grantee_name, derivation_dated_date, derivation_recorded_date, derivation_book, derivation_page, derivation_instrument_number'
+    )
     .eq('order_id', id)
     .maybeSingle()
 
@@ -91,6 +93,11 @@ export default async function CommitmentScheduleAPage({
           instrumentType: prelimSearch.derivation_instrument_type ?? '',
           grantor: prelimSearch.derivation_grantor_name ?? '',
           grantee: prelimSearch.derivation_grantee_name ?? '',
+          datedDate: prelimSearch.derivation_dated_date ?? '',
+          recordedDate: prelimSearch.derivation_recorded_date ?? '',
+          book: prelimSearch.derivation_book ?? '',
+          page: prelimSearch.derivation_page ?? '',
+          instrumentNumber: prelimSearch.derivation_instrument_number ?? '',
         }
       : null
 
