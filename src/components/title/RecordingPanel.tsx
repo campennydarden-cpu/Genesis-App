@@ -1,12 +1,17 @@
 'use client'
 
-import { useRef, useTransition } from 'react'
+import { useRef, useState, useTransition } from 'react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { CurrencyInput } from '@/components/ui/currency-input'
 import { SaveIndicator } from '@/components/SaveIndicator'
-import { addRecordingDocument, updateRecordingDocument, deleteRecordingDocument } from '@/app/actions/recording'
+import {
+  addRecordingDocument,
+  updateRecordingDocument,
+  deleteRecordingDocument,
+  autofillRecordingRates,
+} from '@/app/actions/recording'
 import { useAutosave } from '@/lib/use-autosave'
 import { RECORDING_STATUSES, RECORDING_DOCUMENT_TYPES } from '@/lib/constants'
 import type { RecordingDocument } from '@/lib/types'
@@ -19,10 +24,29 @@ function DocumentRow({ orderId, doc }: { orderId: string; doc: RecordingDocument
   const formRef = useRef<HTMLFormElement>(null)
   const { state, errorMessage, save } = useAutosave((formData: FormData) => updateRecordingDocument(orderId, doc.id, formData))
   const [isPending, startTransition] = useTransition()
+  const [noRateMessage, setNoRateMessage] = useState<string | null>(null)
 
   function handleSave() {
     if (!formRef.current) return
     save(new FormData(formRef.current))
+  }
+
+  // Document type, county, and page count are the inputs the rate tables key on
+  // (readiness doc "Recording Rate-Table Wiring", Cam answered 2026-09-10) -- re-run the
+  // lookup whenever one of those changes, after the field's own save lands.
+  function handleSaveAndAutofill() {
+    if (!formRef.current) return
+    startTransition(async () => {
+      await save(new FormData(formRef.current!))
+      const result = await autofillRecordingRates(orderId, doc.id)
+      if (result.updated) {
+        refresh()
+        return
+      }
+      setNoRateMessage(
+        result.noRateFor && result.noRateFor.length > 0 ? `No Available Rates: ${result.noRateFor.join(', ')} — enter manually.` : null
+      )
+    })
   }
 
   return (
@@ -34,7 +58,7 @@ function DocumentRow({ orderId, doc }: { orderId: string; doc: RecordingDocument
             id={`recording-doc-${doc.id}-document_description`}
             name="document_description"
             defaultValue={doc.document_description ?? ''}
-            onBlur={handleSave}
+            onBlur={handleSaveAndAutofill}
             className="block w-full rounded border px-2 py-1 text-sm"
           >
             <option value="" />
@@ -47,7 +71,7 @@ function DocumentRow({ orderId, doc }: { orderId: string; doc: RecordingDocument
         </div>
         <div>
           <Label htmlFor={`recording-doc-${doc.id}-county`}>County</Label>
-          <Input id={`recording-doc-${doc.id}-county`} name="county" defaultValue={doc.county ?? ''} onBlur={handleSave} />
+          <Input id={`recording-doc-${doc.id}-county`} name="county" defaultValue={doc.county ?? ''} onBlur={handleSaveAndAutofill} />
         </div>
         <div>
           <Label htmlFor={`recording-doc-${doc.id}-number_of_pages`}># of Pages</Label>
@@ -56,7 +80,7 @@ function DocumentRow({ orderId, doc }: { orderId: string; doc: RecordingDocument
             name="number_of_pages"
             type="number"
             defaultValue={doc.number_of_pages ?? ''}
-            onBlur={handleSave}
+            onBlur={handleSaveAndAutofill}
           />
         </div>
         <div>
@@ -158,9 +182,15 @@ function DocumentRow({ orderId, doc }: { orderId: string; doc: RecordingDocument
             onBlur={handleSave}
           />
         </div>
+        {noRateMessage && (
+          <p className="col-span-4 text-xs text-amber-600" data-testid={`recording-doc-${doc.id}-no-rate`}>
+            {noRateMessage}
+          </p>
+        )}
         <p className="col-span-4 text-xs text-muted-foreground">
           Recording Fee, Recordation Tax + Transfer Tax, and Stamp Tax each combine across every document on this file into their
-          own fixed line on CDF Page 2, Section E — no per-document assignment needed.
+          own fixed line on CDF Page 2, Section E — no per-document assignment needed. Fee/tax fields auto-fill from the document
+          type, county, and page count when a rate is on file; edit them freely after.
         </p>
         <div className="col-span-4">
           <SaveIndicator state={state} errorMessage={errorMessage} />

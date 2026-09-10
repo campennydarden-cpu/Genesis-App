@@ -4,6 +4,7 @@ import { revalidatePath } from 'next/cache'
 import { createClient } from '@/lib/supabase/server'
 import { RECORDING_STATUSES, CDF_PAGE2_SECTION_E_RECORDING_LINES } from '@/lib/constants'
 import type { RecordingDocument } from '@/lib/types'
+import { matchRecordingRate } from '@/lib/recording-rates'
 
 export async function listRecordingDocuments(orderId: string): Promise<RecordingDocument[]> {
   const supabase = await createClient()
@@ -138,6 +139,69 @@ export async function updateRecordingDocument(orderId: string, id: string, formD
   await syncRecordingCdfLines(orderId)
   revalidatePath(`/orders/${orderId}/recording`)
   return {}
+}
+
+// Recording Rate-Table Wiring (Cam answered 2026-09-10): base-rate lookup only, auto-filled
+// directly into Fee/Recordation Tax/Transfer Tax on document-type/county/page-count change
+// (Q5 -- "Auto fill the Fee/Tax field directly"). Never overwrites a field we have no
+// confirmed rate for -- Stamp Tax has no corresponding schedule table today and Release/
+// Power of Attorney/Affidavit/Other never carry a transfer or recordation tax, so those are
+// simply left alone rather than cleared. Returns which fields had no confirmed rate so the
+// UI can surface Q4's "No Available Rates" state.
+export async function autofillRecordingRates(
+  orderId: string,
+  id: string
+): Promise<{ error?: string; noRateFor?: string[]; updated?: boolean }> {
+  const supabase = await createClient()
+
+  const { data: doc } = await supabase.from('recording_documents').select('*').eq('id', id).single()
+  if (!doc) return { error: 'Document not found.' }
+
+  const { data: order } = await supabase.from('orders').select('property_state, purchase_price, loan_amount').eq('id', orderId).single()
+  if (!order?.property_state) return { noRateFor: [], updated: false }
+
+  const [{ data: feeRows }, { data: transferTaxRows }, { data: recordationTaxRows }] = await Promise.all([
+    supabase.from('recording_fee_schedules').select('*').eq('state', order.property_state),
+    supabase.from('transfer_tax_schedules').select('*').eq('state', order.property_state),
+    supabase.from('recordation_tax_schedules').select('*').eq('state', order.property_state),
+  ])
+
+  const match = matchRecordingRate({
+    state: order.property_state,
+    county: doc.county,
+    documentDescription: doc.document_description,
+    numberOfPages: doc.number_of_pages,
+    purchasePrice: order.purchase_price,
+    loanAmount: order.loan_amount,
+    feeRows: feeRows ?? [],
+    transferTaxRows: transferTaxRows ?? [],
+    recordationTaxRows: recordationTaxRows ?? [],
+  })
+
+  const update: Record<string, number> = {}
+  if (match.feeStatus === 'matched' && match.fee !== null) update.fee = match.fee
+  if (match.transferTaxStatus === 'matched' && match.transferTax !== null) update.transferTax = match.transferTax
+  if (match.recordationTaxStatus === 'matched' && match.recordationTax !== null) update.recordationTax = match.recordationTax
+
+  if (Object.keys(update).length > 0) {
+    await supabase
+      .from('recording_documents')
+      .update({
+        fee: match.feeStatus === 'matched' ? match.fee : doc.fee,
+        transfer_tax: match.transferTaxStatus === 'matched' ? match.transferTax : doc.transfer_tax,
+        recordation_tax: match.recordationTaxStatus === 'matched' ? match.recordationTax : doc.recordation_tax,
+      })
+      .eq('id', id)
+    await syncRecordingCdfLines(orderId)
+    revalidatePath(`/orders/${orderId}/recording`)
+  }
+
+  const noRateFor: string[] = []
+  if (match.feeStatus === 'no_rate') noRateFor.push('Recording Fee')
+  if (match.transferTaxStatus === 'no_rate') noRateFor.push('Transfer Tax')
+  if (match.recordationTaxStatus === 'no_rate') noRateFor.push('Recordation Tax')
+
+  return { noRateFor, updated: Object.keys(update).length > 0 }
 }
 
 export async function deleteRecordingDocument(orderId: string, id: string): Promise<{ error?: string }> {

@@ -41,6 +41,12 @@ async function createOrder(page: Page): Promise<string> {
   return orderId
 }
 
+async function setOrderFields(orderId: string, fields: Record<string, unknown>) {
+  const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY)
+  await supabase.auth.signInWithPassword({ email: SEEDED_EMAIL, password: SEEDED_PASSWORD })
+  await supabase.from('orders').update(fields).eq('id', orderId)
+}
+
 test.afterAll(async () => {
   await deleteTrackedOrders()
 })
@@ -107,4 +113,24 @@ test('Recording Fee, Recordation/Transfer Tax, and Stamp Tax auto-sum into fixed
 
   await page.goto(`/orders/${orderId}/cdf-page-2`)
   await expect(page.getByTestId('cdf-section-E-fixed').filter({ hasText: 'Recording Fees' })).toContainText('$0.00')
+})
+
+test('Recording Fee and Transfer Tax auto-fill from the state rate tables on Deed document type', async ({ page }) => {
+  const orderId = await createOrder(page)
+  await setOrderFields(orderId, { property_state: 'GA', purchase_price: 200000 })
+  await page.goto(`/orders/${orderId}/recording`)
+
+  await page.getByRole('button', { name: '+ Add Document' }).click()
+  const row = page.getByTestId('recording-doc-list').locator('[data-testid^="recording-doc-"]').first()
+  const docSelect = row.locator('select[name="document_description"]')
+  // selectOption() alone doesn't focus the element the way a real click does, so a
+  // trailing .blur() is a no-op (nothing was ever focused to blur) -- focus first so the
+  // subsequent blur actually fires the field's onBlur.
+  await docSelect.focus()
+  await docSelect.selectOption('Deed')
+  await Promise.all([page.waitForNavigation(), docSelect.blur()])
+
+  const reloadedRow = page.getByTestId('recording-doc-list').locator('[data-testid^="recording-doc-"]').first()
+  await expect(reloadedRow.getByLabel('Recording Fee')).toHaveValue('$25.00') // GA flat Deed fee
+  await expect(reloadedRow.getByLabel('Transfer Tax')).toHaveValue('$200.00') // GA: $200,000 / 100 * $0.10
 })
