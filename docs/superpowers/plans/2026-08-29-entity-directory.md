@@ -1,5 +1,7 @@
 # Entity Directory (Lender Vertical Slice) Implementation Plan
 
+> **SUPERSEDED 2026-09-10 by `2026-09-10-entity-directory-revised.md`.** This plan's role-type list, Task 1 (shadcn), and Task 2 (`profiles`) no longer match the current codebase, and Task 6's separate "Add Lender" panel was replaced with folding into the existing Contact role picker per Cam's instruction. Kept here for history — do not execute this version.
+
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
 **Goal:** Build the shared Entity Directory system (firm-wide, Lookup-Code-driven contact directory with fuzzy-dedup and CSV round-trip) generically across all 13 role types, and fully wire up Lender — the only role type with a known field set — end to end as the proof slice.
