@@ -2,7 +2,7 @@
 
 import { revalidatePath } from 'next/cache'
 import { createClient } from '@/lib/supabase/server'
-import { requireFolderTemplatePermission } from '@/lib/permissions'
+import { hasPermission } from '@/lib/permissions'
 import type { FolderTemplate } from '@/lib/types'
 
 export async function listFolderTemplates(): Promise<FolderTemplate[]> {
@@ -29,7 +29,7 @@ export async function createFolderTemplate(
 ): Promise<{ error?: string }> {
   const supabase = await createClient()
 
-  if (!(await requireFolderTemplatePermission(supabase))) {
+  if (!(await hasPermission(supabase, 'manage_folder_templates'))) {
     return { error: 'You do not have permission to manage folder templates.' }
   }
 
@@ -53,7 +53,7 @@ export async function createFolderTemplate(
 export async function renameFolderTemplate(id: string, name: string): Promise<{ error?: string }> {
   const supabase = await createClient()
 
-  if (!(await requireFolderTemplatePermission(supabase))) {
+  if (!(await hasPermission(supabase, 'manage_folder_templates'))) {
     return { error: 'You do not have permission to manage folder templates.' }
   }
 
@@ -71,7 +71,7 @@ export async function renameFolderTemplate(id: string, name: string): Promise<{ 
 export async function deleteFolderTemplate(id: string): Promise<{ error?: string }> {
   const supabase = await createClient()
 
-  if (!(await requireFolderTemplatePermission(supabase))) {
+  if (!(await hasPermission(supabase, 'manage_folder_templates'))) {
     return { error: 'You do not have permission to manage folder templates.' }
   }
 

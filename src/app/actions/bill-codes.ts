@@ -2,7 +2,7 @@
 
 import { revalidatePath } from 'next/cache'
 import { createClient } from '@/lib/supabase/server'
-import { requireBillCodePermission } from '@/lib/permissions'
+import { hasPermission } from '@/lib/permissions'
 import type { BillCode } from '@/lib/types'
 
 export async function listBillCodes(): Promise<BillCode[]> {
@@ -19,7 +19,7 @@ async function nextBillCodeSortOrder(supabase: Awaited<ReturnType<typeof createC
 export async function createBillCode(code: string, description: string): Promise<{ error?: string }> {
   const supabase = await createClient()
 
-  if (!(await requireBillCodePermission(supabase))) {
+  if (!(await hasPermission(supabase, 'manage_bill_codes'))) {
     return { error: 'You do not have permission to manage bill codes.' }
   }
 
@@ -41,7 +41,7 @@ export async function createBillCode(code: string, description: string): Promise
 export async function updateBillCode(id: string, code: string, description: string): Promise<{ error?: string }> {
   const supabase = await createClient()
 
-  if (!(await requireBillCodePermission(supabase))) {
+  if (!(await hasPermission(supabase, 'manage_bill_codes'))) {
     return { error: 'You do not have permission to manage bill codes.' }
   }
 
@@ -62,7 +62,7 @@ export async function updateBillCode(id: string, code: string, description: stri
 export async function deleteBillCode(id: string): Promise<{ error?: string }> {
   const supabase = await createClient()
 
-  if (!(await requireBillCodePermission(supabase))) {
+  if (!(await hasPermission(supabase, 'manage_bill_codes'))) {
     return { error: 'You do not have permission to manage bill codes.' }
   }
 

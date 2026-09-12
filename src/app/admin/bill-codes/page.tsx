@@ -1,6 +1,6 @@
 import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
-import { requireBillCodePermission } from '@/lib/permissions'
+import { hasPermission } from '@/lib/permissions'
 import { listBillCodes } from '@/app/actions/bill-codes'
 import { BillCodeAdmin } from '@/components/BillCodeAdmin'
 
@@ -11,7 +11,7 @@ export default async function BillCodesAdminPage() {
   } = await supabase.auth.getUser()
 
   if (!user) redirect('/login')
-  if (!(await requireBillCodePermission(supabase))) redirect('/orders')
+  if (!(await hasPermission(supabase, 'manage_bill_codes'))) redirect('/orders')
 
   const billCodes = await listBillCodes()
 

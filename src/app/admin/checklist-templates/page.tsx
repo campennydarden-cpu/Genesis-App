@@ -1,6 +1,6 @@
 import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
-import { requireChecklistTemplatePermission } from '@/lib/permissions'
+import { hasPermission } from '@/lib/permissions'
 import { listChecklistTemplates } from '@/app/actions/checklist-templates'
 import { ChecklistTemplateAdmin } from '@/components/ChecklistTemplateAdmin'
 
@@ -11,7 +11,7 @@ export default async function ChecklistTemplatesAdminPage() {
   } = await supabase.auth.getUser()
 
   if (!user) redirect('/login')
-  if (!(await requireChecklistTemplatePermission(supabase))) redirect('/orders')
+  if (!(await hasPermission(supabase, 'manage_checklist_templates'))) redirect('/orders')
 
   const templates = await listChecklistTemplates()
 

@@ -1,6 +1,6 @@
 import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
-import { requireFolderTemplatePermission } from '@/lib/permissions'
+import { hasPermission } from '@/lib/permissions'
 import { listFolderTemplates } from '@/app/actions/folder-templates'
 import { FolderTemplateAdmin } from '@/components/FolderTemplateAdmin'
 
@@ -11,7 +11,7 @@ export default async function FolderTemplatesAdminPage() {
   } = await supabase.auth.getUser()
 
   if (!user) redirect('/login')
-  if (!(await requireFolderTemplatePermission(supabase))) redirect('/orders')
+  if (!(await hasPermission(supabase, 'manage_folder_templates'))) redirect('/orders')
 
   const templates = await listFolderTemplates()
 

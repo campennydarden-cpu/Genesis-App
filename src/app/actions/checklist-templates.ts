@@ -2,7 +2,7 @@
 
 import { revalidatePath } from 'next/cache'
 import { createClient } from '@/lib/supabase/server'
-import { requireChecklistTemplatePermission } from '@/lib/permissions'
+import { hasPermission } from '@/lib/permissions'
 import { CHECKLIST_MILESTONES } from '@/lib/constants'
 import type { ChecklistTaskTemplate } from '@/lib/types'
 
@@ -25,7 +25,7 @@ export async function createChecklistTemplate(
 ): Promise<{ error?: string }> {
   const supabase = await createClient()
 
-  if (!(await requireChecklistTemplatePermission(supabase))) {
+  if (!(await hasPermission(supabase, 'manage_checklist_templates'))) {
     return { error: 'You do not have permission to manage checklist templates.' }
   }
 
@@ -51,7 +51,7 @@ export async function updateChecklistTemplate(
 ): Promise<{ error?: string }> {
   const supabase = await createClient()
 
-  if (!(await requireChecklistTemplatePermission(supabase))) {
+  if (!(await hasPermission(supabase, 'manage_checklist_templates'))) {
     return { error: 'You do not have permission to manage checklist templates.' }
   }
 
@@ -72,7 +72,7 @@ export async function updateChecklistTemplate(
 export async function deleteChecklistTemplate(id: string): Promise<{ error?: string }> {
   const supabase = await createClient()
 
-  if (!(await requireChecklistTemplatePermission(supabase))) {
+  if (!(await hasPermission(supabase, 'manage_checklist_templates'))) {
     return { error: 'You do not have permission to manage checklist templates.' }
   }
 

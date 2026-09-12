@@ -1,55 +1,38 @@
 import type { createClient } from '@/lib/supabase/server'
+import type { PermissionKey } from '@/lib/constants'
+import type { Profile } from '@/lib/types'
 
-export async function requireFolderTemplatePermission(
+export async function getCurrentProfile(
   supabase: Awaited<ReturnType<typeof createClient>>
-): Promise<boolean> {
+): Promise<Profile | null> {
   const {
     data: { user },
   } = await supabase.auth.getUser()
 
-  if (!user) return false
+  if (!user) return null
 
   const { data: profile } = await supabase
     .from('profiles')
-    .select('can_manage_folder_templates')
+    .select('id, full_name, active, role_id')
     .eq('id', user.id)
     .maybeSingle()
 
-  return profile?.can_manage_folder_templates ?? false
+  return profile
 }
 
-export async function requireChecklistTemplatePermission(
-  supabase: Awaited<ReturnType<typeof createClient>>
+export async function hasPermission(
+  supabase: Awaited<ReturnType<typeof createClient>>,
+  key: PermissionKey
 ): Promise<boolean> {
-  const {
-    data: { user },
-  } = await supabase.auth.getUser()
+  const profile = await getCurrentProfile(supabase)
+  if (!profile || !profile.active) return false
 
-  if (!user) return false
-
-  const { data: profile } = await supabase
-    .from('profiles')
-    .select('can_manage_checklist_templates')
-    .eq('id', user.id)
+  const { data } = await supabase
+    .from('role_permissions')
+    .select('permission_key')
+    .eq('role_id', profile.role_id)
+    .eq('permission_key', key)
     .maybeSingle()
 
-  return profile?.can_manage_checklist_templates ?? false
-}
-
-export async function requireBillCodePermission(
-  supabase: Awaited<ReturnType<typeof createClient>>
-): Promise<boolean> {
-  const {
-    data: { user },
-  } = await supabase.auth.getUser()
-
-  if (!user) return false
-
-  const { data: profile } = await supabase
-    .from('profiles')
-    .select('can_manage_bill_codes')
-    .eq('id', user.id)
-    .maybeSingle()
-
-  return profile?.can_manage_bill_codes ?? false
+  return data !== null
 }
