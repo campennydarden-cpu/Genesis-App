@@ -68,6 +68,19 @@ export const FUNCTIONAL_ROLES = [
   { key: 'post_closer', label: 'Post-Closer' },
 ] as const
 
+// Flat, code-defined list of gateable capabilities. A role (public.roles) is
+// just a named bundle of these keys via role_permissions -- adding a new
+// permission here needs no migration, only a new gated call site.
+export const PERMISSIONS = [
+  { key: 'manage_users', label: 'Manage Users & Roles' },
+  { key: 'manage_bill_codes', label: 'Manage Bill Codes' },
+  { key: 'manage_checklist_templates', label: 'Manage Checklist Templates' },
+  { key: 'manage_folder_templates', label: 'Manage Folder Templates' },
+  { key: 'manage_lookup_data', label: 'Manage Lookup Data (Entity Directory)' },
+] as const
+
+export type PermissionKey = (typeof PERMISSIONS)[number]['key']
+
 export const ENTITY_TYPES = [
   'Individual',
   'LLC',
