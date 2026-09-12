@@ -19,11 +19,17 @@ async function countOtherActiveManageUsersHolders(
   admin: ReturnType<typeof createAdminClient>,
   excludingProfileId?: string
 ): Promise<number> {
-  const { data } = await admin
+  let query = admin
     .from('profiles')
     .select('id, active, role_id, roles:role_id(role_permissions(permission_key))')
     .eq('active', true)
-    .neq('id', excludingProfileId ?? '')
+  if (excludingProfileId) {
+    query = query.neq('id', excludingProfileId)
+  }
+  const { data, error } = await query
+  // Fail safe: treat an unreadable count as "no other holders confirmed" so
+  // the caller still blocks rather than silently allowing a lockout.
+  if (error) return 0
 
   // role_id is a FK to roles, not role_permissions -- embed through roles one
   // level deeper, then filter client-side since the permission_key check
@@ -215,12 +221,13 @@ export async function deleteRole(roleId: string): Promise<{ error?: string }> {
   if (!allowed) return { error: 'Not permitted.' }
 
   const admin = createAdminClient()
-  const { count } = await admin
+  const { count, error: countError } = await admin
     .from('profiles')
     .select('id', { count: 'exact', head: true })
     .eq('role_id', roleId)
     .eq('active', true)
 
+  if (countError) return { error: 'Could not verify active holders. Please try again.' }
   if ((count ?? 0) > 0) {
     return { error: 'Cannot delete a role while an active user still holds it.' }
   }
