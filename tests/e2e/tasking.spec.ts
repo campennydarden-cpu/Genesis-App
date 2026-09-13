@@ -7,6 +7,12 @@ const SUPABASE_ANON_KEY =
   'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImhsYWhyeXBnbG5tamp4cmR0ZmttIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODc3MzYyMDEsImV4cCI6MjEwMzMxMjIwMX0.dhgrZ8ei_NY2wG6bs6Ah--AHPEagl36gI7tcAX8llsY'
 const SEEDED_EMAIL = 'genesis-e2e-seed@genesis-app-e2e-test.dev'
 const SEEDED_PASSWORD = 'E2eSeedPass123!'
+// Staff-role account with no extra permissions, seeded for the redirect test
+// below -- SEEDED_EMAIL is Admin (migration 0054 backfills any pre-existing
+// can_manage_* flag into Admin, which holds every permission), so it can
+// never exercise a "lacks the permission" redirect.
+const STAFF_EMAIL = 'genesis-e2e-seed-staff@genesis-app-e2e-test.dev'
+const STAFF_PASSWORD = 'E2eSeedPass123!'
 
 const createdOrderIds = new Set<string>()
 
@@ -79,7 +85,11 @@ test.describe('Tasking (Requested Tasks + Checklist Tasks)', () => {
   })
 
   test('checklist-templates admin screen redirects a user without the permission', async ({ page }) => {
-    await loginAsSeededUser(page)
+    await page.goto('/login')
+    await page.getByLabel('Email').fill(STAFF_EMAIL)
+    await page.getByLabel('Password').fill(STAFF_PASSWORD)
+    await page.getByRole('button', { name: 'Sign In' }).click()
+    await page.waitForURL('**/orders')
     await page.goto('/admin/checklist-templates')
     await page.waitForURL('**/orders')
   })
