@@ -33,16 +33,6 @@ async function deleteTrackedOrders() {
   }
 }
 
-function uniqueEmail() {
-  // NOTE: @example.com is deliberately avoided — Supabase Auth (GoTrue) hard-rejects
-  // RFC 2606 reserved test domains (example.com/.org/.net) with error_code
-  // "email_address_invalid" regardless of project config. Using a non-reserved
-  // placeholder domain instead so signUp() actually reaches account creation.
-  return `genesis-test-${Date.now()}@genesis-app-e2e-test.dev`
-}
-
-const TEST_PASSWORD = 'TestPassword123!'
-
 // Fixed seeded test user — created once via the real /signup flow against the
 // production Supabase project (hlahrypglnmjjxrdtfkm). This is a dedicated
 // test-only account with no real data, not a secret. Every test below except
@@ -80,22 +70,23 @@ test.describe('Genesis foundation phase', () => {
   })
 
   test('signup is disabled (post-bootstrap security posture)', async ({ page }) => {
-    // Public signup was intentionally closed in the Supabase dashboard once the
-    // one seeded account existed (final-review Critical finding: an open /signup
-    // route + single-tenant "to authenticated" RLS meant anyone with the URL
-    // could self-register and read/write every order and contact, SSN/DOB
-    // included). This test verifies that fix holds, rather than testing a flow
-    // that's now deliberately unavailable.
-    const email = uniqueEmail()
-
-    await page.goto('/signup')
-    await page.getByLabel('Email').fill(email)
-    await page.getByLabel('Password').fill(TEST_PASSWORD)
-    await page.getByRole('button', { name: 'Sign Up' }).click()
-
-    await page.waitForURL('**/signup?error=**')
-    await expect(page.locator('p.text-red-700')).toBeVisible()
-    expect(page.url()).not.toContain('/orders')
+    // Public signup was intentionally closed once the one seeded account
+    // existed (final-review Critical finding: an open /signup route +
+    // single-tenant "to authenticated" RLS meant anyone with the URL could
+    // self-register and read/write every order and contact, SSN/DOB
+    // included). The route itself was removed in favor of an invite-only
+    // flow (/auth/confirm + /invite/complete), so this test now verifies
+    // /signup is gone entirely rather than that it redirects with an error.
+    //
+    // Must check this while authenticated: the middleware redirects any
+    // unauthenticated request to a non-public path to /login (307) before
+    // Next.js's router ever gets a chance to 404 the missing route, which
+    // would make the assertion below pass for the wrong reason (a login
+    // redirect, not a gone route). Logging in first isolates the actual
+    // route-level check.
+    await loginAsSeededUser(page)
+    const response = await page.goto('/signup')
+    expect(response?.status()).toBe(404)
   })
 
   test('log in with the seeded account', async ({ page }) => {
