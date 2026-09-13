@@ -27,6 +27,22 @@ export async function updateSession(request: NextRequest) {
     data: { user },
   } = await supabase.auth.getUser()
 
+  if (user) {
+    const { data: profile } = await supabase
+      .from('profiles')
+      .select('active')
+      .eq('id', user.id)
+      .maybeSingle()
+
+    if (profile && !profile.active) {
+      await supabase.auth.signOut()
+      const url = request.nextUrl.clone()
+      url.pathname = '/login'
+      url.searchParams.set('error', 'Your account has been deactivated.')
+      return NextResponse.redirect(url)
+    }
+  }
+
   const publicPaths = ['/login', '/auth/confirm', '/invite/complete']
   const isPublicPath = publicPaths.some((p) => request.nextUrl.pathname.startsWith(p))
 
