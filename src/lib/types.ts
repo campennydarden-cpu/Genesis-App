@@ -34,6 +34,7 @@ export type Loan = {
   id: string
   order_id: string
   sort_order: number
+  created_at: string
   lender_contact_id: string | null
   principal_amount: number | null
   annual_interest_rate: number | null

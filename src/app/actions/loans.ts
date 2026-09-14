@@ -7,13 +7,15 @@ import type { Loan } from '@/lib/types'
 
 export async function listLoans(orderId: string): Promise<Loan[]> {
   const supabase = await createClient()
-  const { data } = await supabase.from('loans').select('*').eq('order_id', orderId).order('sort_order')
+  const { data } = await supabase.from('loans').select('*').eq('order_id', orderId).order('sort_order').order('created_at')
   return data ?? []
 }
 
 // The one loan every other screen's seeding relationship reads from. Returns
 // null for an order with no loans yet -- every caller treats that as "no
-// seed available," not an error.
+// seed available," not an error. Secondary sort on created_at is a
+// deterministic tiebreaker for the (order_id, sort_order) unique index --
+// ties shouldn't occur, but if they ever do, "primary" stays stable.
 export async function getPrimaryLoan(orderId: string): Promise<Loan | null> {
   const supabase = await createClient()
   const { data } = await supabase
@@ -21,6 +23,7 @@ export async function getPrimaryLoan(orderId: string): Promise<Loan | null> {
     .select('*')
     .eq('order_id', orderId)
     .order('sort_order')
+    .order('created_at')
     .limit(1)
     .maybeSingle()
   return data
@@ -29,12 +32,16 @@ export async function getPrimaryLoan(orderId: string): Promise<Loan | null> {
 export async function addLoan(orderId: string): Promise<{ error?: string }> {
   const supabase = await createClient()
 
-  const { count } = await supabase
+  const { data: last } = await supabase
     .from('loans')
-    .select('*', { count: 'exact', head: true })
+    .select('sort_order')
     .eq('order_id', orderId)
+    .order('sort_order', { ascending: false })
+    .limit(1)
+    .maybeSingle()
 
-  const isFirstLoan = (count ?? 0) === 0
+  const nextSortOrder = last ? last.sort_order + 1 : 0
+  const isFirstLoan = nextSortOrder === 0
   let seedPrincipal: number | null = null
   if (isFirstLoan) {
     const { data: order } = await supabase.from('orders').select('loan_amount').eq('id', orderId).single()
@@ -43,7 +50,7 @@ export async function addLoan(orderId: string): Promise<{ error?: string }> {
 
   const { error } = await supabase
     .from('loans')
-    .insert({ order_id: orderId, sort_order: count ?? 0, principal_amount: seedPrincipal })
+    .insert({ order_id: orderId, sort_order: nextSortOrder, principal_amount: seedPrincipal })
 
   if (error) {
     console.error('addLoan failed:', error)
@@ -76,6 +83,7 @@ export async function updateLoan(orderId: string, id: string, formData: FormData
       construction_equity_draw_amount: numOrNull('construction_equity_draw_amount'),
     })
     .eq('id', id)
+    .eq('order_id', orderId)
 
   if (error) {
     console.error('updateLoan failed:', error)
@@ -88,7 +96,7 @@ export async function updateLoan(orderId: string, id: string, formData: FormData
 
 export async function deleteLoan(orderId: string, id: string): Promise<{ error?: string }> {
   const supabase = await createClient()
-  const { error } = await supabase.from('loans').delete().eq('id', id)
+  const { error } = await supabase.from('loans').delete().eq('id', id).eq('order_id', orderId)
 
   if (error) {
     console.error('deleteLoan failed:', error)
