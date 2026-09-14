@@ -22,8 +22,21 @@ export async function POST(request: NextRequest) {
 
   const body = (await request.json()) as { status?: number; url?: string; token?: string }
 
-  if (!body.token || !verifyOnlyOfficeEditorToken(body.token)) {
+  const verifiedPayload = body.token ? verifyOnlyOfficeEditorToken(body.token) : null
+  if (!verifiedPayload) {
     return NextResponse.json({ error: 1, message: 'Invalid or missing token' }, { status: 403 })
+  }
+
+  // Bind the verified token to the orderId in the query string -- without this,
+  // a validly-signed callback captured for one order's document could be replayed
+  // against a different orderId, since the JWT check alone only proves "signed by
+  // someone with the shared secret," not "signed for this specific order." The
+  // editor config's `document.key` (set in page.tsx as `${orderId}-rev-${n}`) is
+  // echoed back by ONLYOFFICE inside the callback token, so it doubles as the
+  // per-order binding.
+  const tokenKey = typeof verifiedPayload.key === 'string' ? verifiedPayload.key : ''
+  if (!tokenKey.startsWith(`${orderId}-rev-`)) {
+    return NextResponse.json({ error: 1, message: 'Token does not match orderId' }, { status: 403 })
   }
 
   if (body.status === undefined || !SAVEABLE_STATUSES.has(body.status)) {
