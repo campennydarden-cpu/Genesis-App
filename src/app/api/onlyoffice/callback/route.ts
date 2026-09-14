@@ -6,8 +6,8 @@
 // Constraints). Must validate the request's JWT -- this endpoint accepts
 // externally-triggered writes to Storage, a real security boundary.
 import { NextRequest, NextResponse } from 'next/server'
-import { createClient } from '@/lib/supabase/server'
-import { verifyOnlyOfficeJwt } from '@/lib/onlyoffice'
+import { createAdminClient } from '@/lib/supabase/admin'
+import { verifyOnlyOfficeEditorToken } from '@/lib/onlyoffice'
 
 // ONLYOFFICE callback status codes relevant here: 2 = "ready for saving" (a user
 // closed the editor after editing), 6 = "being edited, force-saved." Everything
@@ -22,7 +22,7 @@ export async function POST(request: NextRequest) {
 
   const body = (await request.json()) as { status?: number; url?: string; token?: string }
 
-  if (!body.token || !verifyOnlyOfficeJwt(body.token)) {
+  if (!body.token || !verifyOnlyOfficeEditorToken(body.token)) {
     return NextResponse.json({ error: 1, message: 'Invalid or missing token' }, { status: 403 })
   }
 
@@ -34,7 +34,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: 1, message: 'Missing document url' }, { status: 400 })
   }
 
-  const supabase = await createClient()
+  const supabase = createAdminClient()
 
   const { data: commitmentDocument } = await supabase
     .from('commitment_documents')

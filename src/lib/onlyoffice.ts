@@ -79,6 +79,28 @@ export function verifyOnlyOfficeJwt(token: string): Record<string, unknown> | nu
   }
 }
 
+// For the save-callback webhook's `token` field -- verified against a real
+// Document Server (Task 6): the callback JWT's payload is the callback body
+// itself (`{key, status, users, actions, ...}`) at the top level, not wrapped
+// as `{payload: ...}`. Same unwrapped convention as the embedded editor's
+// config.token (signOnlyOfficeEditorConfig above) -- identical to
+// verifyOnlyOfficeJwt except it returns the decoded payload directly instead
+// of unwrapping `.payload`.
+export function verifyOnlyOfficeEditorToken(token: string): Record<string, unknown> | null {
+  const parts = token.split('.')
+  if (parts.length !== 3) return null
+  const [headerEnc, payloadEnc, signature] = parts
+  const expected = base64url(
+    createHmac('sha256', requireSecret()).update(`${headerEnc}.${payloadEnc}`).digest()
+  )
+  if (expected !== signature) return null
+  try {
+    return JSON.parse(Buffer.from(payloadEnc, 'base64').toString('utf8'))
+  } catch {
+    return null
+  }
+}
+
 const SCRIPTS_BUCKET = 'commitment-documents'
 const SCRIPTS_PREFIX = '_scripts'
 
