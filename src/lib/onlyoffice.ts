@@ -31,33 +31,37 @@ function requireServerUrl(): string {
 // exactly this (verified against a real Document Server in the spike); adding the
 // `jsonwebtoken` package for two dozen lines of HMAC would be a new dependency for
 // no real benefit.
-export function signOnlyOfficeJwt(payload: object): string {
+//
+// ONLYOFFICE uses two different JWT payload shapes depending on the endpoint, and
+// both call sites below need the *same* HS256 sign step, just with a different
+// payload shape:
+//   - docbuilder/command HTTP APIs (runDocBuilderScript) want the payload wrapped
+//     as `{ payload: <body> }`.
+//   - the embedded Document Editor's `config.token` field wants the payload to
+//     be the config object itself, unwrapped -- the Document Server decodes the
+//     JWT and compares its claims directly against document/editorConfig/etc.
+//     Confirmed against a real Document Server: signing the wrapped shape for
+//     this field produces "The document security token is not correctly
+//     formed" every time.
+// signHS256 holds the one shared signing implementation; the two exports below
+// just pick the payload shape their endpoint expects.
+function signHS256(payload: object): string {
   const header = { alg: 'HS256', typ: 'JWT' }
   const headerEnc = base64url(JSON.stringify(header))
-  const payloadEnc = base64url(JSON.stringify({ payload }))
+  const payloadEnc = base64url(JSON.stringify(payload))
   const signature = base64url(
     createHmac('sha256', requireSecret()).update(`${headerEnc}.${payloadEnc}`).digest()
   )
   return `${headerEnc}.${payloadEnc}.${signature}`
 }
 
-// The embedded Document Editor's `config.token` field is a different JWT shape
-// than the docbuilder/command HTTP APIs above: the Document Server verifies it
-// by decoding the JWT and comparing the decoded claims directly against the
-// config object it was given (document, editorConfig, ...) -- there is no outer
-// "payload" wrapper. Confirmed against a real Document Server: reusing
-// signOnlyOfficeJwt's {payload: ...} wrapping for this purpose produces "The
-// document security token is not correctly formed" every time. Same HS256
-// primitives as signOnlyOfficeJwt, just without the wrapper.
-export function signOnlyOfficeEditorConfig(config: object): string {
-  const header = { alg: 'HS256', typ: 'JWT' }
-  const headerEnc = base64url(JSON.stringify(header))
-  const payloadEnc = base64url(JSON.stringify(config))
-  const signature = base64url(
-    createHmac('sha256', requireSecret()).update(`${headerEnc}.${payloadEnc}`).digest()
-  )
-  return `${headerEnc}.${payloadEnc}.${signature}`
-}
+// For docbuilder/command HTTP API requests -- wraps as `{ payload: ... }`.
+export const signOnlyOfficeJwt = (payload: object) => signHS256({ payload })
+
+// For the embedded Document Editor's `config.token` field -- signs the config
+// object directly, no wrapper. See the comment above signHS256 for why these
+// two need different payload shapes.
+export const signOnlyOfficeEditorConfig = (config: object) => signHS256(config)
 
 export function verifyOnlyOfficeJwt(token: string): Record<string, unknown> | null {
   const parts = token.split('.')
