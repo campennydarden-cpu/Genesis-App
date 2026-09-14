@@ -94,8 +94,18 @@ export async function mergeCommitmentDocument(orderId: string): Promise<{ error?
   const mergedUrl = outputUrls['merged.docx']
   if (!mergedUrl) return { error: 'Merge did not produce an output file.' }
 
-  const mergedResponse = await fetch(mergedUrl)
-  const mergedBytes = new Uint8Array(await mergedResponse.arrayBuffer())
+  let mergedBytes: Uint8Array
+  try {
+    const mergedResponse = await fetch(mergedUrl)
+    if (!mergedResponse.ok) {
+      console.error(`mergeCommitmentDocument merged file fetch failed: ${mergedResponse.status} ${mergedResponse.statusText}`)
+      return { error: 'Could not download the merged document.' }
+    }
+    mergedBytes = new Uint8Array(await mergedResponse.arrayBuffer())
+  } catch (err) {
+    console.error('mergeCommitmentDocument merged file fetch failed:', err)
+    return { error: 'Could not download the merged document.' }
+  }
   const storagePath = `${orderId}/commitment.docx`
 
   const { error: uploadError } = await supabase.storage
