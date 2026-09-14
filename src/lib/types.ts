@@ -257,6 +257,7 @@ export type CommitmentScheduleA = {
   owner_coverage_tbd: boolean
   owner_proposed_insured: string | null
   loan_policy_type: string | null
+  loan_number: string | null
   loan_coverage_amount: number | null
   loan_coverage_tbd: boolean
   loan_proposed_insured: string | null

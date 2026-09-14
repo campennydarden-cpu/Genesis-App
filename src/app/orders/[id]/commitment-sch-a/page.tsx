@@ -1,6 +1,7 @@
 import { notFound } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
 import { fmtDate } from '@/lib/format'
+import { getPrimaryLoan } from '@/app/actions/loans'
 import { CommitmentScheduleAForm } from '@/components/commitment-sch-a/CommitmentScheduleAForm'
 
 export default async function CommitmentScheduleAPage({
@@ -35,6 +36,8 @@ export default async function CommitmentScheduleAPage({
     .select('*')
     .eq('order_id', id)
     .maybeSingle()
+
+  const primaryLoan = await getPrimaryLoan(id)
 
   const { data: prelimSearch } = await supabase
     .from('prelim_search')
@@ -117,6 +120,7 @@ export default async function CommitmentScheduleAPage({
         readOnly={readOnly}
         chainOfTitleEntries={chainOfTitle ?? []}
         derivationSeed={derivationSeed}
+        primaryLoan={primaryLoan}
       />
     </div>
   )

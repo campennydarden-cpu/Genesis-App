@@ -12,7 +12,7 @@ import { useAutosave } from '@/lib/use-autosave'
 import { COMMITMENT_FORM_TYPES, ALTA_POLICY_FORM_TYPES } from '@/lib/constants'
 import { MORTGAGEE_CLAUSE_LOAN_TYPES, buildMortgageeClause } from '@/lib/mortgagee-clause'
 import { upsertCommitmentScheduleA } from '@/app/actions/commitment-sch-a'
-import type { CommitmentScheduleA, ChainOfTitleEntry } from '@/lib/types'
+import type { CommitmentScheduleA, ChainOfTitleEntry, Loan } from '@/lib/types'
 import { ChainOfTitleSection } from './ChainOfTitleSection'
 
 type ContactSeed = {
@@ -48,6 +48,7 @@ export function CommitmentScheduleAForm({
   readOnly,
   chainOfTitleEntries,
   derivationSeed,
+  primaryLoan,
 }: {
   orderId: string
   commitmentSchA: CommitmentScheduleA | null
@@ -61,6 +62,7 @@ export function CommitmentScheduleAForm({
   readOnly?: boolean
   chainOfTitleEntries: ChainOfTitleEntry[]
   derivationSeed: DerivationSeed
+  primaryLoan: Loan | null
 }) {
   const [formType, setFormType] = useState<string>(commitmentSchA?.form_type ?? 'Standard')
   const [ownerProposedInsured, setOwnerProposedInsured] = useState(commitmentSchA?.owner_proposed_insured ?? '')
@@ -343,6 +345,15 @@ export function CommitmentScheduleAForm({
 
           <div className={`rounded border p-4 ${showLoanPolicy ? '' : 'hidden'}`} data-testid="loan-policy-card">
             <h3 className="mb-4 font-semibold">Loan Policy</h3>
+            <div>
+              <Label htmlFor="loan_number">Loan Number</Label>
+              <Input
+                id="loan_number"
+                name="loan_number"
+                defaultValue={commitmentSchA?.loan_number ?? primaryLoan?.loan_number ?? ''}
+                onBlur={() => handleSave()}
+              />
+            </div>
             <div className="grid grid-cols-3 gap-4">
               <div>
                 <Label htmlFor="loan_policy_type">ALTA Form</Label>

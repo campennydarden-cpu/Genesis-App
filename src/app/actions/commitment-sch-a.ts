@@ -37,6 +37,7 @@ export async function upsertCommitmentScheduleA(
         owner_coverage_tbd: formData.get('owner_coverage_tbd') === 'on',
         owner_proposed_insured: field('owner_proposed_insured'),
         loan_policy_type: field('loan_policy_type'),
+        loan_number: field('loan_number'),
         loan_coverage_amount: numField('loan_coverage_amount'),
         loan_coverage_tbd: formData.get('loan_coverage_tbd') === 'on',
         loan_proposed_insured: field('loan_proposed_insured'),
