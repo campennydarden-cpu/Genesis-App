@@ -34,12 +34,14 @@ export async function updateSession(request: NextRequest) {
       .eq('id', user.id)
       .maybeSingle()
 
-    if (profile && !profile.active) {
+    if (!profile || !profile.active) {
       await supabase.auth.signOut()
       const url = request.nextUrl.clone()
       url.pathname = '/login'
       url.searchParams.set('error', 'Your account has been deactivated.')
-      return NextResponse.redirect(url)
+      const response = NextResponse.redirect(url)
+      supabaseResponse.cookies.getAll().forEach((c) => response.cookies.set(c))
+      return response
     }
   }
 
@@ -49,7 +51,9 @@ export async function updateSession(request: NextRequest) {
   if (!user && !isPublicPath) {
     const url = request.nextUrl.clone()
     url.pathname = '/login'
-    return NextResponse.redirect(url)
+    const response = NextResponse.redirect(url)
+    supabaseResponse.cookies.getAll().forEach((c) => response.cookies.set(c))
+    return response
   }
 
   return supabaseResponse
