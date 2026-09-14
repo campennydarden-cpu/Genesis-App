@@ -12,7 +12,7 @@ import { computeCdfPage2Totals } from '@/lib/cdf-page2'
 import { actualDaysBetween, days360Between } from '@/lib/tax-proration'
 import { CDF_PAGE2_SECTIONS, DATE_BASIS_OPTIONS, CDF_PAGE2_SECTION_E_RECORDING_LINES } from '@/lib/constants'
 import { CdfWrap, CdfBar, CdfTable, CdfRow, CdfNum, cdfInputClass, cdfAmtInputClass, cdfSelectClass } from '@/components/title/cdf-chrome'
-import type { CdfPage2Line, CdfPage2Totals } from '@/lib/types'
+import type { CdfPage2Line, CdfPage2Totals, Loan } from '@/lib/types'
 
 type Contact = { id: string; name: string }
 
@@ -61,12 +61,14 @@ function LineRow({
   contacts,
   num,
   loanAmount,
+  primaryLoan,
 }: {
   orderId: string
   line: CdfPage2Line
   contacts: Contact[]
   num: number
   loanAmount: number | null
+  primaryLoan: Loan | null
 }) {
   const formRef = useRef<HTMLFormElement>(null)
   const { state, errorMessage, save } = useAutosave((formData: FormData) => updateCdfPage2Line(orderId, line.id, formData))
@@ -81,6 +83,11 @@ function LineRow({
   const computedPerMonth = line.section === 'G' && !line.is_fixed ? computePerMonthAmount(line) : null
   const isPrepaidInterest = line.is_fixed && line.section === 'F' && line.description === 'Prepaid Interest'
   const computedPrepaidInterest = isPrepaidInterest ? computePrepaidInterest(line) : null
+  const defaultPerDiemRate =
+    isPrepaidInterest && primaryLoan?.principal_amount != null && primaryLoan?.annual_interest_rate != null
+      ? ((primaryLoan.annual_interest_rate / 100) * primaryLoan.principal_amount) /
+        (line.prepaid_interest_use_30_day_months ? 360 : 365)
+      : undefined
   // Section E's 3 Recording totals are re-synced from Recording on every add/edit/delete
   // there (syncRecordingCdfLines) — editing them here would just be overwritten on the
   // next sync, and renaming the description would break that sync's own matching, so
@@ -290,7 +297,7 @@ function LineRow({
           <CurrencyInput
             aria-label="Prepaid Interest Per Diem Rate"
             name="prepaid_interest_per_diem_rate"
-            defaultValue={line.prepaid_interest_per_diem_rate}
+            defaultValue={line.prepaid_interest_per_diem_rate ?? defaultPerDiemRate}
             onBlur={handleSave}
             className="h-7 w-24 px-1.5 text-right"
           />
@@ -392,6 +399,7 @@ function SectionGroup({
   addSection,
   totalRow,
   loanAmount,
+  primaryLoan,
 }: {
   title: string
   codes: string[]
@@ -402,6 +410,7 @@ function SectionGroup({
   addSection: (section: string) => void
   totalRow: ReactNode
   loanAmount: number | null
+  primaryLoan: Loan | null
 }) {
   return (
     <CdfWrap>
@@ -423,7 +432,14 @@ function SectionGroup({
               {fixedPosition === 'first' &&
                 fixedLinesForCode.map((fixedLine, i) => (
                   <div key={fixedLine.id} data-testid={`cdf-section-${code}-fixed`}>
-                    <LineRow orderId={orderId} line={fixedLine} contacts={contacts} num={i + 1} loanAmount={loanAmount} />
+                    <LineRow
+                      orderId={orderId}
+                      line={fixedLine}
+                      contacts={contacts}
+                      num={i + 1}
+                      loanAmount={loanAmount}
+                      primaryLoan={primaryLoan}
+                    />
                   </div>
                 ))}
               <div data-testid={`cdf-section-${code}-list`}>
@@ -435,6 +451,7 @@ function SectionGroup({
                     contacts={contacts}
                     num={fixedPosition === 'first' ? idx + 1 + fixedLinesForCode.length : idx + 1}
                     loanAmount={loanAmount}
+                    primaryLoan={primaryLoan}
                   />
                 ))}
                 {sectionLines.length === 0 && <p className="py-1.5 pl-[26px] text-xs text-muted-foreground">No items yet.</p>}
@@ -448,6 +465,7 @@ function SectionGroup({
                       contacts={contacts}
                       num={sectionLines.length + i + 1}
                       loanAmount={loanAmount}
+                      primaryLoan={primaryLoan}
                     />
                   </div>
                 ))}
@@ -471,12 +489,14 @@ export function CdfPage2Panel({
   contacts,
   loanAmount,
   transactionType,
+  primaryLoan,
 }: {
   orderId: string
   lines: CdfPage2Line[]
   contacts: Contact[]
   loanAmount: number | null
   transactionType: string | null
+  primaryLoan: Loan | null
 }) {
   const [isPending, startTransition] = useTransition()
   const { d, i, closingCostsSubtotal, j } = computeCdfPage2Totals(lines, transactionType)
@@ -518,6 +538,7 @@ export function CdfPage2Panel({
             />
           }
           loanAmount={loanAmount}
+          primaryLoan={primaryLoan}
         />
         <SectionGroup
           title="Other Costs"
@@ -529,6 +550,7 @@ export function CdfPage2Panel({
           addSection={addSection}
           totalRow={<SubtotalLine id="i" label="I. Total Other Costs" totals={i} />}
           loanAmount={loanAmount}
+          primaryLoan={primaryLoan}
         />
         <CdfWrap>
           <CdfBar title="Total Closing Costs (J)" />
@@ -536,7 +558,14 @@ export function CdfPage2Panel({
             <SubtotalLine id="j-subtotal" label="1. Closing Costs Subtotal (D + I)" totals={closingCostsSubtotal} />
             {lenderCreditsLine && (
               <div data-testid="cdf-section-J-fixed">
-                <LineRow orderId={orderId} line={lenderCreditsLine} contacts={contacts} num={2} loanAmount={loanAmount} />
+                <LineRow
+                  orderId={orderId}
+                  line={lenderCreditsLine}
+                  contacts={contacts}
+                  num={2}
+                  loanAmount={loanAmount}
+                  primaryLoan={primaryLoan}
+                />
               </div>
             )}
             <SubtotalLine id="j" label="J. Total Closing Costs" totals={j} variant="total" />
