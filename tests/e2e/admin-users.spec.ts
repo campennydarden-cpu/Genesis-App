@@ -121,9 +121,10 @@ test('cannot revoke manage_users from the last remaining active holder', async (
     // Restore the real roles' manage_users grants first, before any other
     // cleanup, to minimize the window where nobody else can manage users.
     if (otherRoleIds.length > 0) {
-      await admin
+      const { error: restoreError } = await admin
         .from('role_permissions')
         .insert(otherRoleIds.map((role_id) => ({ role_id, permission_key: 'manage_users' })))
+      expect(restoreError, 'failed to restore manage_users on a live role').toBeNull()
     }
     await admin.auth.admin.deleteUser(created.user!.id)
     await admin.from('role_permissions').delete().eq('role_id', newRole!.id)
