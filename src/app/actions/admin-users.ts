@@ -103,8 +103,12 @@ export async function inviteUser(
     return { error: 'Email, name, and role are all required.' }
   }
 
+  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL
+  if (!siteUrl) {
+    return { error: 'NEXT_PUBLIC_SITE_URL is not configured — invites cannot be sent.' }
+  }
+
   const admin = createAdminClient()
-  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? 'http://localhost:3000'
   const { data, error } = await admin.auth.admin.inviteUserByEmail(email.trim(), {
     redirectTo: `${siteUrl}/invite/complete`,
   })
@@ -117,7 +121,13 @@ export async function inviteUser(
     .from('profiles')
     .insert({ id: data.user.id, full_name: fullName.trim(), role_id: roleId, active: true })
 
-  if (profileError) return { error: profileError.message }
+  if (profileError) {
+    // Don't leave an orphaned auth.users row with no profile -- middleware
+    // treats "no profile" as blocked, but listStaff() has no way to surface
+    // or deactivate an account it can't see, since it joins through profiles.
+    await admin.auth.admin.deleteUser(data.user.id)
+    return { error: profileError.message }
+  }
 
   revalidatePath('/', 'layout')
   return {}
@@ -221,15 +231,18 @@ export async function deleteRole(roleId: string): Promise<{ error?: string }> {
   if (!allowed) return { error: 'Not permitted.' }
 
   const admin = createAdminClient()
+  // profiles.role_id -> roles(id) has no `on delete` clause (defaults to NO
+  // ACTION), so Postgres blocks the delete if ANY row references this role,
+  // active or not -- count all holders here to match that real constraint,
+  // not just active ones.
   const { count, error: countError } = await admin
     .from('profiles')
     .select('id', { count: 'exact', head: true })
     .eq('role_id', roleId)
-    .eq('active', true)
 
-  if (countError) return { error: 'Could not verify active holders. Please try again.' }
+  if (countError) return { error: 'Could not verify holders. Please try again.' }
   if ((count ?? 0) > 0) {
-    return { error: 'Cannot delete a role while an active user still holds it.' }
+    return { error: 'Cannot delete a role while any user, active or not, still holds it.' }
   }
 
   const { error } = await admin.from('roles').delete().eq('id', roleId)
