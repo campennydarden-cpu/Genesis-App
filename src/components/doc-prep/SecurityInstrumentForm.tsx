@@ -13,7 +13,7 @@ import {
   addSiPrincipal,
   deleteSiPrincipal,
 } from '@/app/actions/doc-prep-security-instrument'
-import type { DocPrepSecurityInstrument, DocPrepSiPrincipal } from '@/lib/types'
+import type { DocPrepSecurityInstrument, DocPrepSiPrincipal, Loan } from '@/lib/types'
 
 type ContactOption = { id: string; name: string; role: string }
 
@@ -149,11 +149,13 @@ export function SecurityInstrumentForm({
   si,
   principals,
   contacts,
+  primaryLoan,
 }: {
   orderId: string
   si: DocPrepSecurityInstrument | null
   principals: DocPrepSiPrincipal[]
   contacts: ContactOption[]
+  primaryLoan: Loan | null
 }) {
   const formRef = useRef<HTMLFormElement>(null)
   const { state, errorMessage, save } = useAutosave((formData: FormData) => saveSecurityInstrument(orderId, formData))
@@ -197,7 +199,14 @@ export function SecurityInstrumentForm({
         <div className="grid grid-cols-2 gap-4">
           <div>
             <Label htmlFor="loan_amount">Loan Amount</Label>
-            <Input id="loan_amount" name="loan_amount" type="number" step="0.01" defaultValue={si?.loan_amount ?? ''} onBlur={handleSave} />
+            <Input
+              id="loan_amount"
+              name="loan_amount"
+              type="number"
+              step="0.01"
+              defaultValue={si?.loan_amount ?? primaryLoan?.principal_amount ?? ''}
+              onBlur={handleSave}
+            />
           </div>
           <div>
             <Label htmlFor="dated_date">Dated Date</Label>
@@ -261,7 +270,14 @@ export function SecurityInstrumentForm({
             </div>
             <div>
               <Label htmlFor="interest_rate">Interest Rate (%)</Label>
-              <Input id="interest_rate" name="interest_rate" type="number" step="0.001" defaultValue={si?.interest_rate ?? ''} onBlur={handleSave} />
+              <Input
+                id="interest_rate"
+                name="interest_rate"
+                type="number"
+                step="0.001"
+                defaultValue={si?.interest_rate ?? primaryLoan?.annual_interest_rate ?? ''}
+                onBlur={handleSave}
+              />
             </div>
           </div>
         </div>
