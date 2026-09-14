@@ -11,13 +11,13 @@ declare global {
 
 export function CommitmentDocumentEditor({
   orderId,
-  editorUrl,
-  revisionNumber,
+  editorConfig,
+  editorToken,
   documentServerUrl,
 }: {
   orderId: string
-  editorUrl: string | null
-  revisionNumber: number | null
+  editorConfig: object | null
+  editorToken: string | null
   documentServerUrl: string
 }) {
   const [isMerging, startMerge] = useTransition()
@@ -25,26 +25,15 @@ export function CommitmentDocumentEditor({
   const editorInstanceRef = useRef<{ destroyEditor: () => void } | null>(null)
 
   useEffect(() => {
-    if (!editorUrl || !documentServerUrl) return
+    if (!editorConfig || !editorToken || !documentServerUrl) return
 
     const script = document.createElement('script')
     script.src = `${documentServerUrl}/web-apps/apps/api/documents/api.js`
     script.onload = () => {
       if (!window.DocsAPI) return
-      // Config JWT signing happens server-side in a real deployment (this config
-      // object would be built by a server action and passed down); left as a
-      // documented follow-up wiring step here since it needs the JWT secret,
-      // which must never reach the client bundle. See Global Constraints.
       editorInstanceRef.current = new window.DocsAPI.DocEditor('onlyoffice-editor-container', {
-        document: {
-          fileType: 'docx',
-          key: `${orderId}-rev-${revisionNumber ?? 0}`,
-          title: 'Commitment.docx',
-          url: editorUrl,
-        },
-        editorConfig: {
-          callbackUrl: `${window.location.origin}/api/onlyoffice/callback?orderId=${orderId}`,
-        },
+        ...editorConfig,
+        token: editorToken,
       })
     }
     document.body.appendChild(script)
@@ -53,7 +42,7 @@ export function CommitmentDocumentEditor({
       editorInstanceRef.current?.destroyEditor()
       document.body.removeChild(script)
     }
-  }, [editorUrl, documentServerUrl, orderId, revisionNumber])
+  }, [editorConfig, editorToken, documentServerUrl])
 
   return (
     <div>
@@ -71,11 +60,11 @@ export function CommitmentDocumentEditor({
           }
           className="rounded bg-blue-600 px-4 py-2 text-sm font-medium text-white disabled:opacity-50"
         >
-          {isMerging ? 'Merging…' : editorUrl ? 'Refresh from current data' : 'Generate document'}
+          {isMerging ? 'Merging…' : editorConfig ? 'Refresh from current data' : 'Generate document'}
         </button>
       </div>
       {error && <p className="mb-4 rounded bg-red-50 p-3 text-sm text-red-700">{error}</p>}
-      {editorUrl ? (
+      {editorConfig ? (
         <div id="onlyoffice-editor-container" style={{ height: '80vh' }} />
       ) : (
         <p className="text-sm text-gray-500">No document has been generated yet. Click &quot;Generate document&quot; to merge current order data into the Commitment template.</p>

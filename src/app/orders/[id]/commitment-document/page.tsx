@@ -1,6 +1,7 @@
 import { notFound } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
 import { CommitmentDocumentEditor } from '@/components/commitment-document/CommitmentDocumentEditor'
+import { signOnlyOfficeEditorConfig } from '@/lib/onlyoffice'
 
 export default async function CommitmentDocumentPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params
@@ -15,20 +16,35 @@ export default async function CommitmentDocumentPage({ params }: { params: Promi
     .eq('order_id', id)
     .maybeSingle()
 
-  let editorUrl: string | null = null
+  let editorConfig: object | null = null
+  let editorToken: string | null = null
   if (commitmentDocument) {
     const { data: signedUrlData } = await supabase.storage
       .from('commitment-documents')
       .createSignedUrl(commitmentDocument.storage_path, 3600)
-    editorUrl = signedUrlData?.signedUrl ?? null
+    if (signedUrlData) {
+      const config = {
+        document: {
+          fileType: 'docx',
+          key: `${id}-rev-${commitmentDocument.revision_number}`,
+          title: 'Commitment.docx',
+          url: signedUrlData.signedUrl,
+        },
+        editorConfig: {
+          callbackUrl: `${process.env.NEXT_PUBLIC_SITE_URL}/api/onlyoffice/callback?orderId=${id}`,
+        },
+      }
+      editorConfig = config
+      editorToken = signOnlyOfficeEditorConfig(config)
+    }
   }
 
   return (
     <div>
       <CommitmentDocumentEditor
         orderId={id}
-        editorUrl={editorUrl}
-        revisionNumber={commitmentDocument?.revision_number ?? null}
+        editorConfig={editorConfig}
+        editorToken={editorToken}
         documentServerUrl={process.env.NEXT_PUBLIC_ONLYOFFICE_DOCUMENT_SERVER_URL ?? ''}
       />
     </div>
