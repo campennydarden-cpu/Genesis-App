@@ -26,7 +26,7 @@ import {
   cdfAmtInputClass,
   cdfSelectClass,
 } from '@/components/title/cdf-chrome'
-import type { CdfCashToClose, CdfPayoffPayment, CdfTransactionSummaryLine } from '@/lib/types'
+import type { CdfCashToClose, CdfPayoffPayment, CdfTransactionSummaryLine, Loan } from '@/lib/types'
 
 type Contact = { id: string; name: string }
 
@@ -36,7 +36,15 @@ function refresh() {
 
 const CASH_GRID = 'grid-cols-[1.8fr_0.85fr_0.85fr_0.85fr]'
 
-function CashToCloseForm({ orderId, cashToClose }: { orderId: string; cashToClose: CdfCashToClose | null }) {
+function CashToCloseForm({
+  orderId,
+  cashToClose,
+  primaryLoan,
+}: {
+  orderId: string
+  cashToClose: CdfCashToClose | null
+  primaryLoan: Loan | null
+}) {
   const formRef = useRef<HTMLFormElement>(null)
   const { state, errorMessage, save } = useAutosave((formData: FormData) => saveCdfCashToClose(orderId, formData))
 
@@ -46,15 +54,34 @@ function CashToCloseForm({ orderId, cashToClose }: { orderId: string; cashToClos
   }
 
   const rows = [
-    { label: 'Loan Amount', est: 'loan_amount_estimate', fin: 'loan_amount_final', changed: 'loan_amount_changed' },
-    { label: 'Total Closing Costs (J)', est: 'closing_costs_j_estimate', fin: 'closing_costs_j_final', changed: 'closing_costs_changed' },
+    {
+      label: 'Loan Amount',
+      est: 'loan_amount_estimate',
+      fin: 'loan_amount_final',
+      changed: 'loan_amount_changed',
+      estDefault: primaryLoan?.principal_amount ?? undefined,
+    },
+    {
+      label: 'Total Closing Costs (J)',
+      est: 'closing_costs_j_estimate',
+      fin: 'closing_costs_j_final',
+      changed: 'closing_costs_changed',
+      estDefault: undefined,
+    },
     {
       label: 'Closing Costs Paid Before Closing',
       est: 'closing_costs_paid_before_closing_estimate',
       fin: 'closing_costs_paid_before_closing_final',
       changed: null,
+      estDefault: undefined,
     },
-    { label: 'Total Payoffs and Payments (K)', est: 'payoffs_k_estimate', fin: 'payoffs_k_final', changed: 'payoffs_changed' },
+    {
+      label: 'Total Payoffs and Payments (K)',
+      est: 'payoffs_k_estimate',
+      fin: 'payoffs_k_final',
+      changed: 'payoffs_changed',
+      estDefault: undefined,
+    },
   ] as const
 
   return (
@@ -77,7 +104,7 @@ function CashToCloseForm({ orderId, cashToClose }: { orderId: string; cashToClos
               <CurrencyInput
                 id={row.est}
                 name={row.est}
-                defaultValue={(cashToClose?.[row.est] as number) ?? null}
+                defaultValue={(cashToClose?.[row.est] as number) ?? row.estDefault ?? null}
                 onBlur={handleSave}
                 className={cdfAmtInputClass}
               />
@@ -331,6 +358,7 @@ export function CdfPage3Panel({
   contacts,
   summaryLines,
   transactionType,
+  primaryLoan,
 }: {
   orderId: string
   cashToClose: CdfCashToClose | null
@@ -338,6 +366,7 @@ export function CdfPage3Panel({
   contacts: Contact[]
   summaryLines: CdfTransactionSummaryLine[]
   transactionType: string | null
+  primaryLoan: Loan | null
 }) {
   const [isPending, startTransition] = useTransition()
 
@@ -351,7 +380,7 @@ export function CdfPage3Panel({
         </p>
       </div>
 
-      <CashToCloseForm orderId={orderId} cashToClose={cashToClose} />
+      <CashToCloseForm orderId={orderId} cashToClose={cashToClose} primaryLoan={primaryLoan} />
 
       <CdfWrap>
         <CdfBar title="K. Payoffs and Payments" />

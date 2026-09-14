@@ -6,6 +6,7 @@ import {
   listAllContacts,
   listTransactionSummaryLines,
 } from '@/app/actions/cdf-page3'
+import { getPrimaryLoan } from '@/app/actions/loans'
 import { CdfPage3Panel } from '@/components/title/CdfPage3Panel'
 
 export default async function CdfPage3Page({ params }: { params: Promise<{ id: string }> }) {
@@ -16,12 +17,13 @@ export default async function CdfPage3Page({ params }: { params: Promise<{ id: s
   } = await supabase.auth.getUser()
   if (!user) redirect('/login')
 
-  const [cashToClose, payoffs, contacts, summaryLines, { data: order }] = await Promise.all([
+  const [cashToClose, payoffs, contacts, summaryLines, { data: order }, primaryLoan] = await Promise.all([
     getCdfCashToClose(orderId),
     listPayoffsPayments(orderId),
     listAllContacts(orderId),
     listTransactionSummaryLines(orderId),
     supabase.from('orders').select('transaction_type').eq('id', orderId).single(),
+    getPrimaryLoan(orderId),
   ])
 
   return (
@@ -32,6 +34,7 @@ export default async function CdfPage3Page({ params }: { params: Promise<{ id: s
       contacts={contacts}
       summaryLines={summaryLines}
       transactionType={order?.transaction_type ?? null}
+      primaryLoan={primaryLoan}
     />
   )
 }
