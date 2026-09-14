@@ -11,6 +11,10 @@ export const PRODUCT_TYPES = [
 
 export const POLICY_TYPES = ['None', "Owner's", 'Loan', 'Simultaneous'] as const
 
+// Loan Information & Funding, Phase A. Confirmed with Cam 2026-09-10 --
+// narrower than SoftPro's full loan-type list.
+export const LOAN_TYPES = ['Conventional', 'FHA', 'VA', 'USDA'] as const
+
 export const TRANSACTION_TYPES = ['Purchase', 'Refinance', 'Equity', 'Other'] as const
 
 // Auto-suggested Transaction Type when Product Type changes — a starting point only,

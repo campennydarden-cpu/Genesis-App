@@ -30,6 +30,18 @@ export type Order = {
   post_closer: string | null
 }
 
+export type Loan = {
+  id: string
+  order_id: string
+  sort_order: number
+  lender_contact_id: string | null
+  principal_amount: number | null
+  annual_interest_rate: number | null
+  loan_number: string | null
+  loan_type: string | null
+  construction_equity_draw_amount: number | null
+}
+
 export type ZipLookupCounty = { name: string; fips: string | null; weight: number }
 
 export type ZipLookupRow = {
