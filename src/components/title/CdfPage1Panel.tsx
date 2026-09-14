@@ -8,9 +8,17 @@ import { SaveIndicator } from '@/components/SaveIndicator'
 import { useAutosave } from '@/lib/use-autosave'
 import { saveCdfPage1 } from '@/app/actions/cdf-page1'
 import { CdfWrap, CdfBar, CdfTable, CdfMeta, cdfAmtInputClass } from '@/components/title/cdf-chrome'
-import type { CdfPage1 } from '@/lib/types'
+import type { CdfPage1, Loan } from '@/lib/types'
 
-export function CdfPage1Panel({ orderId, cdfPage1 }: { orderId: string; cdfPage1: CdfPage1 | null }) {
+export function CdfPage1Panel({
+  orderId,
+  cdfPage1,
+  primaryLoan,
+}: {
+  orderId: string
+  cdfPage1: CdfPage1 | null
+  primaryLoan: Loan | null
+}) {
   const formRef = useRef<HTMLFormElement>(null)
   const { state, errorMessage, save } = useAutosave((formData: FormData) => saveCdfPage1(orderId, formData))
 
@@ -39,7 +47,7 @@ export function CdfPage1Panel({ orderId, cdfPage1 }: { orderId: string; cdfPage1
             <CurrencyInput
               id="loan_amount"
               name="loan_amount"
-              defaultValue={cdfPage1?.loan_amount}
+              defaultValue={cdfPage1?.loan_amount ?? primaryLoan?.principal_amount ?? undefined}
               onBlur={handleSave}
               className={`${cdfAmtInputClass} max-w-[160px]`}
             />
@@ -49,7 +57,7 @@ export function CdfPage1Panel({ orderId, cdfPage1 }: { orderId: string; cdfPage1
               name="interest_rate"
               type="number"
               step="0.001"
-              defaultValue={cdfPage1?.interest_rate ?? ''}
+              defaultValue={cdfPage1?.interest_rate ?? primaryLoan?.annual_interest_rate ?? ''}
               onBlur={handleSave}
               className={`${cdfAmtInputClass} max-w-[160px]`}
             />
