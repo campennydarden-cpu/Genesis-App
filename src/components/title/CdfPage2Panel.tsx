@@ -47,12 +47,12 @@ function computePerMonthAmount(line: CdfPage2Line) {
 // a plain day count (no +1, unlike the Buyer-side proration convention on Tax/Other
 // Prorations) times a manually entered per diem rate. Same display-only
 // computed-help pattern as Section A/G above.
-function computePrepaidInterest(line: CdfPage2Line) {
-  if (line.prepaid_interest_from == null || line.prepaid_interest_to == null || line.prepaid_interest_per_diem_rate == null) return null
+function computePrepaidInterest(line: CdfPage2Line, effectiveRate: number | null | undefined) {
+  if (line.prepaid_interest_from == null || line.prepaid_interest_to == null || effectiveRate == null) return null
   const days = line.prepaid_interest_use_30_day_months
     ? days360Between(line.prepaid_interest_from, line.prepaid_interest_to)
     : actualDaysBetween(line.prepaid_interest_from, line.prepaid_interest_to)
-  return days * line.prepaid_interest_per_diem_rate
+  return days * effectiveRate
 }
 
 function LineRow({
@@ -82,12 +82,14 @@ function LineRow({
   const computedPoints = line.is_fixed && line.section === 'A' ? computePointsAmount(line, loanAmount) : null
   const computedPerMonth = line.section === 'G' && !line.is_fixed ? computePerMonthAmount(line) : null
   const isPrepaidInterest = line.is_fixed && line.section === 'F' && line.description === 'Prepaid Interest'
-  const computedPrepaidInterest = isPrepaidInterest ? computePrepaidInterest(line) : null
   const defaultPerDiemRate =
     isPrepaidInterest && primaryLoan?.principal_amount != null && primaryLoan?.annual_interest_rate != null
       ? ((primaryLoan.annual_interest_rate / 100) * primaryLoan.principal_amount) /
         (line.prepaid_interest_use_30_day_months ? 360 : 365)
       : undefined
+  const computedPrepaidInterest = isPrepaidInterest
+    ? computePrepaidInterest(line, line.prepaid_interest_per_diem_rate ?? defaultPerDiemRate)
+    : null
   // Section E's 3 Recording totals are re-synced from Recording on every add/edit/delete
   // there (syncRecordingCdfLines) — editing them here would just be overwritten on the
   // next sync, and renaming the description would break that sync's own matching, so

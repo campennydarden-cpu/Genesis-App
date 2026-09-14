@@ -24,7 +24,7 @@ export default async function CdfPage2Page({ params }: { params: Promise<{ id: s
       orderId={orderId}
       lines={lines}
       contacts={contacts}
-      loanAmount={order?.loan_amount ?? null}
+      loanAmount={primaryLoan?.principal_amount ?? order?.loan_amount ?? null}
       transactionType={order?.transaction_type ?? null}
       primaryLoan={primaryLoan}
     />
