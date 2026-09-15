@@ -13,6 +13,11 @@ const ADMIN_LINKS = [
   { href: '/admin/bill-codes', label: 'Bill Codes', permission: 'manage_bill_codes' },
   { href: '/admin/checklist-templates', label: 'Checklist Templates', permission: 'manage_checklist_templates' },
   { href: '/admin/folder-templates', label: 'Folder Templates', permission: 'manage_folder_templates' },
+  {
+    href: '/admin/requirement-templates',
+    label: 'Requirement/Exception Templates',
+    permission: 'manage_requirement_templates',
+  },
 ] as const
 
 // A stale Next.js Link-prefetch of this route (from the persistent order
