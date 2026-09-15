@@ -293,6 +293,112 @@ export async function deleteException(orderId: string, exceptionId: string) {
   revalidatePath(`/orders/${orderId}/commitment-sch-b`)
 }
 
+/**
+ * chosenSourceIds maps a scoped tag namespace ("security_instrument", "lien",
+ * "related_document") to the specific record id the picker resolved it to (silently,
+ * if there was exactly one candidate, or via the popup if there were several). Never
+ * trusts client-supplied text — only ids, re-fetched and re-rendered here.
+ */
+export async function addRequirementFromTemplate(
+  orderId: string,
+  templateId: string,
+  parentRequirementId: string | null,
+  chosenSourceIds: Record<string, string>,
+  childTemplateIds: string[]
+) {
+  const supabase = await createClient()
+  const { fileTags, state } = await fetchFileTagContext(supabase, orderId)
+
+  async function renderOne(id: string): Promise<string> {
+    const { data: template } = await supabase.from('requirement_templates').select('*').eq('id', id).single()
+    if (!template) return ''
+    const { data: variants } = await supabase.from('requirement_template_variants').select('*').eq('template_id', id)
+    const body = resolveVariantBody(template.body, variants ?? [], state)
+
+    let scoped: Record<string, string | undefined> = {}
+    if (chosenSourceIds.security_instrument) {
+      const { data: si } = await supabase.from('security_instruments').select('*').eq('id', chosenSourceIds.security_instrument).single()
+      if (si) scoped = { ...scoped, ...siFieldTags(si), ...siClauseTags(si) }
+    }
+    if (chosenSourceIds.lien) {
+      const { data: lien } = await supabase.from('liens').select('*').eq('id', chosenSourceIds.lien).single()
+      if (lien) scoped = { ...scoped, 'lien.full_text': lienFullText(lien), 'lien.type': lien.type, 'lien.creditor': lien.creditor ?? undefined, 'lien.debtor': lien.debtor ?? undefined, 'lien.amount': lien.amount != null ? String(lien.amount) : undefined }
+    }
+    return renderTemplateBody(body, { ...fileTags, ...scoped })
+  }
+
+  const parentDescription = await renderOne(templateId)
+  if (!parentDescription) fail(orderId, 'Could not generate requirement text from that template.')
+
+  const { data: inserted, error } = await supabase
+    .from('commitment_requirements')
+    .insert({
+      order_id: orderId,
+      description: parentDescription,
+      source_type: 'template',
+      source_id: templateId,
+      parent_requirement_id: parentRequirementId,
+      sort_order: await nextRequirementSortOrder(supabase, orderId),
+    })
+    .select('id')
+    .single()
+
+  if (error || !inserted) {
+    console.error('addRequirementFromTemplate failed:', error)
+    fail(orderId, 'Could not save. Please check your entries and try again.')
+  }
+
+  for (const childId of childTemplateIds) {
+    const childDescription = await renderOne(childId)
+    if (!childDescription) continue
+    await supabase.from('commitment_requirements').insert({
+      order_id: orderId,
+      description: childDescription,
+      source_type: 'template',
+      source_id: childId,
+      parent_requirement_id: inserted!.id,
+      sort_order: await nextRequirementSortOrder(supabase, orderId),
+    })
+  }
+
+  revalidatePath('/', 'layout')
+}
+
+export async function addExceptionFromTemplate(orderId: string, templateId: string, chosenSourceIds: Record<string, string>) {
+  const supabase = await createClient()
+  const { fileTags, state } = await fetchFileTagContext(supabase, orderId)
+
+  const { data: template } = await supabase.from('exception_templates').select('*').eq('id', templateId).single()
+  if (!template) fail(orderId, 'Could not generate exception text from that template.')
+  const { data: variants } = await supabase.from('exception_template_variants').select('*').eq('template_id', templateId)
+  const body = resolveVariantBody(template!.body, variants ?? [], state)
+
+  let scoped: Record<string, string | undefined> = {}
+  if (chosenSourceIds.exception_matter) {
+    const { data: em } = await supabase.from('exception_matters').select('*').eq('id', chosenSourceIds.exception_matter).single()
+    if (em) scoped = { ...scoped, ...emFieldTags(em), ...emClauseTags(em) }
+  }
+  if (chosenSourceIds.easement) {
+    const { data: easement } = await supabase.from('property_easements').select('*').eq('id', chosenSourceIds.easement).single()
+    if (easement) scoped = { ...scoped, ...easementFieldTags(easement), ...easementClauseTags(easement) }
+  }
+
+  const description = renderTemplateBody(body, { ...fileTags, ...scoped })
+  const { error } = await supabase.from('commitment_exceptions').insert({
+    order_id: orderId,
+    description,
+    source_type: 'template',
+    source_id: templateId,
+    sort_order: await nextExceptionSortOrder(supabase, orderId),
+  })
+
+  if (error) {
+    console.error('addExceptionFromTemplate failed:', error)
+    fail(orderId, 'Could not save. Please check your entries and try again.')
+  }
+  revalidatePath('/', 'layout')
+}
+
 // Not dead code: backs the "Begin Requirements/Exceptions At" numbering-offset override UI,
 // which is not built yet (follow-up task).
 export async function upsertSchBSettings(orderId: string, formData: FormData) {
