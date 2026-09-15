@@ -42,8 +42,18 @@ export async function exportCommitmentDocumentPdf(orderId: string): Promise<{ er
   const pdfUrl = outputUrls['commitment.pdf']
   if (!pdfUrl) return { error: 'PDF export did not produce an output file.' }
 
-  const pdfResponse = await fetch(pdfUrl)
-  const pdfBytes = new Uint8Array(await pdfResponse.arrayBuffer())
+  let pdfBytes: Uint8Array
+  try {
+    const pdfResponse = await fetch(pdfUrl)
+    if (!pdfResponse.ok) {
+      console.error(`exportCommitmentDocumentPdf PDF fetch failed: ${pdfResponse.status} ${pdfResponse.statusText}`)
+      return { error: 'Could not download the exported PDF.' }
+    }
+    pdfBytes = new Uint8Array(await pdfResponse.arrayBuffer())
+  } catch (err) {
+    console.error('exportCommitmentDocumentPdf PDF fetch failed:', err)
+    return { error: 'Could not download the exported PDF.' }
+  }
   const pdfStoragePath = `${orderId}/commitment.pdf`
 
   const { error: uploadError } = await supabase.storage
@@ -54,11 +64,19 @@ export async function exportCommitmentDocumentPdf(orderId: string): Promise<{ er
     return { error: 'Could not save the exported PDF.' }
   }
 
-  await supabase.from('commitment_documents').update({ pdf_storage_path: pdfStoragePath }).eq('order_id', orderId)
+  const { error: updateError } = await supabase.from('commitment_documents').update({ pdf_storage_path: pdfStoragePath }).eq('order_id', orderId)
+  if (updateError) {
+    console.error('exportCommitmentDocumentPdf pdf_storage_path update failed:', updateError)
+    return { error: 'Could not record the exported PDF.' }
+  }
 
-  const { data: downloadUrlData } = await supabase.storage
+  const { data: downloadUrlData, error: downloadUrlError } = await supabase.storage
     .from('commitment-documents')
     .createSignedUrl(pdfStoragePath, 300)
+  if (downloadUrlError || !downloadUrlData) {
+    console.error('exportCommitmentDocumentPdf failed to sign download URL:', downloadUrlError)
+    return { error: 'PDF was generated but the download link could not be created.' }
+  }
 
-  return { downloadUrl: downloadUrlData?.signedUrl }
+  return { downloadUrl: downloadUrlData.signedUrl }
 }

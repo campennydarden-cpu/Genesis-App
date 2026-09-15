@@ -34,7 +34,7 @@ export function CommitmentDocumentEditor({
     script.src = `${documentServerUrl}/web-apps/apps/api/documents/api.js`
     script.onload = () => {
       if (!window.DocsAPI) return
-      editorInstanceRef.current = new window.DocsAPI.DocEditor('onlyoffice-editor-container', {
+      editorInstanceRef.current = new window.DocsAPI.DocEditor('onlyoffice-editor-mount', {
         ...editorConfig,
         token: editorToken,
       })
@@ -58,6 +58,7 @@ export function CommitmentDocumentEditor({
           onClick={() =>
             startMerge(async () => {
               setError(null)
+              setPdfUrl(null)
               const result = await mergeCommitmentDocument(orderId)
               if (result.error) setError(result.error)
             })
@@ -92,17 +93,21 @@ export function CommitmentDocumentEditor({
       {editorConfig ? (
         // ONLYOFFICE's DocsAPI.DocEditor destroys the element passed by id and
         // replaces it with its own unstyled wrapper div(s) + iframe -- any style
-        // (including our intended 80vh) put directly on #onlyoffice-editor-container
-        // is discarded the moment the editor mounts, and the iframe's own
+        // (or persistent id) put directly on the element passed to DocEditor is
+        // discarded the moment the editor mounts, and the iframe's own
         // height="100%" attribute then has no definite ancestor height to resolve
         // against, so it collapses to the browser's ~150px default iframe size
         // (confirmed live: getComputedStyle on the mounted iframe showed
-        // height: 150px). Fix: give a *surviving* wrapper the real height, then
-        // force every ONLYOFFICE-injected div/iframe inside it to 100% so the
-        // percentage chain has something definite to resolve against.
-        <div id="onlyoffice-editor-wrapper" style={{ height: '80vh' }}>
-          <style>{`#onlyoffice-editor-wrapper div, #onlyoffice-editor-wrapper iframe { height: 100%; }`}</style>
-          <div id="onlyoffice-editor-container" />
+        // height: 150px). Fix: #onlyoffice-editor-container is the *outer*,
+        // surviving element carrying the real height and the id Task 10's
+        // Playwright selector (#onlyoffice-editor-container iframe) depends on;
+        // DocEditor is mounted against the *inner* #onlyoffice-editor-mount div,
+        // which ONLYOFFICE is free to destroy/replace however it wants. A scoped
+        // <style> rule forces every ONLYOFFICE-injected div/iframe to 100% so the
+        // percentage-height chain has something definite to resolve against.
+        <div id="onlyoffice-editor-container" style={{ height: '80vh' }}>
+          <style>{`#onlyoffice-editor-container div, #onlyoffice-editor-container iframe { height: 100%; }`}</style>
+          <div id="onlyoffice-editor-mount" />
         </div>
       ) : (
         <p className="text-sm text-gray-500">No document has been generated yet. Click &quot;Generate document&quot; to merge current order data into the Commitment template.</p>
