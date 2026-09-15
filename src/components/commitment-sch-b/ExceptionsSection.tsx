@@ -61,6 +61,13 @@ export function ExceptionsSection({
     return namespaces.filter((ns) => candidatesFor(ns).length > 1)
   }
 
+  const nonIndividualParty = contacts.some(
+    (c) => (c.role === 'Buyer/Borrower' || c.role === 'Seller') && c.entity_type !== 'Individual'
+  )
+  const suggestedTemplates = nonIndividualParty
+    ? exceptionTemplates.filter((t) => t.category === 'Entity-Confirmation' && !t.parent_template_id)
+    : []
+
   return (
     <div className="mt-6 rounded border p-4">
       <p className="mb-4 text-lg font-semibold">Exceptions</p>
@@ -186,6 +193,22 @@ export function ExceptionsSection({
             </button>
           </form>
         </details>
+      )}
+
+      {!readOnly && suggestedTemplates.length > 0 && (
+        <div className="mb-4 flex flex-wrap gap-2" data-testid="entity-confirmation-suggestions">
+          <p className="w-full text-xs text-slate-500">Suggested — a party&apos;s Entity Type isn&apos;t Individual:</p>
+          {suggestedTemplates.map((t) => (
+            <button
+              key={t.id}
+              type="button"
+              onClick={() => setLibraryPickerTemplate(t)}
+              className="rounded-full border border-amber-400 bg-amber-50 px-3 py-1 text-xs text-amber-800 hover:bg-amber-100"
+            >
+              + {t.label}
+            </button>
+          ))}
+        </div>
       )}
 
       {!readOnly && (
