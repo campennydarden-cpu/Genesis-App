@@ -63,29 +63,12 @@ export const signOnlyOfficeJwt = (payload: object) => signHS256({ payload })
 // two need different payload shapes.
 export const signOnlyOfficeEditorConfig = (config: object) => signHS256(config)
 
-export function verifyOnlyOfficeJwt(token: string): Record<string, unknown> | null {
-  const parts = token.split('.')
-  if (parts.length !== 3) return null
-  const [headerEnc, payloadEnc, signature] = parts
-  const expected = base64url(
-    createHmac('sha256', requireSecret()).update(`${headerEnc}.${payloadEnc}`).digest()
-  )
-  if (expected !== signature) return null
-  try {
-    const decoded = JSON.parse(Buffer.from(payloadEnc, 'base64').toString('utf8'))
-    return decoded.payload ?? null
-  } catch {
-    return null
-  }
-}
-
 // For the save-callback webhook's `token` field -- verified against a real
 // Document Server (Task 6): the callback JWT's payload is the callback body
 // itself (`{key, status, users, actions, ...}`) at the top level, not wrapped
 // as `{payload: ...}`. Same unwrapped convention as the embedded editor's
-// config.token (signOnlyOfficeEditorConfig above) -- identical to
-// verifyOnlyOfficeJwt except it returns the decoded payload directly instead
-// of unwrapping `.payload`.
+// config.token (signOnlyOfficeEditorConfig above): returns the decoded
+// payload directly, with no `.payload` unwrapping step.
 export function verifyOnlyOfficeEditorToken(token: string): Record<string, unknown> | null {
   const parts = token.split('.')
   if (parts.length !== 3) return null

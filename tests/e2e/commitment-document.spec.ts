@@ -40,6 +40,13 @@ test.describe('Commitment Document', () => {
     // labels invoke the identical mergeCommitmentDocument action (see
     // CommitmentDocumentEditor.tsx), so either is the correct target here.
     await page.getByRole('button', { name: /^(Generate document|Refresh from current data)$/ }).click()
+    // TEST_ORDER_ID is a pre-merged fixture, so an editor iframe from the
+    // *previous* revision is already on the page before this click -- without
+    // waiting for the in-flight merge to finish, the iframe-visible assertion
+    // below could pass trivially against that stale iframe instead of proving
+    // this merge (and its revalidated editorConfig/key) actually completed.
+    // Wait for the "Merging…" loading state to clear first.
+    await expect(page.getByRole('button', { name: 'Merging…' })).toHaveCount(0, { timeout: 15000 })
     await expect(page.locator('#onlyoffice-editor-container iframe')).toBeVisible({ timeout: 15000 })
     await expect(page.getByText(/could not merge/i)).not.toBeVisible()
   })

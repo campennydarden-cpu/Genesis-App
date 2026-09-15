@@ -98,8 +98,9 @@ export async function getCommitmentDocumentDivergence(orderId: string): Promise<
 
   const divergent: DivergentField[] = []
   for (const tag of KNOWN_TAGS) {
+    if (!(tag in currentValues)) continue // tag missing from the document entirely (template defect) -- never treat as "cleared to empty"
     const snapshotValue = snapshot[tag] ?? ''
-    const currentDocValue = currentValues[tag] ?? ''
+    const currentDocValue = currentValues[tag]
     if (snapshotValue !== currentDocValue) {
       divergent.push({ tag, snapshotValue, currentDocValue })
     }

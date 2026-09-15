@@ -14,6 +14,7 @@ type TagSource = {
   value: (sch_a: Record<string, unknown>, prelim: Record<string, unknown> | null) => string
 }
 
+// Naive string formatting only -- not a real currency/date parser; revisit if these fields need locale-aware formatting or validation.
 const TAG_SOURCES: TagSource[] = [
   { tag: 'commitment_number', value: (s) => String(s.commitment_number ?? '') },
   { tag: 'revision_number', value: (s) => String(s.revision_number ?? '') },
@@ -28,19 +29,15 @@ const TAG_SOURCES: TagSource[] = [
   { tag: 'issuing_office', value: (s) => String(s.issuing_office ?? '') },
 ]
 
-function escapeForDocBuilderString(value: string): string {
-  return value.replace(/\\/g, '\\\\').replace(/"/g, '\\"')
-}
-
 function buildMergeScript(templateUrl: string, tagValues: Record<string, string>): string {
   const setCalls = Object.entries(tagValues)
     .map(
       ([tag, value]) => `
   for (var i = 0; i < aContentControls.length; i++) {
-    if (aContentControls[i].GetTag() === "${escapeForDocBuilderString(tag)}") {
+    if (aContentControls[i].GetTag() === ${JSON.stringify(tag)}) {
       aContentControls[i].RemoveAllElements();
       var oRun_${tag.replace(/[^a-zA-Z0-9]/g, '_')} = Api.CreateRun();
-      oRun_${tag.replace(/[^a-zA-Z0-9]/g, '_')}.AddText("${escapeForDocBuilderString(value)}");
+      oRun_${tag.replace(/[^a-zA-Z0-9]/g, '_')}.AddText(${JSON.stringify(value)});
       aContentControls[i].AddElement(oRun_${tag.replace(/[^a-zA-Z0-9]/g, '_')}, 0);
     }
   }`
