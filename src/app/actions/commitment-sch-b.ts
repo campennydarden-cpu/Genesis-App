@@ -351,7 +351,7 @@ export async function addRequirementFromTemplate(
   for (const childId of childTemplateIds) {
     const childDescription = await renderOne(childId)
     if (!childDescription) continue
-    await supabase.from('commitment_requirements').insert({
+    const { error: childError } = await supabase.from('commitment_requirements').insert({
       order_id: orderId,
       description: childDescription,
       source_type: 'template',
@@ -359,6 +359,9 @@ export async function addRequirementFromTemplate(
       parent_requirement_id: inserted!.id,
       sort_order: await nextRequirementSortOrder(supabase, orderId),
     })
+    if (childError) {
+      console.error('addRequirementFromTemplate child insert failed:', childError)
+    }
   }
 
   revalidatePath('/', 'layout')

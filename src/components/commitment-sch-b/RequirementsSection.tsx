@@ -74,7 +74,7 @@ export function RequirementsSection({
   const [search, setSearch] = useState('')
 
   const childTemplates = (parentId: string) => requirementTemplates.filter((t) => t.parent_template_id === parentId)
-  const topLevelTemplates = requirementTemplates.filter((t) => !t.parent_template_id)
+  const topLevelTemplates = requirementTemplates.filter((t) => !t.parent_template_id && !t.trigger_source_type)
   const filteredTemplates = topLevelTemplates.filter(
     (t) =>
       (!categoryFilter || t.category === categoryFilter) &&
@@ -298,7 +298,7 @@ export function RequirementsSection({
         <LibraryPickerModal
           orderId={orderId}
           template={libraryPickerTemplate}
-          children={childTemplates(libraryPickerTemplate.id)}
+          childTemplates={childTemplates(libraryPickerTemplate.id)}
           ambiguousNamespaces={ambiguousNamespaces(libraryPickerTemplate)}
           candidatesFor={candidatesFor}
           onClose={() => setLibraryPickerTemplate(null)}
@@ -311,14 +311,14 @@ export function RequirementsSection({
 function LibraryPickerModal({
   orderId,
   template,
-  children,
+  childTemplates,
   ambiguousNamespaces,
   candidatesFor,
   onClose,
 }: {
   orderId: string
   template: RequirementTemplate
-  children: RequirementTemplate[]
+  childTemplates: RequirementTemplate[]
   ambiguousNamespaces: string[]
   candidatesFor: (namespace: string) => { id: string; [key: string]: unknown }[]
   onClose: () => void
@@ -349,10 +349,10 @@ function LibraryPickerModal({
             ))}
           </div>
         ))}
-        {children.length > 0 && (
+        {childTemplates.length > 0 && (
           <div className="mb-3">
             <p className="mb-1 text-sm font-medium">Include:</p>
-            {children.map((c) => (
+            {childTemplates.map((c) => (
               <label key={c.id} className="flex items-center gap-2 text-sm">
                 <input
                   type="checkbox"

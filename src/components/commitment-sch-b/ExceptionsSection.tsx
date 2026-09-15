@@ -42,7 +42,7 @@ export function ExceptionsSection({
   const [categoryFilter, setCategoryFilter] = useState<string>('')
   const [search, setSearch] = useState('')
 
-  const topLevelTemplates = exceptionTemplates.filter((t) => !t.parent_template_id)
+  const topLevelTemplates = exceptionTemplates.filter((t) => !t.parent_template_id && !t.trigger_source_type)
   const filteredTemplates = topLevelTemplates.filter(
     (t) =>
       (!categoryFilter || t.category === categoryFilter) &&
