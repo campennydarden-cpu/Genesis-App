@@ -3,6 +3,9 @@ import { createClient } from '@/lib/supabase/server'
 import { STANDARD_BI_ITEM_COUNTS } from '@/lib/constants'
 import { RequirementsSection } from '@/components/commitment-sch-b/RequirementsSection'
 import { ExceptionsSection } from '@/components/commitment-sch-b/ExceptionsSection'
+import { listRequirementTemplates } from '@/app/actions/requirement-templates'
+import { listExceptionTemplates } from '@/app/actions/exception-templates'
+import { resolveVariantBody } from '@/lib/template-tags'
 
 export default async function CommitmentScheduleBPage({
   params,
@@ -41,6 +44,22 @@ export default async function CommitmentScheduleBPage({
     ? await supabase.from('exception_matters').select('*').eq('prelim_search_id', prelimId).order('created_at')
     : { data: [] }
 
+  const { data: property } = await supabase.from('property_details').select('*').eq('order_id', id).maybeSingle()
+  const { data: propertyEasements } = property
+    ? await supabase.from('property_easements').select('*').eq('property_id', property.id).order('created_at')
+    : { data: [] }
+  const { data: contacts } = await supabase.from('contacts').select('*').eq('order_id', id)
+
+  const allRequirementTemplates = await listRequirementTemplates()
+  const allExceptionTemplates = await listExceptionTemplates()
+  const state = property?.state ?? null
+  const requirementTemplates = allRequirementTemplates
+    .filter((t) => t.active)
+    .map((t) => ({ ...t, body: resolveVariantBody(t.body, t.variants, state) }))
+  const exceptionTemplates = allExceptionTemplates
+    .filter((t) => t.active)
+    .map((t) => ({ ...t, body: resolveVariantBody(t.body, t.variants, state) }))
+
   const { data: requirements } = await supabase.from('commitment_requirements').select('*').eq('order_id', id).order('sort_order')
   const { data: exceptions } = await supabase.from('commitment_exceptions').select('*').eq('order_id', id).order('sort_order')
   const { data: settings } = await supabase.from('commitment_sch_b_settings').select('*').eq('order_id', id).maybeSingle()
@@ -70,6 +89,8 @@ export default async function CommitmentScheduleBPage({
         liens={liens ?? []}
         beginAt={beginRequirementsAt}
         readOnly={readOnly}
+        requirementTemplates={requirementTemplates}
+        contacts={contacts ?? []}
       />
       <ExceptionsSection
         orderId={id}
@@ -77,6 +98,9 @@ export default async function CommitmentScheduleBPage({
         exceptionMatters={exceptionMatters ?? []}
         beginAt={beginExceptionsAt}
         readOnly={readOnly}
+        propertyEasements={propertyEasements ?? []}
+        exceptionTemplates={exceptionTemplates}
+        contacts={contacts ?? []}
       />
     </div>
   )
