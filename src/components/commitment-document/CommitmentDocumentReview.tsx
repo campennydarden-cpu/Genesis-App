@@ -1,12 +1,13 @@
 // src/components/commitment-document/CommitmentDocumentReview.tsx
 'use client'
 
-import { useTransition } from 'react'
+import { useState, useTransition } from 'react'
 import { resolveCommitmentDocumentField } from '@/app/actions/commitment-document-review'
 import type { DivergentField } from '@/app/actions/commitment-document-diff'
 
 export function CommitmentDocumentReview({ orderId, divergentFields }: { orderId: string; divergentFields: DivergentField[] }) {
   const [isPending, startTransition] = useTransition()
+  const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({})
 
   if (divergentFields.length === 0) return null
 
@@ -23,6 +24,9 @@ export function CommitmentDocumentReview({ orderId, divergentFields }: { orderId
               <div className="text-gray-500">
                 Database: <span className="line-through">{field.snapshotValue || '(empty)'}</span> → Document: {field.currentDocValue || '(empty)'}
               </div>
+              {fieldErrors[field.tag] && (
+                <p className="mt-1 text-xs text-red-600">{fieldErrors[field.tag]}</p>
+              )}
             </div>
             <div className="flex gap-2">
               <button
@@ -30,7 +34,9 @@ export function CommitmentDocumentReview({ orderId, divergentFields }: { orderId
                 disabled={isPending}
                 onClick={() =>
                   startTransition(async () => {
-                    await resolveCommitmentDocumentField(orderId, field.tag, 'accept', field.currentDocValue)
+                    setFieldErrors((prev) => ({ ...prev, [field.tag]: '' }))
+                    const result = await resolveCommitmentDocumentField(orderId, field.tag, 'accept', field.currentDocValue)
+                    if (result.error) setFieldErrors((prev) => ({ ...prev, [field.tag]: result.error! }))
                   })
                 }
                 className="rounded bg-green-600 px-3 py-1 text-xs font-medium text-white disabled:opacity-50"
@@ -42,7 +48,9 @@ export function CommitmentDocumentReview({ orderId, divergentFields }: { orderId
                 disabled={isPending}
                 onClick={() =>
                   startTransition(async () => {
-                    await resolveCommitmentDocumentField(orderId, field.tag, 'reject', field.currentDocValue)
+                    setFieldErrors((prev) => ({ ...prev, [field.tag]: '' }))
+                    const result = await resolveCommitmentDocumentField(orderId, field.tag, 'reject', field.currentDocValue)
+                    if (result.error) setFieldErrors((prev) => ({ ...prev, [field.tag]: result.error! }))
                   })
                 }
                 className="rounded bg-gray-300 px-3 py-1 text-xs font-medium text-gray-800 disabled:opacity-50"
