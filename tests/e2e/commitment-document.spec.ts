@@ -1,10 +1,11 @@
-// tests/commitment-document.spec.ts
+// tests/e2e/commitment-document.spec.ts
 // Requires a running local ONLYOFFICE Document Server (ONLYOFFICE_DOCUMENT_SERVER_URL)
 // and a seeded commitment template (scripts/upload-commitment-template.mjs) —
 // this suite talks to the real Document Server, not a mock, matching this
 // codebase's existing preference for full Playwright user-flow coverage over
 // unit tests (see Attachments Core plan's Global Constraints).
 import { test, expect, type Page } from '@playwright/test'
+import { readFileSync, statSync } from 'node:fs'
 
 // Same seeded account every sibling spec.ts under tests/e2e uses (see e.g.
 // tests/e2e/attachments.spec.ts) — the app's middleware (src/lib/supabase/middleware.ts)
@@ -74,5 +75,18 @@ test.describe('Commitment Document', () => {
       page.getByRole('button', { name: 'Export PDF' }).click().then(() => page.getByRole('link', { name: 'Download PDF' }).click()),
     ])
     expect(download.suggestedFilename()).toMatch(/\.pdf$/)
+
+    // A matching filename isn't proof of a real file -- Playwright's `download`
+    // event fires on the browser's download disposition regardless of body
+    // content, so a 0-byte or corrupted download would still pass the check
+    // above. Verify actual bytes: non-empty, and starting with the PDF magic
+    // number (same `%PDF-` signature this codebase already uses to build a
+    // minimal real PDF fixture in tests/e2e/attachments.spec.ts's MINIMAL_PDF).
+    const downloadPath = await download.path()
+    expect(downloadPath).not.toBeNull()
+    const stats = statSync(downloadPath!)
+    expect(stats.size).toBeGreaterThan(0)
+    const header = readFileSync(downloadPath!).subarray(0, 5).toString('ascii')
+    expect(header).toBe('%PDF-')
   })
 })
