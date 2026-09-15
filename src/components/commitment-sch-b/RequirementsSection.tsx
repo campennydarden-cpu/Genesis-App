@@ -6,11 +6,20 @@ import { computeReqLabels, reorderForNumbering } from '@/lib/commitment-text'
 import {
   addRequirementFromChip,
   addRequirementManual,
+  addRequirementFromTemplate,
   updateRequirement,
   deleteRequirement,
   moveRequirement,
 } from '@/app/actions/commitment-sch-b'
-import type { CommitmentRequirement, SecurityInstrument, SecurityInstrumentRelatedDoc, Lien } from '@/lib/types'
+import { parseTemplateTags } from '@/lib/template-tags'
+import type {
+  CommitmentRequirement,
+  SecurityInstrument,
+  SecurityInstrumentRelatedDoc,
+  Lien,
+  RequirementTemplate,
+  Contact,
+} from '@/lib/types'
 
 export function RequirementsSection({
   orderId,
@@ -20,6 +29,8 @@ export function RequirementsSection({
   liens,
   beginAt,
   readOnly = false,
+  requirementTemplates,
+  contacts,
 }: {
   orderId: string
   requirements: CommitmentRequirement[]
@@ -28,6 +39,8 @@ export function RequirementsSection({
   liens: Lien[]
   beginAt: number
   readOnly?: boolean
+  requirementTemplates: (RequirementTemplate & { variants: unknown[] })[]
+  contacts: Contact[]
 }) {
   const [editingId, setEditingId] = useState<string | null>(null)
 
@@ -55,6 +68,33 @@ export function RequirementsSection({
   // Sub-items move with their parent, not independently — reorder controls only apply
   // to top-level rows, so track each one's position among just its top-level siblings.
   const topLevelIds = orderedRequirements.filter((r) => !r.parent_requirement_id).map((r) => r.id)
+
+  const [libraryPickerTemplate, setLibraryPickerTemplate] = useState<RequirementTemplate | null>(null)
+  const [categoryFilter, setCategoryFilter] = useState<string>('')
+  const [search, setSearch] = useState('')
+
+  const childTemplates = (parentId: string) => requirementTemplates.filter((t) => t.parent_template_id === parentId)
+  const topLevelTemplates = requirementTemplates.filter((t) => !t.parent_template_id)
+  const filteredTemplates = topLevelTemplates.filter(
+    (t) =>
+      (!categoryFilter || t.category === categoryFilter) &&
+      (!search || t.label.toLowerCase().includes(search.toLowerCase()))
+  )
+
+  function candidatesFor(namespace: string) {
+    if (namespace === 'security_instrument') return securityInstruments
+    if (namespace === 'lien') return liens
+    return []
+  }
+
+  function ambiguousNamespaces(template: RequirementTemplate) {
+    const tags = [
+      ...parseTemplateTags(template.body),
+      ...childTemplates(template.id).flatMap((c) => parseTemplateTags(c.body)),
+    ]
+    const namespaces = [...new Set(tags.map((t) => t.namespace))]
+    return namespaces.filter((ns) => candidatesFor(ns).length > 1)
+  }
 
   return (
     <div className="rounded border p-4">
@@ -195,6 +235,134 @@ export function RequirementsSection({
           </form>
         </details>
       )}
+
+      {!readOnly && (
+        <details className="mt-4 rounded border p-4">
+          <summary className="cursor-pointer font-medium">From Library</summary>
+          <div className="mt-3 flex flex-wrap gap-2">
+            <select value={categoryFilter} onChange={(e) => setCategoryFilter(e.target.value)} className="rounded border px-2 py-1 text-sm">
+              <option value="">All categories</option>
+              {[...new Set(topLevelTemplates.map((t) => t.category))].map((c) => (
+                <option key={c} value={c}>
+                  {c}
+                </option>
+              ))}
+            </select>
+            <input
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              placeholder="Search..."
+              className="rounded border px-2 py-1 text-sm"
+            />
+          </div>
+          <ul className="mt-3 space-y-1">
+            {filteredTemplates.map((t) => (
+              <li key={t.id}>
+                <button
+                  type="button"
+                  onClick={() => setLibraryPickerTemplate(t)}
+                  className="w-full rounded border px-3 py-2 text-left text-sm hover:bg-slate-50"
+                >
+                  <span className="text-xs uppercase text-slate-500">{t.category}</span> — {t.label}
+                </button>
+              </li>
+            ))}
+          </ul>
+        </details>
+      )}
+
+      {libraryPickerTemplate && (
+        <LibraryPickerModal
+          orderId={orderId}
+          template={libraryPickerTemplate}
+          children={childTemplates(libraryPickerTemplate.id)}
+          ambiguousNamespaces={ambiguousNamespaces(libraryPickerTemplate)}
+          candidatesFor={candidatesFor}
+          onClose={() => setLibraryPickerTemplate(null)}
+        />
+      )}
+    </div>
+  )
+}
+
+function LibraryPickerModal({
+  orderId,
+  template,
+  children,
+  ambiguousNamespaces,
+  candidatesFor,
+  onClose,
+}: {
+  orderId: string
+  template: RequirementTemplate
+  children: RequirementTemplate[]
+  ambiguousNamespaces: string[]
+  candidatesFor: (namespace: string) => { id: string; [key: string]: unknown }[]
+  onClose: () => void
+}) {
+  const [choices, setChoices] = useState<Record<string, string>>({})
+  const [checkedChildren, setCheckedChildren] = useState<string[]>([])
+
+  const namespaceLabel = (record: { [key: string]: unknown }) =>
+    (record.type as string) || (record.description as string) || 'Record'
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
+      <div className="w-full max-w-md rounded bg-white p-4">
+        <p className="mb-3 font-medium">{template.label}</p>
+        {ambiguousNamespaces.map((ns) => (
+          <div key={ns} className="mb-3">
+            <p className="mb-1 text-sm font-medium">Which {ns.replace('_', ' ')}?</p>
+            {candidatesFor(ns).map((record) => (
+              <label key={record.id} className="flex items-center gap-2 text-sm">
+                <input
+                  type="radio"
+                  name={ns}
+                  checked={choices[ns] === record.id}
+                  onChange={() => setChoices((c) => ({ ...c, [ns]: record.id }))}
+                />
+                {namespaceLabel(record)}
+              </label>
+            ))}
+          </div>
+        ))}
+        {children.length > 0 && (
+          <div className="mb-3">
+            <p className="mb-1 text-sm font-medium">Include:</p>
+            {children.map((c) => (
+              <label key={c.id} className="flex items-center gap-2 text-sm">
+                <input
+                  type="checkbox"
+                  checked={checkedChildren.includes(c.id)}
+                  onChange={(e) =>
+                    setCheckedChildren((prev) => (e.target.checked ? [...prev, c.id] : prev.filter((id) => id !== c.id)))
+                  }
+                />
+                {c.label}
+              </label>
+            ))}
+          </div>
+        )}
+        <div className="flex justify-end gap-2">
+          <button type="button" onClick={onClose} className="rounded border px-3 py-1.5 text-sm">
+            Cancel
+          </button>
+          <form
+            action={async () => {
+              await addRequirementFromTemplate(orderId, template.id, null, choices, checkedChildren)
+              onClose()
+            }}
+          >
+            <button
+              type="submit"
+              disabled={ambiguousNamespaces.some((ns) => !choices[ns])}
+              className="rounded bg-slate-900 px-3 py-1.5 text-sm text-white disabled:opacity-40"
+            >
+              Add
+            </button>
+          </form>
+        </div>
+      </div>
     </div>
   )
 }
