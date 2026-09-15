@@ -25,8 +25,11 @@ export default async function CommitmentDocumentPage({ params }: { params: Promi
   let configError: string | null = null
   if (commitmentDocument) {
     const siteUrl = process.env.NEXT_PUBLIC_SITE_URL
+    const documentServerUrl = process.env.NEXT_PUBLIC_ONLYOFFICE_DOCUMENT_SERVER_URL
     if (!siteUrl) {
       configError = 'NEXT_PUBLIC_SITE_URL is not configured — the document editor cannot be loaded.'
+    } else if (!documentServerUrl) {
+      configError = 'NEXT_PUBLIC_ONLYOFFICE_DOCUMENT_SERVER_URL is not configured — the document editor cannot be loaded.'
     } else {
       const { data: signedUrlData } = await supabase.storage
         .from('commitment-documents')
