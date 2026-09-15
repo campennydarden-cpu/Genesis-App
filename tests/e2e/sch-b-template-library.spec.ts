@@ -112,7 +112,7 @@ test('adds a requirement from the template library, including its optional child
   const requirementRows = page.getByTestId('requirement-list').getByTestId('requirement-row')
   await expect(requirementRows).toHaveCount(2)
   await expect(requirementRows.nth(0)).toContainText('Documents satisfactory to the Company')
-  await expect(requirementRows.nth(1)).toContainText('to recorded among the land records for')
+  await expect(requirementRows.nth(1)).toContainText('to be recorded among the land records for')
 })
 
 test('easement chip on Exceptions renders the Property Easement template', async ({ page }) => {
