@@ -2,6 +2,8 @@ import { notFound } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
 import { CommitmentDocumentEditor } from '@/components/commitment-document/CommitmentDocumentEditor'
 import { signOnlyOfficeEditorConfig } from '@/lib/onlyoffice'
+import { getCommitmentDocumentDivergence } from '@/app/actions/commitment-document-diff'
+import { CommitmentDocumentReview } from '@/components/commitment-document/CommitmentDocumentReview'
 
 export default async function CommitmentDocumentPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params
@@ -15,6 +17,8 @@ export default async function CommitmentDocumentPage({ params }: { params: Promi
     .select('storage_path, revision_number, updated_at')
     .eq('order_id', id)
     .maybeSingle()
+
+  const divergentFields = commitmentDocument ? await getCommitmentDocumentDivergence(id) : []
 
   let editorConfig: object | null = null
   let editorToken: string | null = null
@@ -41,6 +45,7 @@ export default async function CommitmentDocumentPage({ params }: { params: Promi
 
   return (
     <div>
+      <CommitmentDocumentReview orderId={id} divergentFields={divergentFields} />
       <CommitmentDocumentEditor
         orderId={id}
         editorConfig={editorConfig}
