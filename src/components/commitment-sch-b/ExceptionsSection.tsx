@@ -36,7 +36,7 @@ export function ExceptionsSection({
       {!readOnly && emChips.length > 0 && (
         <div className="mb-4 flex flex-wrap gap-2" data-testid="exception-chips">
           {emChips.map((em) => (
-            <form key={em.id} action={addExceptionFromChip.bind(null, orderId, em.id)}>
+            <form key={em.id} action={addExceptionFromChip.bind(null, orderId, 'em', em.id)}>
               <button type="submit" className="rounded-full border px-3 py-1 text-xs text-slate-600 hover:bg-slate-100" data-testid="em-exc-chip">
                 + {em.description || '(no description)'}
               </button>

@@ -3,10 +3,33 @@
 import { revalidatePath } from 'next/cache'
 import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
-import { siRequirementText, relRequirementText, lienRequirementText, emExceptionText } from '@/lib/commitment-text'
+import {
+  renderTemplateBody,
+  resolveVariantBody,
+  buildFileLevelTags,
+  siFieldTags,
+  siClauseTags,
+  relClauseTags,
+  lienFullText,
+  emFieldTags,
+  emClauseTags,
+  easementFieldTags,
+  easementClauseTags,
+} from '@/lib/template-tags'
 
 function fail(orderId: string, message: string): never {
   redirect(`/orders/${orderId}/commitment-sch-b?error=${encodeURIComponent(message)}`)
+}
+
+async function fetchFileTagContext(supabase: Awaited<ReturnType<typeof createClient>>, orderId: string) {
+  const { data: order } = await supabase.from('orders').select('*').eq('id', orderId).single()
+  const { data: property } = await supabase.from('property_details').select('*').eq('order_id', orderId).maybeSingle()
+  const { data: prelim } = await supabase.from('prelim_search').select('*').eq('order_id', orderId).maybeSingle()
+  const { data: contacts } = await supabase.from('contacts').select('*').eq('order_id', orderId)
+  return {
+    fileTags: buildFileLevelTags({ order, property: property ?? null, prelimSearch: prelim ?? null, contacts: contacts ?? [] }),
+    state: property?.state ?? null,
+  }
 }
 
 async function nextRequirementSortOrder(supabase: Awaited<ReturnType<typeof createClient>>, orderId: string) {
@@ -40,20 +63,36 @@ export async function addRequirementFromChip(
 ) {
   void formData
   const supabase = await createClient()
+  const { fileTags, state } = await fetchFileTagContext(supabase, orderId)
   let description = ''
 
   if (sourceType === 'si') {
     const { data: si } = await supabase.from('security_instruments').select('*').eq('id', sourceId).single()
-    if (si) description = siRequirementText(si)
+    const { data: template } = await supabase.from('requirement_templates').select('*').eq('trigger_source_type', 'si').eq('active', true).limit(1).maybeSingle()
+    if (si && template) {
+      const { data: variants } = await supabase.from('requirement_template_variants').select('*').eq('template_id', template.id)
+      const body = resolveVariantBody(template.body, variants ?? [], state)
+      description = renderTemplateBody(body, { ...fileTags, ...siFieldTags(si), ...siClauseTags(si) })
+    }
   } else if (sourceType === 'rel') {
     const { data: rel } = await supabase.from('security_instrument_related_docs').select('*').eq('id', sourceId).single()
     if (rel) {
       const { data: si } = await supabase.from('security_instruments').select('*').eq('id', rel.security_instrument_id).single()
-      if (si) description = relRequirementText(rel, si)
+      const { data: template } = await supabase.from('requirement_templates').select('*').eq('trigger_source_type', 'rel').eq('active', true).limit(1).maybeSingle()
+      if (si && template) {
+        const { data: variants } = await supabase.from('requirement_template_variants').select('*').eq('template_id', template.id)
+        const body = resolveVariantBody(template.body, variants ?? [], state)
+        description = renderTemplateBody(body, { ...fileTags, ...relClauseTags(rel, si) })
+      }
     }
   } else if (sourceType === 'lien') {
     const { data: lien } = await supabase.from('liens').select('*').eq('id', sourceId).single()
-    if (lien) description = lienRequirementText(lien)
+    const { data: template } = await supabase.from('requirement_templates').select('*').eq('trigger_source_type', 'lien').eq('active', true).limit(1).maybeSingle()
+    if (lien && template) {
+      const { data: variants } = await supabase.from('requirement_template_variants').select('*').eq('template_id', template.id)
+      const body = resolveVariantBody(template.body, variants ?? [], state)
+      description = renderTemplateBody(body, { ...fileTags, 'lien.full_text': lienFullText(lien) })
+    }
   }
 
   if (!description) fail(orderId, 'Could not generate requirement text from that source.')
@@ -71,7 +110,7 @@ export async function addRequirementFromChip(
     console.error('addRequirementFromChip failed:', error)
     fail(orderId, 'Could not save. Please check your entries and try again.')
   }
-  revalidatePath(`/orders/${orderId}/commitment-sch-b`)
+  revalidatePath('/', 'layout')
 }
 
 export async function addRequirementManual(orderId: string, formData: FormData) {
@@ -146,18 +185,35 @@ export async function deleteRequirement(orderId: string, requirementId: string) 
   revalidatePath(`/orders/${orderId}/commitment-sch-b`)
 }
 
-export async function addExceptionFromChip(orderId: string, sourceId: string, formData: FormData) {
+export async function addExceptionFromChip(orderId: string, sourceType: 'em' | 'easement', sourceId: string, formData: FormData) {
   void formData
   const supabase = await createClient()
-  const { data: em } = await supabase.from('exception_matters').select('*').eq('id', sourceId).single()
+  const { fileTags, state } = await fetchFileTagContext(supabase, orderId)
+  let description = ''
 
-  if (!em) fail(orderId, 'Could not generate exception text from that source.')
+  if (sourceType === 'em') {
+    const { data: em } = await supabase.from('exception_matters').select('*').eq('id', sourceId).single()
+    const { data: template } = await supabase.from('exception_templates').select('*').eq('trigger_source_type', 'em').eq('active', true).limit(1).maybeSingle()
+    if (em && template) {
+      const { data: variants } = await supabase.from('exception_template_variants').select('*').eq('template_id', template.id)
+      const body = resolveVariantBody(template.body, variants ?? [], state)
+      description = renderTemplateBody(body, { ...fileTags, ...emFieldTags(em), ...emClauseTags(em) })
+    }
+  } else if (sourceType === 'easement') {
+    const { data: easement } = await supabase.from('property_easements').select('*').eq('id', sourceId).single()
+    const { data: template } = await supabase.from('exception_templates').select('*').eq('trigger_source_type', 'easement').eq('active', true).limit(1).maybeSingle()
+    if (easement && template) {
+      const { data: variants } = await supabase.from('exception_template_variants').select('*').eq('template_id', template.id)
+      const body = resolveVariantBody(template.body, variants ?? [], state)
+      description = renderTemplateBody(body, { ...fileTags, ...easementFieldTags(easement), ...easementClauseTags(easement) })
+    }
+  }
 
-  const description = emExceptionText(em)
+  if (!description) fail(orderId, 'Could not generate exception text from that source.')
   const { error } = await supabase.from('commitment_exceptions').insert({
     order_id: orderId,
     description,
-    source_type: 'em',
+    source_type: sourceType,
     source_id: sourceId,
     sort_order: await nextExceptionSortOrder(supabase, orderId),
   })
@@ -166,7 +222,7 @@ export async function addExceptionFromChip(orderId: string, sourceId: string, fo
     console.error('addExceptionFromChip failed:', error)
     fail(orderId, 'Could not save. Please check your entries and try again.')
   }
-  revalidatePath(`/orders/${orderId}/commitment-sch-b`)
+  revalidatePath('/', 'layout')
 }
 
 export async function addExceptionManual(orderId: string, formData: FormData) {
