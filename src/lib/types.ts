@@ -284,7 +284,7 @@ export type CommitmentRequirement = {
   order_id: string
   description: string
   notes: string | null
-  source_type: 'si' | 'rel' | 'lien' | null
+  source_type: 'si' | 'rel' | 'lien' | 'template' | null
   source_id: string | null
   parent_requirement_id: string | null
   disposition: string | null
@@ -298,7 +298,7 @@ export type CommitmentException = {
   order_id: string
   description: string
   notes: string | null
-  source_type: 'em' | null
+  source_type: 'em' | 'easement' | 'template' | null
   source_id: string | null
   disposition: string | null
   disposition_notes: string | null
@@ -899,4 +899,48 @@ export type Profile = {
   full_name: string | null
   active: boolean
   role_id: string
+}
+
+export type TemplateCategory =
+  | 'Mortgage'
+  | 'Judgment'
+  | 'Lien'
+  | 'HOA'
+  | 'Tax'
+  | 'Entity-Confirmation'
+  | 'Related-Document-Release'
+  | 'General'
+
+export type RequirementTemplate = {
+  id: string
+  category: TemplateCategory
+  label: string
+  body: string
+  trigger_source_type: 'si' | 'rel' | 'lien' | null
+  parent_template_id: string | null
+  active: boolean
+}
+
+export type RequirementTemplateVariant = {
+  id: string
+  template_id: string
+  state: string | null
+  body: string
+}
+
+export type ExceptionTemplate = {
+  id: string
+  category: TemplateCategory
+  label: string
+  body: string
+  trigger_source_type: 'em' | 'easement' | null
+  parent_template_id: string | null
+  active: boolean
+}
+
+export type ExceptionTemplateVariant = {
+  id: string
+  template_id: string
+  state: string | null
+  body: string
 }
